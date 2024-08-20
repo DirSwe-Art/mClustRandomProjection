@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 from kMeansFromScratch import kmeans
+from sklearn.cluster import KMeans
 
 
 # ================================================================== Generate data
@@ -51,5 +52,26 @@ for i, cluster in enumerate(L):
 	F1m = C[i][0]
 	F2m = C[i][1]
 	plt.scatter(F1m, F2m, color=colors[i+2], marker='<' )
+
+plt.show()
+
+
+# ================================================================== Clustering X
+
+# using the sk-learn library
+
+cl = KMeans(n_clusters=2)
+cl.fit(X)
+
+Y = cl.predict(X)		# a list of the indexes of predicted cluster for each x in X
+centers = [ center for center in cl.cluster_centers_ ] # cluster centers: each center is a mean of cluster points
+
+
+colors = ["r", "b", "g", "k", "y"]
+
+F1, F2 = zip(*X)
+m1, m2 = zip(*centers)
+plt.scatter( F1, F2, color = [colors[i] for i in Y] )
+plt.scatter( m1, m2, color = [colors[i+3] for i in range(2)] )
 
 plt.show()
