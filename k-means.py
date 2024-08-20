@@ -7,7 +7,7 @@ Last modified:  2024_  _
 '''
 
 from sklearn.cluster import KMeans
-import matplotlib.pylab as plt
+import matplotlib.pyplot as plt
 import numpy as np
 import random
 

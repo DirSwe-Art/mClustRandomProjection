@@ -6,10 +6,10 @@ Last modified:  2024_  _
 - This file runs the k-means algorithm from the Sk-Learn library.
 '''
 
-from sklearn.cluster import KMeans
-import matplotlib.pylab as plt
+import matplotlib.pyplot as plt
 import numpy as np
 import random
+import math
 
 # ================================================================== Generate data
 
@@ -18,9 +18,13 @@ X1 = [ [np.random.normal(5,1), np.random.normal(5,1)] for u in range(500) ]
 X2 = [ [np.random.normal(10,1), np.random.normal(10,1)] for u in range(500) ]
 
 X  = X1 + X2
+random.shuffle(X)
 
+F1, F2 = zip(*X)
+plt.scatter(F1, F2, color='g')
+plt.show()
 # ================================================================== Clustering
-
+'''
 cl = KMeans(n_clusters=2)
 cl.fit(X)
 
@@ -37,3 +41,4 @@ plt.scatter(F1, F2, color = [colors[i] for i in Y] )
 plt.scatter(m1, m2, color = [colors[i+2] for i in range(2) ] )
 
 plt.show()
+'''
