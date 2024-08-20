@@ -22,23 +22,23 @@ def prepare_data(image):
 	
 	for r in range(imRow):
 		for c in range(imCol):
-			X.append( IMG[r][c] )
+			X.append( np.float32(IMG[r][c]) )
 			
-	X = np.array(X, dtype='float32')
+	#X = np.array(X, dtype='float32')
 	return X, imRow, imCol, imDim
 
 def disply_image(X, XX, imRow, imCol, imDim):
-	X = np.array(X, dtype='uint8')
-	X = np.array(XX, dtype='uint8')
+	X  = np.array(X, dtype='uint8')
+	XX = np.array(XX, dtype='uint8')
 	IMG_X  = X.reshape(imRow, imCol, imDim)
-	IMG_XX = X.reshape(imRow, imCol, imDim)
+	IMG_XX = XX.reshape(imRow, imCol, imDim)
 	
 	plt.close('all')
-	f, (ax1, ax2) = plt.subplots(2,1, sharex=True, shrey=True)
-	ax1.imshow(IMF_X)
+	f, (ax1, ax2) = plt.subplots(2,1, sharex=True, sharey=True)
+	ax1.imshow(IMG_X)
 	ax1.set_title('Original Image')
 	
-	ax2.imshow(IMF_XX)
+	ax2.imshow(IMG_XX)
 	ax2.set_title('Segmented Image')
 	
 	plt.xticks([])
@@ -54,6 +54,7 @@ eps   = 0.1
 image = 'img.bmp'
 
 X, imRow, imCol, imDim = prepare_data(image)
+
 C, L, Y = kmeans(X, k, eps)
 XX = np.array( [C[i] for i in Y] ) # replace each data point with its cluster's center (color)
 
