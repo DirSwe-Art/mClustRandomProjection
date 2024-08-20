@@ -18,6 +18,7 @@ X1 = [ [np.random.normal(5,1), np.random.normal(5,1)] for u in range(500) ]
 X2 = [ [np.random.normal(10,1), np.random.normal(10,1)] for u in range(500) ]
 
 X  = X1 + X2
+random.shuffle(X)
 
 # ================================================================== Clustering
 
