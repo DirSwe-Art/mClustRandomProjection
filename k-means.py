@@ -1,7 +1,7 @@
 '''
 Dirar Sweidan
-Created:		2024_08_20
-Last modified:	2024_  _
+Created:        2024_08_20
+Last modified:  2024_  _
 
 - This file runs the k-means algorithm from the Sk-Learn library.
 '''
