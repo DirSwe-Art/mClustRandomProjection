@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 import math
+import copy
 
 # ================================================================== Generate data
 
@@ -22,23 +23,59 @@ random.shuffle(X)
 
 F1, F2 = zip(*X)
 plt.scatter(F1, F2, color='g')
-plt.show()
-# ================================================================== Clustering
-'''
-cl = KMeans(n_clusters=2)
-cl.fit(X)
+plt.show(block=True)
 
-Y  = cl.predict(X) # a list of the indices of predicted clusters for each x in X
-Mu = [ center for center in cl.cluster_centers_] # cluser centers: each center is a mean of cluster points 
+# ================================================================== Functions
 
-# ================================================================== Plotting
+def dist(a,b):
+	s = sum([ (a[i] - b[i])**2 for i in range(len(a)) ])
+	return (math.sqrt(s))**2
+
+def nearestCenterIndex(x, C):
+	return np.argmin( [dist(x,c) for c in C] )
+
+def iterate(X, C):
+	L = [ [] for j in range(len(C)) ] # list of k empty lists:
+	
+	for x in X:
+		ic = nearestCenterIndex(x, C)
+		L[ic].append(x)
+	
+	# updating the centers:
+	for i in range(len(C)):
+		cluster = L[i]
+		C[i] = [ np.mean(col) for col in zip(*cluster) ]
+	
+	return C, L
+
+def kmeans(X, k=2, eps=0.0001):
+	C = random.sample(X, k) # choose k initial centers
+	
+	counter = 0
+	while True:
+		counter += 1
+		print(counter)
+		
+		prev_C = C.copy()
+		C, L = iterate(X, C)
+		if np.mean([ dist(prev_c, c) for (prev_c, c) in zip(prev_C, C) ]) < eps:
+			break
+	
+	return C, L
+
+
+# ================================================================== Clustering X
+
+C, L = kmeans(X, k=2, eps=0.0001)
+print('Final centers are:', C)
 
 colors = ['r','b','g','k','y']
-
-F1, F2 = zip(*X)
-m1, m2 = zip(*Mu)
-plt.scatter(F1, F2, color = [colors[i] for i in Y] )
-plt.scatter(m1, m2, color = [colors[i+2] for i in range(2) ] )
+for i, cluster in enumerate(L):
+	F1, F2 = zip(*cluster)
+	plt.scatter( F1, F2, color=colors[i] )
+	
+	F1m = C[i][0]
+	F2m = C[i][1]
+	plt.scatter(F1m, F2m, color=colors[i+2], marker='<' )
 
 plt.show()
-'''
