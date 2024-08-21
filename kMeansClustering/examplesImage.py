@@ -12,13 +12,13 @@ import numpy as np
 import random
 from kMeansFromScratch import kmeans
 from sklearn.cluster import KMeans
-from PIL import Image
+#from PIL import Image
 
 # =============================================================== definitions
 
 def prepare_data(image):
-	#IMG = plt.imread(image)	# uint8 data type
-	IMG = np.array( Image.open(image, formats=['bmp']) )
+	IMG = plt.imread(image)	# uint8 data type
+	#IMG = np.array( Image.open(image, formats=['bmp']) )
 	
 	imRow, imCol, imDim = IMG.shape
 	X = []
@@ -63,6 +63,9 @@ XX = np.array( [C[i] for i in Y] ) # replace each data point with its cluster's 
 display_image(X, XX, imRow, imCol, imDim)
 
 
+#Image.fromarray(np.uint8(X.reshape(imRow, imCol, imDim))).show()
+#Image.fromarray(np.uint8(XX.reshape(imRow, imCol, imDim))).show()
+
 # ================================================================== Clustering X
 
 cl    = KMeans(n_clusters=k)
@@ -72,9 +75,7 @@ Y     = cl.predict(X)
 centers = [ center for center in cl.cluster_centers_]
 XX    = np.array( [centers[i] for i in Y] )
 
-Ximg  = Image.new(mode: 'RGB', size: XX.shape()[0:2])
-Ximg.show()
-#display_image(X, XX, imRow, imCol, imDim)
+display_image(X, XX, imRow, imCol, imDim)
 
 
 
