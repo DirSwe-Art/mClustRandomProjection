@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from scipy.linalg import fractional_matrix_power
 import os
-os.environ["OMP_NUM_THREADS"] = '1'
+os.environ['OMP_NUM_THREADS'] = '2'
 
 # ========================================================================
 
