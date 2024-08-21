@@ -1,7 +1,5 @@
 """Multi-View Clustering via Orthogonalization"""
 
-# Paper: Y. Cui et al. (2007). Non-redundant multi-view clustering via orthogonalization. ICDM (pp. 133-142).
-
 # Authors: DirarSweidan
 # License: DSB 3-Claus
 
@@ -11,12 +9,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from scipy.linalg import fractional_matrix_power
+import os
+os.environ["OMP_NUM_THREADS"] = '1'
 
 # ========================================================================
 
 def generate_data(type='4-2-2'):			# 4 features, 3 clusters, 2 views
 	if type == '4-3-2': return data432()
-	if typr == '2-2-4': return data224()
+	if type == '2-2-4': return data224()
 	
 def data224():
 	X = []
@@ -50,27 +50,59 @@ def data432():								# 4 features, 3 clusters, 2 views
 def plot_clusters(DATA, X, colors):
 	fig, ((ax1a, ax2a),(ax1b, ax2b)) = plt.subplots(2, 2)
 	
-	ax1a.scatter( *no.array([ *zip(*DATA) ])[:2], c=colors, marker='.' )
+	ax1a.scatter( *np.array([ *zip(*DATA) ])[:2], c=colors, marker='.' )
 	ax1a.set_title('Original Space')
 	ax1a.set_xlabel('Feature 1')
 	ax1a.set_ylabel('Feature 2')
 	
 	if len(DATA[0]) > 2:
-		ax1a.scatter( *no.array([ *zip(*DATA) ])[2:4], c=colors, marker='.' )
+		ax1a.scatter( *np.array([ *zip(*DATA) ])[2:4], c=colors, marker='.' )
 		ax1a.set_title('Original Space')
 		ax1a.set_xlabel('Feature 3')
 		ax1a.set_ylabel('Feature 4')
 		
-	ax1b.scatter( *no.array([ *zip(*DATA) ])[:2], c=colors, marker='.' )
+	ax1b.scatter( *np.array([ *zip(*DATA) ])[:2], c=colors, marker='.' )
 	ax1b.set_title('Transformed Space')
 	ax1b.set_xlabel('Feature 1')
 	ax1b.set_ylabel('Feature 2')
 	
 	if len(DATA[0]) > 2:
-		ax1b.scatter( *no.array([ *zip(*DATA) ])[2:4], c=colors, marker='.' )
+		ax1b.scatter( *np.array([ *zip(*DATA) ])[2:4], c=colors, marker='.' )
 		ax1b.set_title('Transformed Space')
 		ax1b.set_xlabel('Feature 3')
 		ax1b.set_ylabel('Feature 4')
 	
 	plt.show()
 	
+def mView_Clustering_via_Orthogonalization(DATA, alternatives):
+	X   = copy.deepcopy(DATA)
+	clr = ['green','yellow','black','blue']
+
+	for t in range(alternatives):
+		h = KMeans(n_clusters=k).fit(X)					# Clustering X first
+		plot_clusters( DATA, X, colors= [ clr[i] for i in h.predict(X) ]) # Coloring original (DATA) and transformed (X) based on X new clustering
+		if t == alternatives - 1: break
+		
+		for i, x in enumerate(X):						# Project X data on the space orthogonal to u vector
+			u   = h.cluster_centers_[ h.predict([x])[0] ]	# Find cluster center (u) closest to x 
+			uuT = np.array([u]) * np.array([u]).T
+			uTu = np.dot(u, u)
+			X[i]= (np.identity(len(x)) - uuT / uTu ).dot(x)
+			
+			'''
+			u   = h.cluster_centers_[ h.predict([x])[0] ]
+			u   = np.array(u)
+			I   = np.odentity(len(x))
+			X[i]= ( I-(u.T * u)/ u.dot(u.T) ).dot(x.T)
+			'''
+
+# ========================================================================
+# Paper: Y. Cui et al. (2007). Non-redundant multi-view clustering via orthogonalization. ICDM (pp. 133-142).
+
+
+k = 2
+alternatives = 5
+
+DATA = generate_data(type='2-2-4')
+#DATA = generate_data(type='4-3-2')
+mView_Clustering_via_Orthogonalization(DATA, alternatives)
