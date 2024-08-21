@@ -72,7 +72,9 @@ Y     = cl.predict(X)
 centers = [ center for center in cl.cluster_centers_]
 XX    = np.array( [centers[i] for i in Y] )
 
-display_image(X, XX, imRow, imCol, imDim)
+Ximg  = Image.new(mode: 'RGB', size: XX.shape()[0:2])
+Ximg.show()
+#display_image(X, XX, imRow, imCol, imDim)
 
 
 
