@@ -73,3 +73,44 @@ centers = [ center for center in cl.cluster_centers_]
 XX    = np.array( [centers[i] for i in Y] )
 
 display_image(X, XX, imRow, imCol, imDim)
+
+
+
+
+
+
+
+
+
+'''
+plt.close('all')
+f, ax = plt.subplots()
+ax.imshow(IMG_SEG)
+ax.set_title('Segmented image')
+plt.show()
+
+#############
+
+plt.close('all')
+f, axarr = plt.subplots(2,sharex=True)
+axarr[0].imshow(IMG)
+axarr[0].set_title('Original image')
+axarr[1].imshow(IMG_SEG)
+axarr[1].set_title('Segmented image')
+plt.show()
+
+#############
+
+plt.close('all')
+f, (ax1, ax2) = plt.subplots(1,2,sharey=True, sharex=True)
+ax1.imshow(IMG)
+ax1.set_title('Original image')
+ax2.imshow(IMG_SEG)
+ax2.set_title('Segmented image')
+plt.show()
+
+#############
+
+
+
+'''
