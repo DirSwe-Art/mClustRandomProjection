@@ -14,7 +14,7 @@ import copy
 
 
 def dist(a,b):
-	s = sum([ (a[i] - b[i])**2 for i in range(len(a)) ])
+	s = sum([ (float(a[i]) - float(b[i]))**2 for i in range(len(a)) ])
 	return (math.sqrt(s))**2
 
 def nearestCenterIndex(x, C):
@@ -30,7 +30,7 @@ def iterate(X, C):
 		Y.append(ic)
 	
 	# updating the centers:
-	for i in range(len(C)):
+	for i in set(Y):
 		cluster = L[i]
 		C[i] = [ np.mean(col) for col in zip(*cluster) ]
 	
@@ -42,9 +42,9 @@ def kmeans(X, k=2, eps=0.0001):
 	counter = 0
 	while True:
 		counter += 1
-		print(counter)
+		print(counter, end=' ', flush=True)
 		
-		prev_C = C.copy()
+		prev_C = copy.deepcopy(C)
 		C, L, Y = iterate(X, C)
 		if np.mean([ dist(prev_c, c) for (prev_c, c) in zip(prev_C, C) ]) < eps:
 			break
