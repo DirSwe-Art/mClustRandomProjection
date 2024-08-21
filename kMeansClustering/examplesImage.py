@@ -12,21 +12,21 @@ import numpy as np
 import random
 from kMeansFromScratch import kmeans
 from sklearn.cluster import KMeans
-
+from PIL import Image
 
 # =============================================================== definitions
 
 def prepare_data(image):
-	IMG = plt.imread(image)	# uint8 data type
+	#IMG = plt.imread(image)	# uint8 data type
+	IMG = np.array( Image.open(image, formats=['bmp']) )
+	
 	imRow, imCol, imDim = IMG.shape
 	X = []
 	
 	for r in range(imRow):
 		for c in range(imCol):
 			X.append( IMG[r][c] )
-			#X.append( np.float32(IMG[r][c]) )
 			
-	#X = np.array(X, dtype='float32')
 	return X, imRow, imCol, imDim
 
 def display_image(X, XX, imRow, imCol, imDim):
