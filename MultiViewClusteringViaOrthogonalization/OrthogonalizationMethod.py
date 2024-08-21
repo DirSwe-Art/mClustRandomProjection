@@ -104,5 +104,5 @@ def mView_Clustering_via_Orthogonalization(DATA, alternatives):
 k    = 3
 DATA = generate_data(type='4-3-2')
 
-alternatives = 5
+alternatives = 5 
 mView_Clustering_via_Orthogonalization(DATA, alternatives)
