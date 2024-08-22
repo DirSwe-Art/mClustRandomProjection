@@ -130,7 +130,7 @@ def image_clusters(DATA, X, colors, t):
 def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
 	X   = copy.deepcopy(DATA)
 	
-	X = np.array(X)
+	X = np.array(X)																	# Center data if already uncentered
 	X = X - X.mean(axis=0)
 	
 

@@ -26,7 +26,7 @@ def prepare_data(image):
 	for r in range(imRow):
 		for c in range(imCol):
 			X.append( IMG[r][c] )
-			
+	
 	return X, imRow, imCol, imDim
 
 def display_image(X, XX, imRow, imCol, imDim):

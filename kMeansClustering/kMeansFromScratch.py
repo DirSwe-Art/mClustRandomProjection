@@ -51,3 +51,11 @@ def kmeans(X, k=2, eps=0.0001):
 	
 	return C, L, Y
 
+
+
+
+
+'''
+	C = random.sample(X, k) # choose k initial centers
+	C = np.array(X)[np.random.randint(len(X), size=k)]
+'''
