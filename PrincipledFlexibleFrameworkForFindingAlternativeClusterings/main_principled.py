@@ -75,7 +75,8 @@ def dataimg(file):
 	for r in range(imRow):
 		for c in range(imCol):
 			X.append( IMG[r][c] )
-			
+	
+	X = np.array(X, dtype='uint8')	
 	return X, imRow, imCol, imDim
 	
 	
@@ -118,8 +119,8 @@ def random_clusters(DATA, X, colors, t):
 
 
 def image_clusters(DATA, X, colors, t):
-	IMG_DATA = np.array(copy.deepcopy(DATA), dtype='uint8').reshape(imRow, imCol, imDim)
-	IMG_X    = np.array(copy.deepcopy(X), dtype='uint8').reshape(imRow, imCol, imDim)
+	IMG_DATA = copy.deepcopy(DATA).reshape(imRow, imCol, imDim)
+	IMG_X    = copy.deepcopy(X).reshape(imRow, imCol, imDim)
 	
 	f, (ax1, ax2, ax3) = plt.subplots(3,1, sharex=False, sharey=False, figsize=(6, 15))
 	ax1.imshow(IMG_DATA); ax1.set_title('Source image')								# view the original space
@@ -142,7 +143,7 @@ def princ_flex_framework_AlternativeClustering(DATA, a, alternatives, k, datatyp
 		
 		if datatype == 'image': clr = np.array(h.cluster_centers_, dtype='uint8') 	# For coloring pixels of each cluster by the mean color (centroid) 
 		else: 					clr = ['green','yellow','black','blue']				# For coloring data points of each cluster by a given color
-		plot_clusters( DATA, X, [ clr[i] for i in h.predict(X) ], t)			# Coloring original (DATA) and transformed (X) based on X clustering
+		plot_clusters( DATA, X, [ clr[i] for i in h.predict(X) ], t)				# Coloring original (DATA) and transformed (X) based on X clustering
 		
 		S = np.zeros( (len(DATA[0]),len(DATA[0])) ) # Sigma: data point variation for (k-1) centroids where this data point unlikely belongs to PI'
 		
