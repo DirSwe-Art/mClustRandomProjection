@@ -9,15 +9,32 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from scipy.linalg import fractional_matrix_power
+#import matplotlib.colors as mcolors
 
 
 # ========================================================================
 
-def generate_data(type='4-2-2'):			# 4 features, 3 clusters, 2 views
-	if type == '4-3-2': return data432()
-	if type == '2-2-4': return data224()
-	
-def data224():
+def generate_data(type='4-2-2'):			
+	if type == '4-3-2':
+		DATA = data432()
+		k = 3
+		datatype = 'F-C-V'
+		return DATA, k, datatype
+		
+	elif type == '2-2-4':
+		DATA = data224()
+		k = 2
+		datatype = 'F-C-V'
+		return DATA, k, datatype
+		
+	elif type == 'image':
+		DATA, imRow, imCol, imDim = dataimg('image.bmp')
+		k = 2
+		datatype = 'image'
+		return DATA, k, datatype, imRow, imCol, imDim
+
+
+def data224():								# 2 features, 2 clusters, 4 views
 	X = []
 	M = [[2, 2],[-2, 2],[-2, -2],[2, -2]]
 	for m in M:
@@ -26,6 +43,7 @@ def data224():
 	X = np.array(X)
 	X = X -X.mean(axis=0)					# center the data
 	return X
+	
 	
 def data432():								# 4 features, 3 clusters, 2 views
 	X1 = []									# First view of the data (with F1, F2 features of each x)
@@ -45,8 +63,25 @@ def data432():								# 4 features, 3 clusters, 2 views
 	X  = np.array([ X1[i] + X2[i] for i in range(len(X1)) ]) # Combine the two views (four features F1, F2, F3, F4)
 	X  = X - X.mean(axis=0)					# Center the data (shift the data points toward the origine)
 	return X
+
+
+def dataimg(file):
+	IMG = plt.imread(file)					# uint8 data type
+	imRow, imCol, imDim = IMG.shape
+	X = []
+	
+	for r in range(imRow):
+		for c in range(imCol):
+			X.append( IMG[r][c] )
+	
+	return X, imRow, imCol, imDim
+	
 	
 def plot_clusters(DATA, X, colors):
+	if datatype == 'F-C-V': return random_clusters(DATA, X, colors)
+	if datatype == 'image': return image_clusters(DATA, X, colors) 
+	
+def random_clusters(DATA, X, colors):
 	fig, ((ax1a, ax2a),(ax1b, ax2b)) = plt.subplots(2, 2)
 	
 	ax1a.scatter( *np.array([ *zip(*DATA) ])[:2], c=colors, marker='.' )
@@ -72,14 +107,30 @@ def plot_clusters(DATA, X, colors):
 		ax2b.set_ylabel('Feature 4')
 	
 	plt.show()
+
+def image_clusters(DATA, X, colors):
+	IMG_DATA = np.array(copy.deepcopy(DATA), dtype='uint8').reshape(imRow, imCol, imDim)
+	IMG_X    = np.array(copy.deepcopy(X), dtype='uint8').reshape(imRow, imCol, imDim)
 	
-def mView_Clustering_via_Orthogonalization(DATA, alternatives):
+	f, (ax1, ax2, ax3) = plt.subplots(3,1, sharex=True, sharey=True)
+	ax1.imshow(IMG_DATA); ax1.set_title('Source image')			# view the original space
+	ax2.imshow(IMG_X)   ; ax2.set_title('Transformed space')	# view the transformed space (to the space orthogonal to the clustering solution)
+	ax3.imshow(np.array(colors).reshape(imRow, imCol, imDim)); ax3.set_title('Clustering Solution')
+	plt.show()
+	plt.close('all')	
+	
+	
+def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
 	X   = copy.deepcopy(DATA)
-	clr = ['green','yellow','black','blue']
+	
 
 	for t in range(alternatives):
 		h = KMeans(n_clusters=k).fit(X)					# Clustering X first
-		plot_clusters( DATA, X, colors= [ clr[i] for i in h.predict(X) ]) # Coloring original (DATA) and transformed (X) based on X new clustering
+		
+		if datatype == 'image': clr = np.array(h.cluster_centers_, dtype='uint8') 	# For coloring pixels of each cluster by the mean color (centroid) 
+		else: 					clr = ['green','yellow','black','blue']				# For coloring data points of each cluster by a given color
+		plot_clusters( DATA, X, colors= [ clr[i] for i in h.predict(X) ]) 			# Coloring original (DATA) and transformed (X) based on X new clustering
+		
 		if t == alternatives - 1: break
 		
 		for i, x in enumerate(X):						# Project X data on the space orthogonal to u vector
@@ -98,11 +149,8 @@ def mView_Clustering_via_Orthogonalization(DATA, alternatives):
 # ========================================================================
 # Paper: Y. Cui et al. (2007). Non-redundant multi-view clustering via orthogonalization. ICDM (pp. 133-142).
 
-#k    = 2
-#DATA = generate_data(type='2-2-4')
 
-k    = 3
-DATA = generate_data(type='4-3-2')
-
+DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') # '2-2-4', '4-3-2', 'image'
 alternatives = 5 
-mView_Clustering_via_Orthogonalization(DATA, alternatives)
+
+mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype)
