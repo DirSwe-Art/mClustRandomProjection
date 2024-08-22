@@ -1,4 +1,4 @@
-"""A principled and flexible framework for finding alternative clusterings"""
+"""Multi-View Clustering via Orthogonalization"""
 
 # Authors: DirarSweidan
 # License: DSB 3-Claus
@@ -127,49 +127,58 @@ def image_clusters(DATA, X, colors, t):
 	plt.close('all')	
 	
 
-# ================================================================================
-# Paper: Z. Qi et al. (2009). A principled and flexible framework for finding alternative clusterings. SIGKDD (pp. 717-726).
-def princ_flex_framework_AlternativeClustering(DATA, a, alternatives, k, datatype):
-	X = copy.deepcopy(DATA)
+# ========================================================================
+# Paper: Y. Cui et al. (2007). Non-redundant multi-view clustering via orthogonalization. ICDM (pp. 133-142).
+def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
+	X   = copy.deepcopy(DATA)
 	
 	for t in range(alternatives):
-		print('Iteration'+str(t))
+		print('Iteration', t)
 		
-		h = KMeans(n_clusters= k).fit(X)
+		h = KMeans(n_clusters=k).fit(X)												# Clustering X first
 		
 		if datatype == 'image': clr = np.array(h.cluster_centers_, dtype='uint8') 	# For coloring pixels of each cluster by the mean color (centroid) 
 		else: 					clr = ['green','yellow','black','blue']				# For coloring data points of each cluster by a given color
-		plot_clusters( DATA, X, [ clr[i] for i in h.predict(X) ], t)			# Coloring original (DATA) and transformed (X) based on X clustering
+		plot_clusters( DATA, X, [ clr[i] for i in h.predict(X) ], t) 				# Coloring original (DATA) and transformed (X) based on X clustering
 		
-		S = np.zeros( (len(DATA[0]),len(DATA[0])) ) # Sigma: data point variation for (k-1) centroids where this data point unlikely belongs to PI'
+		if t == alternatives - 1: break
 		
-		# B= D*D' and B=(Sigma)^(-1) => D=sqrt(B)=(Sigma)^(-1/2)
-		for i, x in enumerate(X):
-			# List of centroieds that x does not belong to
-			C = [ u for iu, u in enumerate(h.cluster_centers_) if iu != h.predict([x])[0]] 
+		for i, x in enumerate(X):													# Project X data on the space orthogonal to u vector
+			u   = h.cluster_centers_[ h.predict([x])[0] ]							# Find cluster center (u) closest to x 
+			uuT = np.array([u]) * np.array([u]).T
+			uTu = np.dot(u, u)
+			X[i]= (np.identity(len(x)) - uuT / uTu ).dot(x)
 			
-			# Add the distances between xi and all those centroids to the Sigma matrix 
-			for u in C:
-				S += (x-u) * np.array([(x-u)]).T
-		
-		# divide by the number of data points: 
-		# Sigma= 1/n(xi-mj)*(xi-mj)' where xi does not belong to Cj
-		S = S / len(X)
-		
-		# Transformation matrix: B=(Sigma)^(-1), a=2, B=(Sigma)^(-a/2), D=sqrt(B)=(Sigma)^(-a/4)
-		D = fractional_matrix_power(S, -a/4.)	
-		
-		# Transforming X to Y by D: Y=D.X
-		X = (D.dot(X.T)).T
-		
-# ================================================================================
+			'''
+			u   = h.cluster_centers_[ h.predict([x])[0] ]
+			u   = np.array(u)
+			I   = np.odentity(len(x))
+			X[i]= ( I-(u.T * u)/ u.dot(u.T) ).dot(x.T)
+			'''
+# ========================================================================
 
-alternatives = 5
-a = 2
+alternatives = 5 
 
-DATA, k, datatype  = generate_data(type= '4-3-2') 						# '2-2-4', '4-3-2'
-#DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 	# 'image'
-
-princ_flex_framework_AlternativeClustering(DATA, a, alternatives, k, datatype)
+DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 	# 'image'
+#DATA, k, datatype  = generate_data(type= '2-2-4') 						# '2-2-4', '4-3-2'
 
 
+mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype)
+
+
+
+'''
+Repersenting a clustered image by foreground and background colors
+
+list_to_uint8 = lambda A: [np.uint8(v) for v in A]
+rep_colors = [ [0, 0, 0], [255, 255, 255], [128, 128, 128], [64, 64, 64], [200, 200, 200] ] + [ np.random.randint(0, 255, 3).tolist() for _ in range(100) ]
+
+colors = [ list_to_uint8( rep_colors[i] ) for i in range(2) ]
+
+
+XX = np.array([ colors[i] for i in Y ])		# projection of the original image on the new centers (float32 dtype)
+
+
+### I centered image data. The first clustering was good. After the first transformation (of the centered image) the resuls was not good, and the second clustering was bad. 
+### I think, centering image data is not always a good choice.
+'''
