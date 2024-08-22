@@ -139,9 +139,9 @@ def princ_flex_framework_AlternativeClustering(DATA, a, alternatives, k, datatyp
 		
 		if datatype == 'image': clr = np.array(h.cluster_centers_, dtype='uint8') 	# For coloring pixels of each cluster by the mean color (centroid) 
 		else: 					clr = ['green','yellow','black','blue']				# For coloring data points of each cluster by a given color
-		plot_clusters( DATA, X, [ clr[i] for i in h.predict(X) ], t) 				# Coloring original (DATA) and transformed (X) based on X clustering
+		plot_clusters( DATA, X, [ clr[i] for i in h.predict(X) ], t)			# Coloring original (DATA) and transformed (X) based on X clustering
 		
-		S = np.zeros((len(DATA[0])),(len(DATA[0]))) # Sigma: data point variation for (k-1) centroids where this data point unlikely belongs to PI'
+		S = np.zeros( (len(DATA[0]),len(DATA[0])) ) # Sigma: data point variation for (k-1) centroids where this data point unlikely belongs to PI'
 		
 		# B= D*D' and B=(Sigma)^(-1) => D=sqrt(B)=(Sigma)^(-1/2)
 		for i, x in enumerate(X):
@@ -167,9 +167,9 @@ def princ_flex_framework_AlternativeClustering(DATA, a, alternatives, k, datatyp
 alternatives = 5
 a = 2
 
-DATA, k, datatype  = generate_data(type= '2-2-4') 						# '2-2-4', '4-3-2'
+DATA, k, datatype  = generate_data(type= '4-3-2') 						# '2-2-4', '4-3-2'
 #DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 	# 'image'
 
-princ_flex_frameWork_AlternativeClustering(DATA, a, alternatives, k, datatype)
+princ_flex_framework_AlternativeClustering(DATA, a, alternatives, k, datatype)
 
 
