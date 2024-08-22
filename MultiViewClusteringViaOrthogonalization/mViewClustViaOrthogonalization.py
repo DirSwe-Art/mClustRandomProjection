@@ -160,8 +160,8 @@ def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
 # Paper: Y. Cui et al. (2007). Non-redundant multi-view clustering via orthogonalization. ICDM (pp. 133-142).
 
 
-#DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 	# 'image'
-DATA, k, datatype  = generate_data(type= '2-2-4') 						# '2-2-4', '4-3-2'
+DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 	# 'image'
+#DATA, k, datatype  = generate_data(type= '2-2-4') 						# '2-2-4', '4-3-2'
 alternatives = 5 
 
 mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype)
