@@ -72,7 +72,7 @@ def dataimg(file):
 	for r in range(imRow):
 		for c in range(imCol):
 			X.append( IMG[r][c] )
-	
+			
 	return X, imRow, imCol, imDim
 	
 	
@@ -129,6 +129,9 @@ def image_clusters(DATA, X, colors, t):
 	
 def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
 	X   = copy.deepcopy(DATA)
+	
+	X = np.array(X)
+	X = X - X.mean(axis=0)
 	
 
 	for t in range(alternatives):
