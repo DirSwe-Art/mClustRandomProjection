@@ -15,6 +15,9 @@ from sklearn.cluster import KMeans
 
 # ================================================================== Generate data
 
+import os
+if not os.path.exists('results'): os.makedirs('results')
+	
 # Generate a dataset randomly (example with 2 clusters)
 X1 = [ [np.random.normal(5,1), np.random.normal(5,1)] for u in range(500) ]
 X2 = [ [np.random.normal(10,1), np.random.normal(10,1)] for u in range(500) ]

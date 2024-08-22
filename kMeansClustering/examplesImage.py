@@ -17,6 +17,9 @@ from sklearn.cluster import KMeans
 # =============================================================== definitions
 
 def prepare_data(image):
+	import os
+	if not os.path.exists('results'): os.makedirs('results')
+	
 	IMG = plt.imread(image)	# uint8 data type
 	#IMG = np.array( Image.open(image, formats=['bmp']) )
 	
@@ -29,7 +32,7 @@ def prepare_data(image):
 	
 	return X, imRow, imCol, imDim
 
-def display_image(X, XX, imRow, imCol, imDim):
+def display_image(X, XX, imRow, imCol, imDim, text=None):
 	X  = np.array(X, dtype='uint8')
 	XX = np.array(XX, dtype='uint8')
 	IMG_X  = X.reshape(imRow, imCol, imDim)
@@ -45,22 +48,21 @@ def display_image(X, XX, imRow, imCol, imDim):
 	
 	plt.xticks([])
 	plt.yticks([])
-	plt.savefig('segmented_'+str(k)+'.jpg')
-	plt.show()
+	plt.savefig(r'results/'+text+'segmented_'+str(k)+'.jpg')
 	
 
 # ================================================================== Clustering X
 
 k     = 2
 eps   = 0.0001
-image = 'img.bmp' # 'img.jpg'
+image = 'source_images/img.bmp' # 'img.jpg'
 
 X, imRow, imCol, imDim = prepare_data(image)
 
 C, L, Y = kmeans(X, k, eps)
 XX = np.array( [C[i] for i in Y] ) # replace each data point with its cluster's center (color)
 
-display_image(X, XX, imRow, imCol, imDim)
+display_image(X, XX, imRow, imCol, imDim, text='mine_')
 
 
 #Image.fromarray(np.uint8(X.reshape(imRow, imCol, imDim))).show()
@@ -75,7 +77,7 @@ Y     = cl.predict(X)
 centers = [ center for center in cl.cluster_centers_]
 XX    = np.array( [centers[i] for i in Y] )
 
-display_image(X, XX, imRow, imCol, imDim)
+display_image(X, XX, imRow, imCol, imDim, text='lib_')
 
 
 
