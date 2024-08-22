@@ -86,6 +86,12 @@ display_image(X, XX, imRow, imCol, imDim)
 
 
 '''
+When I centered the image, colors are changed. However, got similar clustering results.
+X = np.array(X)					# Center data if already uncentered
+X = X - X.mean(axis=0)
+	
+	
+
 plt.close('all')
 f, ax = plt.subplots()
 ax.imshow(IMG_SEG)
