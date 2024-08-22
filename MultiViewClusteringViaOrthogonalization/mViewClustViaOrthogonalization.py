@@ -126,20 +126,18 @@ def image_clusters(DATA, X, colors, t):
 	plt.savefig('image_clustering_n_'+str(t+1)+'.jpg')
 	plt.close('all')	
 	
-	
+
+# ========================================================================
+# Paper: Y. Cui et al. (2007). Non-redundant multi-view clustering via orthogonalization. ICDM (pp. 133-142).
 def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
 	X   = copy.deepcopy(DATA)
 	
-	X = np.array(X)																	# Center data if already uncentered
-	X = X - X.mean(axis=0)
-	
-
 	for t in range(alternatives):
 		h = KMeans(n_clusters=k).fit(X)												# Clustering X first
 		
 		if datatype == 'image': clr = np.array(h.cluster_centers_, dtype='uint8') 	# For coloring pixels of each cluster by the mean color (centroid) 
 		else: 					clr = ['green','yellow','black','blue']				# For coloring data points of each cluster by a given color
-		plot_clusters( DATA, X, [ clr[i] for i in h.predict(X) ], t) 				# Coloring original (DATA) and transformed (X) based on X new clustering
+		plot_clusters( DATA, X, [ clr[i] for i in h.predict(X) ], t) 				# Coloring original (DATA) and transformed (X) based on X clustering
 		
 		if t == alternatives - 1: break
 		
@@ -155,14 +153,13 @@ def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
 			I   = np.odentity(len(x))
 			X[i]= ( I-(u.T * u)/ u.dot(u.T) ).dot(x.T)
 			'''
-
 # ========================================================================
-# Paper: Y. Cui et al. (2007). Non-redundant multi-view clustering via orthogonalization. ICDM (pp. 133-142).
 
+alternatives = 5 
 
 DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 	# 'image'
 #DATA, k, datatype  = generate_data(type= '2-2-4') 						# '2-2-4', '4-3-2'
-alternatives = 5 
+
 
 mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype)
 
@@ -178,4 +175,8 @@ colors = [ list_to_uint8( rep_colors[i] ) for i in range(2) ]
 
 
 XX = np.array([ colors[i] for i in Y ])		# projection of the original image on the new centers (float32 dtype)
+
+
+### I centered image data. The first clustering was good. After the first transformation (of the centered image) the resuls was not good, and the second clustering was bad. 
+### I think, centering image data is not always a good choice.
 '''
