@@ -155,3 +155,17 @@ DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') # '2-2-4',
 alternatives = 5 
 
 mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype)
+
+
+
+'''
+Repersenting a clustered image by foreground and background colors
+
+list_to_uint8 = lambda A: [np.uint8(v) for v in A]
+rep_colors = [ [0, 0, 0], [255, 255, 255], [128, 128, 128], [64, 64, 64], [200, 200, 200] ] + [ np.random.randint(0, 255, 3).tolist() for _ in range(100) ]
+
+colors = [ list_to_uint8( rep_colors[i] ) for i in range(2) ]
+
+
+XX = np.array([ colors[i] for i in Y ])		# projection of the original image on the new centers (float32 dtype)
+'''
