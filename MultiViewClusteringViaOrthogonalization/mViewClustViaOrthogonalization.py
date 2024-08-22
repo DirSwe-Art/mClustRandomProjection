@@ -40,7 +40,7 @@ def data224():								# 2 features, 2 clusters, 4 views
 		X += np.random.multivariate_normal(m, np.identity(2)/3, size=125).tolist()
 	
 	X = np.array(X)
-	X = X -X.mean(axis=0)					# center the data
+	X = X - X.mean(axis=0)					# center the data
 	return X
 	
 	
@@ -76,13 +76,13 @@ def dataimg(file):
 	return X, imRow, imCol, imDim
 	
 	
-def plot_clusters(DATA, X, colors):
-	if datatype == 'F-C-V': return random_clusters(DATA, X, colors)
-	if datatype == 'image': return image_clusters(DATA, X, colors) 
+def plot_clusters(DATA, X, colors, t):
+	if datatype == 'F-C-V': return random_clusters(DATA, X, colors, t)
+	if datatype == 'image': return image_clusters(DATA, X, colors, t) 
 	
 	
-def random_clusters(DATA, X, colors):
-	fig, ((ax1a, ax2a),(ax1b, ax2b)) = plt.subplots(2, 2)
+def random_clusters(DATA, X, colors, t):
+	fig, ((ax1a, ax2a),(ax1b, ax2b)) = plt.subplots(2, 2, figsize=(15, 11), sharex=False, sharey=False)
 	
 	ax1a.scatter( *np.array([ *zip(*DATA) ])[:2], c=colors, marker='.' )
 	ax1a.set_title('Original Space')
@@ -106,18 +106,24 @@ def random_clusters(DATA, X, colors):
 		ax2b.set_xlabel('Feature 3')
 		ax2b.set_ylabel('Feature 4')
 	
-	plt.show()
+	if len(DATA[0]) > 2:
+		plt.savefig('random_3_clustering_n_'+str(t+1)+'.jpg')
+	else:
+		plt.savefig('random_2_clustering_n_'+str(t+1)+'.jpg')
+	
+	plt.close('all')	
 
 
-def image_clusters(DATA, X, colors):
+def image_clusters(DATA, X, colors, t):
 	IMG_DATA = np.array(copy.deepcopy(DATA), dtype='uint8').reshape(imRow, imCol, imDim)
 	IMG_X    = np.array(copy.deepcopy(X), dtype='uint8').reshape(imRow, imCol, imDim)
 	
-	f, (ax1, ax2, ax3) = plt.subplots(3,1, sharex=True, sharey=True)
-	ax1.imshow(IMG_DATA); ax1.set_title('Source image')			# view the original space
-	ax2.imshow(IMG_X)   ; ax2.set_title('Transformed space')	# view the transformed space (to the space orthogonal to the clustering solution)
+	f, (ax1, ax2, ax3) = plt.subplots(3,1, sharex=False, sharey=False, figsize=(6, 15))
+	ax1.imshow(IMG_DATA); ax1.set_title('Source image')								# view the original space
+	ax2.imshow(IMG_X)   ; ax2.set_title('Transformed space')						# view the transformed space (to the space orthogonal to the clustering solution)
 	ax3.imshow(np.array(colors).reshape(imRow, imCol, imDim)); ax3.set_title('Clustering Solution')
-	plt.show()
+	
+	plt.savefig('image_clustering_n_'+str(t+1)+'.jpg')
 	plt.close('all')	
 	
 	
@@ -130,7 +136,7 @@ def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
 		
 		if datatype == 'image': clr = np.array(h.cluster_centers_, dtype='uint8') 	# For coloring pixels of each cluster by the mean color (centroid) 
 		else: 					clr = ['green','yellow','black','blue']				# For coloring data points of each cluster by a given color
-		plot_clusters( DATA, X, colors= [ clr[i] for i in h.predict(X) ]) 			# Coloring original (DATA) and transformed (X) based on X new clustering
+		plot_clusters( DATA, X, [ clr[i] for i in h.predict(X) ], t) 				# Coloring original (DATA) and transformed (X) based on X new clustering
 		
 		if t == alternatives - 1: break
 		
@@ -151,7 +157,8 @@ def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
 # Paper: Y. Cui et al. (2007). Non-redundant multi-view clustering via orthogonalization. ICDM (pp. 133-142).
 
 
-DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') # '2-2-4', '4-3-2', 'image'
+#DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 	# 'image'
+DATA, k, datatype  = generate_data(type= '2-2-4') 						# '2-2-4', '4-3-2'
 alternatives = 5 
 
 mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype)
