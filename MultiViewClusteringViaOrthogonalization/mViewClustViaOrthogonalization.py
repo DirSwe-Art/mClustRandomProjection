@@ -9,7 +9,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from scipy.linalg import fractional_matrix_power
-#import matplotlib.colors as mcolors
 
 
 # ========================================================================
@@ -81,6 +80,7 @@ def plot_clusters(DATA, X, colors):
 	if datatype == 'F-C-V': return random_clusters(DATA, X, colors)
 	if datatype == 'image': return image_clusters(DATA, X, colors) 
 	
+	
 def random_clusters(DATA, X, colors):
 	fig, ((ax1a, ax2a),(ax1b, ax2b)) = plt.subplots(2, 2)
 	
@@ -108,6 +108,7 @@ def random_clusters(DATA, X, colors):
 	
 	plt.show()
 
+
 def image_clusters(DATA, X, colors):
 	IMG_DATA = np.array(copy.deepcopy(DATA), dtype='uint8').reshape(imRow, imCol, imDim)
 	IMG_X    = np.array(copy.deepcopy(X), dtype='uint8').reshape(imRow, imCol, imDim)
@@ -125,7 +126,7 @@ def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
 	
 
 	for t in range(alternatives):
-		h = KMeans(n_clusters=k).fit(X)					# Clustering X first
+		h = KMeans(n_clusters=k).fit(X)												# Clustering X first
 		
 		if datatype == 'image': clr = np.array(h.cluster_centers_, dtype='uint8') 	# For coloring pixels of each cluster by the mean color (centroid) 
 		else: 					clr = ['green','yellow','black','blue']				# For coloring data points of each cluster by a given color
@@ -133,8 +134,8 @@ def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
 		
 		if t == alternatives - 1: break
 		
-		for i, x in enumerate(X):						# Project X data on the space orthogonal to u vector
-			u   = h.cluster_centers_[ h.predict([x])[0] ]	# Find cluster center (u) closest to x 
+		for i, x in enumerate(X):													# Project X data on the space orthogonal to u vector
+			u   = h.cluster_centers_[ h.predict([x])[0] ]							# Find cluster center (u) closest to x 
 			uuT = np.array([u]) * np.array([u]).T
 			uTu = np.dot(u, u)
 			X[i]= (np.identity(len(x)) - uuT / uTu ).dot(x)
