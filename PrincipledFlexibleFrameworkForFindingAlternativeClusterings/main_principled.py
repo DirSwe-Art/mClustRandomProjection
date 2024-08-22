@@ -13,7 +13,10 @@ from scipy.linalg import fractional_matrix_power
 
 # ========================================================================
 
-def generate_data(type='4-2-2'):			
+def generate_data(type='4-2-2'):
+	import os
+	if not os.path.exists('results'): os.makedirs('results')
+	
 	if type == '4-3-2':
 		DATA = data432()
 		k = 3
@@ -27,7 +30,7 @@ def generate_data(type='4-2-2'):
 		return DATA, k, datatype
 		
 	elif type == 'image':
-		DATA, imRow, imCol, imDim = dataimg('image.bmp')
+		DATA, imRow, imCol, imDim = dataimg('source_images/image.bmp')
 		k = 2
 		datatype = 'image'
 		return DATA, k, datatype, imRow, imCol, imDim
@@ -107,9 +110,9 @@ def random_clusters(DATA, X, colors, t):
 		ax2b.set_ylabel('Feature 4')
 	
 	if len(DATA[0]) > 2:
-		plt.savefig('random_3_clustering_n_'+str(t+1)+'.jpg')
+		plt.savefig(r'results/random_3_clustering_n_'+str(t+1)+'.jpg')
 	else:
-		plt.savefig('random_2_clustering_n_'+str(t+1)+'.jpg')
+		plt.savefig(r'results/random_2_clustering_n_'+str(t+1)+'.jpg')
 	
 	plt.close('all')	
 
@@ -123,7 +126,7 @@ def image_clusters(DATA, X, colors, t):
 	ax2.imshow(IMG_X)   ; ax2.set_title('Transformed space')						# view the transformed space (to the space orthogonal to the clustering solution)
 	ax3.imshow(np.array(colors).reshape(imRow, imCol, imDim)); ax3.set_title('Clustering Solution')
 	
-	plt.savefig('image_clustering_n_'+str(t+1)+'.jpg')
+	plt.savefig(r'results/image_clustering_n_'+str(t+1)+'.jpg')
 	plt.close('all')	
 	
 
@@ -167,7 +170,7 @@ def princ_flex_framework_AlternativeClustering(DATA, a, alternatives, k, datatyp
 alternatives = 5
 a = 2
 
-DATA, k, datatype  = generate_data(type= '4-3-2') 						# '2-2-4', '4-3-2'
+DATA, k, datatype  = generate_data(type= '2-2-4') 						# '2-2-4', '4-3-2'
 #DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 	# 'image'
 
 princ_flex_framework_AlternativeClustering(DATA, a, alternatives, k, datatype)
