@@ -30,7 +30,7 @@ def generate_data(type='4-2-2'):
 		return DATA, k, datatype
 		
 	elif type == 'image':
-		DATA, imRow, imCol, imDim = dataimg('source_images/image.bmp')
+		DATA, imRow, imCol, imDim = dataimg('source_images/image_.bmp')
 		k = 2
 		datatype = 'image'
 		return DATA, k, datatype, imRow, imCol, imDim
@@ -120,12 +120,12 @@ def random_clusters(DATA, X, colors, t):
 
 def image_clusters(DATA, X, colors, t):
 	IMG_DATA = copy.deepcopy(DATA).reshape(imRow, imCol, imDim)
-	IMG_X    = copy.deepcopy(X).reshape(imRow, imCol, imDim)
+	IMG_X    = np.array(copy.deepcopy(X),  dtype='uint8').reshape(imRow, imCol, imDim)
 	
 	f, (ax1, ax2, ax3) = plt.subplots(3,1, sharex=False, sharey=False, figsize=(6, 15))
 	ax1.imshow(IMG_DATA); ax1.set_title('Source image')								# view the original space
 	ax2.imshow(IMG_X)   ; ax2.set_title('Transformed space')						# view the transformed space (to the space orthogonal to the clustering solution)
-	ax3.imshow(np.array(colors).reshape(imRow, imCol, imDim)); ax3.set_title('Clustering Solution')
+	ax3.imshow(np.array(colors, dtype='uint8').reshape(imRow, imCol, imDim)); ax3.set_title('Clustering Solution')
 	
 	plt.savefig(r'results/image_clustering_n_'+str(t+1)+'.jpg')
 	plt.close('all')	
