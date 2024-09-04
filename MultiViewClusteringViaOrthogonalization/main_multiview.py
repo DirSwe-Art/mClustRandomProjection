@@ -163,16 +163,16 @@ def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
 			u = np.array(u).reshape(len(u),1)										# reshape u to a vector column
 			uuT = np.dot(u,u.T)														# it returnes a [2×2] matirx ([2×1]*[1×2])
 			uTu = np.dot(u.T,u)														# it returnes a scalar ([1×2]*[2×1]=[1×1] matrix)
-			I   = np.identity(len(x))
-			X[i]= (I - uuT / uTu).dot(x) 											# transformation matrix dot product a vector (vector column) or
-			#X[i]= (I - uuT / uTu) * np.array(x).T 									# transformation matrix mltiplied by the transpose of vector x
+			M   = np.identity(len(x)) - uuT / uTu									# the transformation matrix
+			X[i]= (M).dot(x) 														# the transformation matrix dot product a vector (vector column) or
+			#X[i]= M * np.array(x).T 												# transformation matrix mltiplied by the transpose of vector x
 			
 # ========================================================================
 
 alternatives = 5 
 
-#DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 							# 'image'
-DATA, k, datatype  = generate_data(type= '2-2-3') 									# '2-2-3', '4-3-2'
+#DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 				# 'image'
+DATA, k, datatype  = generate_data(type= '4-3-2') 									# '2-2-3', '4-3-2'
 
 
 mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype)
