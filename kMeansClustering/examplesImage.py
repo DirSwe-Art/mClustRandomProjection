@@ -53,31 +53,31 @@ def display_image(X, XX, imRow, imCol, imDim, text=None):
 
 # ================================================================== Clustering X
 
-k     = 2
-eps   = 0.0001
-image = 'source_images/img.bmp' # 'img.jpg'
+k       = 2
+eps     = 0.0001
+image   = 'source_images/img.bmp' # 'img.jpg'
 
-X, imRow, imCol, imDim = prepare_data(image)
+X,r,c,d = prepare_data(image)
 
 C, L, Y = kmeans(X, k, eps)
-XX = np.array( [C[i] for i in Y] ) # replace each data point with its cluster's center (color)
+XX      = np.array( [C[i] for i in Y] ) # replace each data point with its cluster's center (color)
 
-display_image(X, XX, imRow, imCol, imDim, text='mine_')
+display_image(X, XX, r, c, d, text='mine_')
 
 
-#Image.fromarray(np.uint8(X.reshape(imRow, imCol, imDim))).show()
-#Image.fromarray(np.uint8(XX.reshape(imRow, imCol, imDim))).show()
+#Image.fromarray(np.uint8(X.reshape(r,c, d))).show()
+#Image.fromarray(np.uint8(XX.reshape(r, c, d))).show()
 
 # ================================================================== Clustering X
 
-cl    = KMeans(n_clusters=k)
+cl      = KMeans(n_clusters=k)
 cl.fit(X)
 
-Y     = cl.predict(X)
+Y       = cl.predict(X)
 centers = [ center for center in cl.cluster_centers_]
-XX    = np.array( [centers[i] for i in Y] )
+XX      = np.array( [centers[i] for i in Y] )
 
-display_image(X, XX, imRow, imCol, imDim, text='lib_')
+display_image(X, XX, r, c, d, text='lib_')
 
 
 
@@ -88,7 +88,7 @@ display_image(X, XX, imRow, imCol, imDim, text='lib_')
 
 
 '''
-When I centered the image, colors are changed. However, got similar clustering results.
+When I centered the image, colors are changed. However, I got similar clustering results.
 X = np.array(X)					# Center data if already uncentered
 X = X - X.mean(axis=0)
 	
