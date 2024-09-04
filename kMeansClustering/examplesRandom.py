@@ -45,8 +45,8 @@ m1, m2 = zip(*C)
 plt.scatter(F1, F2, color= [ colors[i] for i in Y])
 plt.scatter(m1, m2, color= [ colors[i+2] for i in range(2)])
 plt.show()
-
 plt.close('all')
+
 # plotting using the actual clusters
 for i, cluster in enumerate(L):
 	F1, F2 = zip(*cluster)
@@ -66,8 +66,8 @@ plt.show()
 cl = KMeans(n_clusters=2)
 cl.fit(X)
 
-Y = cl.predict(X)		# a list of the indexes of predicted cluster for each x in X
-centers = [ center for center in cl.cluster_centers_ ] # cluster centers: each center is a mean of cluster points
+Y = cl.predict(X)										# a list of the indices of predicted cluster for each x in X
+centers = [ center for center in cl.cluster_centers_ ] 	# cluster centers: each center is a mean of cluster points
 
 
 colors = ["r", "b", "g", "k", "y"]
