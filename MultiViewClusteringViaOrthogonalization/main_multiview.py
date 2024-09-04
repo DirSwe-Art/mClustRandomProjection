@@ -13,7 +13,7 @@ from scipy.linalg import fractional_matrix_power
 
 # ========================================================================
 
-def generate_data(type='4-2-2'):			
+def generate_data(type='4-3-2'):			# 4 features, 2 clusters, 2 views	
 	import os
 	if not os.path.exists('results'): os.makedirs('results')
 	
@@ -23,8 +23,8 @@ def generate_data(type='4-2-2'):
 		datatype = 'F-C-V'
 		return DATA, k, datatype
 		
-	elif type == '2-2-4':
-		DATA = data224()
+	elif type == '2-2-3':
+		DATA = data223()
 		k = 2
 		datatype = 'F-C-V'
 		return DATA, k, datatype
@@ -36,7 +36,7 @@ def generate_data(type='4-2-2'):
 		return DATA, k, datatype, imRow, imCol, imDim
 
 
-def data224():								# 2 features, 2 clusters, 4 views
+def data223():								# 2 features, 2 clusters, 3 views
 	X = []
 	M = [[2, 2],[-2, 2],[-2, -2],[2, -2]]
 	for m in M:
@@ -50,19 +50,19 @@ def data224():								# 2 features, 2 clusters, 4 views
 def data432():								# 4 features, 3 clusters, 2 views
 	X1 = []									# First view of the data (with F1, F2 features of each x)
 	M  = [[7, 2], [3, 7], [10, 9]]			# Three centroids
-	S  = [100, 100, 300]					# The number of data points in each custer in the first view
+	S  = [100, 100, 300]					# The first view's number of data points in each cluster
 	
 	for i in range(len(S)):
 		X1 += np.random.multivariate_normal(M[i], np.identity(2)/3, size=S[i]).tolist()
 	
 	X2 = []									# Second view of the data (with F3, F4 features of each x)
 	M  = [[5, 4], [7, 11], [12, 6]]			# Three centroids
-	S  = [200, 200, 100]
+	S  = [200, 200, 100]					# The second view's number of data points in each cluster
 	
 	for i in range(len(S)):
 		X2 += np.random.multivariate_normal(M[i], np.identity(2)/3, size=S[i]).tolist()
 	
-	X  = np.array([ X1[i] + X2[i] for i in range(len(X1)) ]) # Combine the two views (four features F1, F2, F3, F4)
+	X  = np.array([ X1[i] + X2[i] for i in range(len(X1)) ]) # Combine the two views (F1, F2, F3, F4)
 	X  = X - X.mean(axis=0)					# Center the data (shift the data points toward the origine)
 	return X
 
@@ -117,14 +117,19 @@ def random_clusters(DATA, X, colors, t):
 	plt.close('all')	
 
 
-def image_clusters(DATA, X, colors, t):
+def image_clusters(DATA, X, imRow, imCol, imDim, colors, t):
 	IMG_DATA = np.array(copy.deepcopy(DATA), dtype='uint8').reshape(imRow, imCol, imDim)
 	IMG_X    = np.array(copy.deepcopy(X), dtype='uint8').reshape(imRow, imCol, imDim)
 	
 	f, (ax1, ax2, ax3) = plt.subplots(3,1, sharex=False, sharey=False, figsize=(6, 15))
-	ax1.imshow(IMG_DATA); ax1.set_title('Source image')								# view the original space
-	ax2.imshow(IMG_X)   ; ax2.set_title('Transformed space')						# view the transformed space (to the space orthogonal to the clustering solution)
-	ax3.imshow(np.array(colors).reshape(imRow, imCol, imDim)); ax3.set_title('Clustering Solution')
+	ax1.imshow(IMG_DATA)
+	ax1.set_title('Source image')			# view the original space
+	
+	ax2.imshow(IMG_X)
+	ax2.set_title('Transformed space')		# view the space orthogonal to the clustering solution
+	
+	ax3.imshow(np.array(colors).reshape(imRow, imCol, imDim)) # view the segmented space (center colors)
+	ax3.set_title('Clustering Solution')
 	
 	plt.savefig(r'results/image_clustering_n_'+str(t+1)+'.jpg')
 	plt.close('all')	
@@ -155,15 +160,15 @@ def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
 			'''
 			u   = h.cluster_centers_[ h.predict([x])[0] ]
 			u   = np.array(u)
-			I   = np.odentity(len(x))
+			I   = np.identity(len(x))
 			X[i]= ( I-(u.T * u)/ u.dot(u.T) ).dot(x.T)
 			'''
 # ========================================================================
 
 alternatives = 5 
 
-DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 	# 'image'
-#DATA, k, datatype  = generate_data(type= '2-2-4') 						# '2-2-4', '4-3-2'
+DATA, k, datatype, r, c, d = generate_data(type= 'image') 							# 'image'
+#DATA, k, datatype  = generate_data(type= '2-2-4') 									# '2-2-4', '4-3-2'
 
 
 mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype)
