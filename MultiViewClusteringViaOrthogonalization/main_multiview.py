@@ -171,8 +171,8 @@ def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
 
 alternatives = 5 
 
-DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 							# 'image'
-#DATA, k, datatype  = generate_data(type= '2-2-4') 									# '2-2-4', '4-3-2'
+#DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 							# 'image'
+DATA, k, datatype  = generate_data(type= '2-2-3') 									# '2-2-3', '4-3-2'
 
 
 mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype)
