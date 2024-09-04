@@ -123,12 +123,12 @@ def image_clusters(DATA, X, colors, t):
 	
 	f, (ax1, ax2, ax3) = plt.subplots(3,1, sharex=False, sharey=False, figsize=(6, 15))
 	ax1.imshow(IMG_DATA)
-	ax1.set_title('Source image')			# view the original space
+	ax1.set_title('Source image')								# view the original space
 	
 	ax2.imshow(IMG_X)
-	ax2.set_title('Transformed space')		# view the space orthogonal to the clustering solution
+	ax2.set_title('Transformed space')							# view the space orthogonal to the clustering solution
 	
-	ax3.imshow(np.array(colors).reshape(imRow, imCol, imDim)) # view the segmented space (center colors)
+	ax3.imshow(np.array(colors).reshape(imRow, imCol, imDim)) 	# view the segmented space (center colors)
 	ax3.set_title('Clustering Solution')
 	
 	plt.savefig(r'results/image_clustering_n_'+str(t+1)+'.jpg')
@@ -147,7 +147,7 @@ def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
 		
 		if datatype == 'image': clr = np.array(h.cluster_centers_, dtype='uint8') 	# For coloring pixels of each cluster by the mean color (centroid) 
 		else: 					clr = ['green','yellow','black','blue']				# For coloring data points of each cluster by a given color
-		plot_clusters( DATA, X, [ clr[i] for i in h.predict(X) ], t) 				# Coloring original (DATA) and transformed (X) based on X clustering
+		plot_clusters( DATA, X, [ clr[i] for i in h.predict(X) ], t ) 				# Coloring original (DATA) and transformed (X) based on X clustering
 		
 		if t == alternatives - 1: break
 		

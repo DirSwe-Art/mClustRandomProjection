@@ -13,7 +13,7 @@ from scipy.linalg import fractional_matrix_power
 
 # ========================================================================
 
-def generate_data(type='4-2-2'):
+def generate_data(type='4-2-2'):			# 4 features, 2 clusters, 2 views
 	import os
 	if not os.path.exists('results'): os.makedirs('results')
 	
@@ -23,8 +23,8 @@ def generate_data(type='4-2-2'):
 		datatype = 'F-C-V'
 		return DATA, k, datatype
 		
-	elif type == '2-2-4':
-		DATA = data224()
+	elif type == '2-2-3':
+		DATA = data223()
 		k = 2
 		datatype = 'F-C-V'
 		return DATA, k, datatype
@@ -36,7 +36,7 @@ def generate_data(type='4-2-2'):
 		return DATA, k, datatype, imRow, imCol, imDim
 
 
-def data224():								# 2 features, 2 clusters, 4 views
+def data223():								# 2 features, 2 clusters, 3 views
 	X = []
 	M = [[2, 2],[-2, 2],[-2, -2],[2, -2]]
 	for m in M:
@@ -119,13 +119,18 @@ def random_clusters(DATA, X, colors, t):
 
 
 def image_clusters(DATA, X, colors, t):
-	IMG_DATA = copy.deepcopy(DATA).reshape(imRow, imCol, imDim)
-	IMG_X    = np.array(copy.deepcopy(X),  dtype='uint8').reshape(imRow, imCol, imDim)
+	IMG_DATA = np.array(copy.deepcopy(DATA), dtype='uint8').reshape(imRow, imCol, imDim)
+	IMG_X    = np.array(copy.deepcopy(X), dtype='uint8').reshape(imRow, imCol, imDim)
 	
 	f, (ax1, ax2, ax3) = plt.subplots(3,1, sharex=False, sharey=False, figsize=(6, 15))
-	ax1.imshow(IMG_DATA); ax1.set_title('Source image')								# view the original space
-	ax2.imshow(IMG_X)   ; ax2.set_title('Transformed space')						# view the transformed space (to the space orthogonal to the clustering solution)
-	ax3.imshow(np.array(colors, dtype='uint8').reshape(imRow, imCol, imDim)); ax3.set_title('Clustering Solution')
+	ax1.imshow(IMG_DATA)
+	ax1.set_title('Source image')								# view the original space
+	
+	ax2.imshow(IMG_X)
+	ax2.set_title('Transformed space')							# view the transformed space (to the space orthogonal to the clustering solution)
+	
+	ax3.imshow(np.array(colors).reshape(imRow, imCol, imDim))	# view the segmented space (center colors)
+	ax3.set_title('Clustering Solution')
 	
 	plt.savefig(r'results/image_clustering_n_'+str(t+1)+'.jpg')
 	plt.close('all')	
@@ -143,7 +148,7 @@ def princ_flex_framework_AlternativeClustering(DATA, a, alternatives, k, datatyp
 		
 		if datatype == 'image': clr = np.array(h.cluster_centers_, dtype='uint8') 	# For coloring pixels of each cluster by the mean color (centroid) 
 		else: 					clr = ['green','yellow','black','blue']				# For coloring data points of each cluster by a given color
-		plot_clusters( DATA, X, [ clr[i] for i in h.predict(X) ], t)				# Coloring original (DATA) and transformed (X) based on X clustering
+		plot_clusters( DATA, X, [ clr[i] for i in h.predict(X) ], t )				# Coloring original (DATA) and transformed (X) based on X clustering
 		
 		S = np.zeros( (len(DATA[0]),len(DATA[0])) ) # Sigma: data point variation for (k-1) centroids where this data point unlikely belongs to PI'
 		
