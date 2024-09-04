@@ -117,7 +117,7 @@ def random_clusters(DATA, X, colors, t):
 	plt.close('all')	
 
 
-def image_clusters(DATA, X, imRow, imCol, imDim, colors, t):
+def image_clusters(DATA, X, colors, t):
 	IMG_DATA = np.array(copy.deepcopy(DATA), dtype='uint8').reshape(imRow, imCol, imDim)
 	IMG_X    = np.array(copy.deepcopy(X), dtype='uint8').reshape(imRow, imCol, imDim)
 	
