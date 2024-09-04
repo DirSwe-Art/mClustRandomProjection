@@ -152,8 +152,8 @@ def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
 		if t == alternatives - 1: break
 		
 		for i, x in enumerate(X):													# Project X data on the space orthogonal to u vector
-			'''
 			u   = h.cluster_centers_[ h.predict([x])[0] ]							# Find cluster center (u) closest to x (u is a vector column "2×1 matrix")
+			'''
 			uuT = np.array([u]) * np.array([u]).T									# uuT is [2×1]*[1×2]=[2×2] matrix. The matrix multiplication
 			uTu = np.dot(u, u)														# uTu is [1×2]*[2×1]=[1×1] matrix. The dot product (scalar) 
 			X[i]= (np.identity(len(x)) - uuT / uTu ).dot(x)							# The projection of x on the transformation matric
