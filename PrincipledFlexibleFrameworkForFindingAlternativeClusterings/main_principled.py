@@ -176,7 +176,7 @@ def princ_flex_framework_AlternativeClustering(DATA, a, alternatives, k, datatyp
 alternatives = 5
 a = 2
 
-DATA, k, datatype  = generate_data(type= '2-2-3') 						# '2-2-3', '4-3-2'
+DATA, k, datatype  = generate_data(type= '4-3-2') 						# '2-2-3', '4-3-2'
 #DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 	# 'image'
 
 princ_flex_framework_AlternativeClustering(DATA, a, alternatives, k, datatype)
