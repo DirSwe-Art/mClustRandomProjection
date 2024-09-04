@@ -158,18 +158,19 @@ def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
 			X[i]= (np.identity(len(x)) - uuT / uTu ).dot(x)							# The projection of x on the transformation matric
 			
 			'''
+			# another way to computing it:
 			u = np.array(u).reshape(len(u),1)										# reshape u to a vector column
 			uuT = np.dot(u,u.T)														# it returnes a [2×2] matirx ([2×1]*[1×2])
 			uTu = np.dot(u.T,u)														# it returnes a scalar ([1×2]*[2×1]=[1×1] matrix)
 			I   = np.identity(len(x))
 			X[i]= (I - uuT / uTu).dot(x) 											# transformation matrix dot product a vector (vector column) or
-			X[i]= (I - uuT / uTu) * np.array(x).T 									# transformation matrix mltiplied by the transpose of vector x
+			#X[i]= (I - uuT / uTu) * np.array(x).T 									# transformation matrix mltiplied by the transpose of vector x
 			'''
 # ========================================================================
 
 alternatives = 5 
 
-DATA, k, datatype, r, c, d = generate_data(type= 'image') 							# 'image'
+DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 							# 'image'
 #DATA, k, datatype  = generate_data(type= '2-2-4') 									# '2-2-4', '4-3-2'
 
 
