@@ -25,7 +25,7 @@ random.shuffle(X)
 cl = KMeans(n_clusters=2)
 cl.fit(X)
 
-Y  = cl.predict(X) # a list of the indices of predicted clusters for each x in X
+Y  = cl.predict(X)                               # a list of the indices of predicted clusters for each x in X
 Mu = [ center for center in cl.cluster_centers_] # cluser centers: each center is a mean of cluster points 
 
 # ================================================================== Plotting
