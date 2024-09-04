@@ -21,29 +21,24 @@ def nearestCenterIndex(x, C):
 	return np.argmin( [dist(x,c) for c in C] )
 
 def iterate(X, C):
-	L = [ [] for j in range(len(C)) ] # list of k empty lists:
-	Y = []                            # empty list of cluster label of each x in X
+	L = [ [] for k in range(len(C)) ] 	# list of k clusters
+	Y = []                            	# list of cluster label of each x in X
 	
-	for x in X:
+	for x in X:							# assign each x of X to the cluster with the nearest center
 		ic = nearestCenterIndex(x, C)
 		L[ic].append(x)
 		Y.append(ic)
 	
-	# updating the centers:
-	for i in set(Y):
+	for i in set(Y):					# updating the centers of each cluster
 		cluster = L[i]
-		C[i] = [ np.mean(col) for col in zip(*cluster) ]
+		C[i]    = [ np.mean(col) for col in zip(*cluster) ]
 	
 	return C, L, Y
 
 def kmeans(X, k=2, eps=0.0001):
-	C = random.sample(X, k) # choose k initial centers
+	C = random.sample(X, k) 			# choose k initial cluster centers
 	
-	counter = 0
 	while True:
-		counter += 1
-		print(counter, end=' ', flush=True)
-		
 		prev_C = copy.deepcopy(C)
 		C, L, Y = iterate(X, C)
 		if np.mean([ dist(prev_c, c) for (prev_c, c) in zip(prev_C, C) ]) < eps:
@@ -54,8 +49,12 @@ def kmeans(X, k=2, eps=0.0001):
 
 
 
-
 '''
+def kmeans(X, k=2, eps=0.0001):
 	C = random.sample(X, k) # choose k initial centers
-	C = np.array(X)[np.random.randint(len(X), size=k)]
+	#C = np.array(X)[np.random.randint(len(X), size=k)]
+	#counter = 0
+	while True:
+		#counter += 1
+		#print(counter, end=' ', flush=True)
 '''
