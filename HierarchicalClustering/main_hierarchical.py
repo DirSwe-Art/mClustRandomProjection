@@ -1,4 +1,4 @@
-"""Hierarchical Clustering"""
+"""Hierarchical Clustering From Scratch Implementation"""
 
 # Authors: DirarSweidan
 # License: DSB 3-Claus
