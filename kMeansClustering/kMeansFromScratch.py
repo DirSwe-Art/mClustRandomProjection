@@ -3,7 +3,7 @@ Dirar Sweidan
 Created:        2024_08_20
 Last modified:  2024_  _
 
-- This file runs the k-means algorithm from the Sk-Learn library.
+- This code is an implementtaion of the k-means algorithm from scratch.
 '''
 
 import matplotlib.pyplot as plt
