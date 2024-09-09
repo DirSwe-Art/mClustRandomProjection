@@ -32,34 +32,53 @@ def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 		if affinity == 'manhatten': return man(a,b)
 	
 	def initialClusters(DATA):
-		return [ {'cluster_ID':   i},
-				 {'elements_IDs':[i]},
-				 {'elements':    [x]},
-				 {'used':        '1'} for i, x in enumerate(DATA) ]
+		return [ {'cluster_i':  i},
+				 {'elements_i': [i]},
+				 {'elements_x': [x]},
+				 {'used':       '1'} for i, x in enumerate(DATA) ]
 
 	def findClosetClusters(clustersDict, method, metric):
-		S         = []
+		S           = []
+		comb_ids    = list( combinations(range(len(clustersDict)),2) )
 		
-		comb_ids  = list( combinations(range(len(clustersDict)),2) )
-		if method == 'centroid':
+		if method   == 'centroid':
 			for i1, i2 in comb_ids:
-				mu1 = [ np.mean(col) for col in zip(*clustersDict[i1]['elements']) ]
-				mu2 = [ np.mean(col) for col in zip(*clustersDict[i2]['elements']) ]
+				mu1 = [ np.mean(col) for col in zip(*clustersDict[i1]['elements_x']) ]
+				mu2 = [ np.mean(col) for col in zip(*clustersDict[i2]['elements_x']) ]
 				S.append([i1, i2, dist(mu1, mu2)])
-			minDistID = np.argmin(np.array(S)[:,2])
-			return S[minDistID][0], S[minDistID][1], S[minDistID][2]]
+			
+			mDistID = np.argmin(np.array(S)[:,2])
+			return S[mDistID][0], S[mDistID][1], S[mDistID][2]]
+		
 		else:
 			for i1, i2 in comb_ids:
-				m   = len(clustersDict[i1]['elements'])
-				n   = len(clustersDict[i2]['elements'])
+				m   = len(clustersDict[i1]['elements_x'])
+				n   = len(clustersDict[i2]['elements_x'])
 				
 				if m == 1 and n == 1:
-					S.append([i1, i2, dist(clustersDict[i1]['elements'][0], clustersDict[i2]['elements'][0])])
+					S.append([i1, i2, dist(clustersDict[i1]['elements_x'][0], clustersDict[i2]['elements_x'][0])])
 				else:
 					S2= np.zeros((m,n))
 					for i in range(m):
 						for j in range(n):
-							S2[i][j] = dist( clustersDict[i1]['elements'][i], clustersDict[i1]['elements'][j] )
+							S2[i][j] = dist( clustersDict[i1]['elements_x'][i], clustersDict[i1]['elements_x'][j] )
 						if method   == 'single'  : S.append([i1, i2, np.amin(S2)])
 						elif method == 'complete': S.append([i1, i2, np.amax(S2)])
 						elif method == 'average' : S.append([i1, i2, np.mean(S2)])
+				
+				mDistID = np.argmin(np.array(S)[:,2])
+				return S[mDistID][0], S[mDistID][1], S[mDistID][2]]
+
+	X                = copy.deepcopy(DATA)
+	clusters_pool    = initialClusters(X)
+	clusterings_pool = []
+	linkage_matrix   = []
+	output_labels    = []
+	
+
+	clusterings_pool.append( {'level_i':    0,
+							  'clusters_k': len(clusters_pool),
+							  'clusters_x': [cl['elements_x'] for cl in clusters_pool if cl['used']==1],
+							  'clusters_i': [cl['elements_i'] for cl in clusters_pool if cl['used']==1}
+							  } )
+	
