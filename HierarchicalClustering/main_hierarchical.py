@@ -22,6 +22,10 @@ import numpy as np
 import math
 from itertools import combinations
 
+import numpy as np
+import math
+from itertools import combinations
+
 def euc(a,b): 
 	return math.sqrt(sum([ (float(a[i]) - float(b[i]))**2 for i in range(len(a)) ])) 
 
@@ -68,19 +72,20 @@ def closetClusters(clustersDict, method, affinity):
 		mDistID = np.argmin(np.array(S)[:,2])
 		return S[mDistID][0], S[mDistID][1], S[mDistID][2]
 
+def mergeTwoClusters(cl1, cl2, new_cl_id):
+    new_cl = {'cluster_i':  new_cl_id,
+              'elements_x': cl1['elements_x'] + cl2['elements_x'],
+              'elements_i': cl1['elements_i'] + cl2['elements_i']
+               }
+    return new_cl
+
 def outputLC(X, clusters_i):
 	labels  = np.zeros(len(X))
-	centers = []
+	centers = [ [] for i in range(len(clusters_i)) ]
 	for k, cluster in enumerate(clusters_i):
-		labels[clusters_i] = k
-		centers[k]         = [ np.mean(col) for col in zip(*X[cluster]) ]
-	return labels, labels
-	
-def computeCenters(clusters_x):
-	
-	for k, cluster in enumerate(clusters_x):
-		
-	return centers
+		labels[cluster] = k
+		centers[k]      = [ np.mean(col) for col in zip(*X[cluster]) ]
+	return labels, centers
 
 def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 	X                = copy.deepcopy(DATA)
@@ -100,12 +105,9 @@ def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 		i1, i2, dis = closetClusters(clusters_pool, linkage, affinity)
 		
 		new_cl_id  += 1
-		new_cl      = {'cluster_i':  new_cl_id,
-					   'elements_x': clusters_pool[i1]['elements_x'] + clusters_pool[i2]['elements_x'],
-					   'elements_i': clusters_pool[i1]['elements_i'] + clusters_pool[i2]['elements_i']
-					   }
-		clusters_pool.pop(il)
-		clusters_pool.pop(i2)
+		new_cl      = mergeTwoClusters(clusters_pool[i1], clusters_pool[i2], new_cl_id)
+		
+		for id in sorted([i1, i2], reverse=True): del clusters_pool[id]
 		clusters_pool.append(new_cl)
 		
 		new_clust_id+= 1
