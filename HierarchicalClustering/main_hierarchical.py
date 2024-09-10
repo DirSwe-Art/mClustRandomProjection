@@ -23,10 +23,10 @@ import math
 from itertools import combinations
 
 def euc(a,b): 
-    return math.sqrt(sum([ (float(a[i]) - float(b[i]))**2 for i in range(len(a)) ])) 
+	return math.sqrt(sum([ (float(a[i]) - float(b[i]))**2 for i in range(len(a)) ])) 
 
 def man(a,b):
-    return sum([ abs(float(a[i]) - float(b[i])) for i in range(len(a))])
+	return sum([ abs(float(a[i]) - float(b[i])) for i in range(len(a))])
 
 def dist(a,b):
 	if affinity == 'euclidean': return euc(a,b)
@@ -54,11 +54,19 @@ def closetClusters(clustersDict, method, affinity):
 			m   = len(clustersDict[i1]['elements_x'])
 			n   = len(clustersDict[i2]['elements_x'])
 			if m == 1 and n == 1:
-                clust1 = clustersDict[i1]['elements_x'][0]
-                clust2 = clustersDict[i2]['elements_x'][0]
-                S.append([i1, i2, dist(clust1, clust2)])
-        mDistID = np.argmin(np.array(S)[:,2])
-        return S[mDistID][0], S[mDistID][1], S[mDistID][2]
+				clust1 = clustersDict[i1]['elements_x'][0]
+				clust2 = clustersDict[i2]['elements_x'][0]
+				S.append([i1, i2, dist(clust1, clust2)])
+			else:
+				S2= np.zeros((m,n))
+				for i in range(m):
+					for j in range(n):
+						S2[i][j] = dist( clustersDict[i1]['elements_x'][i], clustersDict[i2]['elements_x'][j] )
+					if method   == 'single'  : S.append([i1, i2, np.amin(S2)])
+					elif method == 'complete': S.append([i1, i2, np.amax(S2)])
+					elif method == 'average' : S.append([i1, i2, np.mean(S2)])
+		mDistID = np.argmin(np.array(S)[:,2])
+		return S[mDistID][0], S[mDistID][1], S[mDistID][2]
 
 def outputLC(X, clusters_i):
 	labels  = np.zeros(len(X))
