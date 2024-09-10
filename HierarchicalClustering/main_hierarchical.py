@@ -155,7 +155,7 @@ def plotDendrogram(Z, **kwargs):
 				leaf_rotation = 90,
 				leaf_font_size = 8,
 				#show_leaf_counts=True,
-				#truncate_mode='lastp', # show only the last p merged clusters
+				truncate_mode='lastp', # show only the last p merged clusters
 				#p=12,  
 				#show_contracted=True,	# to get a distribution impression in truncated branches
 				#above_threshold_color='y',
