@@ -21,10 +21,7 @@ import copyfrom scipy.cluster.hierarchy import dendrogram
 import numpy as np
 import math
 from itertools import combinations
-
-import numpy as np
-import math
-from itertools import combinations
+import copy
 
 def euc(a,b): 
 	return math.sqrt(sum([ (float(a[i]) - float(b[i]))**2 for i in range(len(a)) ])) 
@@ -41,93 +38,109 @@ def initialClusters(DATA):
 			  'elements_x': [x],
 			  'elements_i': [i] } for i, x in enumerate(DATA) ]
 
-def closetClusters(clustersDict, method, affinity):
+def closetClusters(clusters, method, affinity):
 	S           = []
-	comb_ids    = list( combinations(range(len(clustersDict)),2) )
+	comb_ids    = list( combinations(range(len(clusters)),2) )
 	
 	if method   == 'centroid':
 		for i1, i2 in comb_ids:
-			mu1 = [ np.mean(col) for col in zip(*clustersDict[i1]['elements_x']) ]
-			mu2 = [ np.mean(col) for col in zip(*clustersDict[i2]['elements_x']) ]
+			mu1 = [ np.mean(col) for col in zip(*clusters[i1]['elements_x']) ]
+			mu2 = [ np.mean(col) for col in zip(*clusters[i2]['elements_x']) ]
 			S.append([i1, i2, dist(mu1, mu2)])
 		
-		mDistID = np.argmin(np.array(S)[:,2])
-		return S[mDistID][0], S[mDistID][1], S[mDistID][2]
+		min_id= np.argmin(np.array(S)[:,2])
+		return S[min_id][0], S[min_id][1], S[min_id][2]
 	else:
 		for i1, i2 in comb_ids:
-			m   = len(clustersDict[i1]['elements_x'])
-			n   = len(clustersDict[i2]['elements_x'])
+			m   = len(clusters[i1]['elements_x'])
+			n   = len(clusters[i2]['elements_x'])
 			if m == 1 and n == 1:
-				clust1 = clustersDict[i1]['elements_x'][0]
-				clust2 = clustersDict[i2]['elements_x'][0]
-				S.append([i1, i2, dist(clust1, clust2)])
+				cl1 = clusters[i1]['elements_x'][0]
+				cl2 = clusters[i2]['elements_x'][0]
+				S.append([i1, i2, dist(cl1, cl2)])
 			else:
 				S2= np.zeros((m,n))
 				for i in range(m):
 					for j in range(n):
-						S2[i][j] = dist( clustersDict[i1]['elements_x'][i], clustersDict[i2]['elements_x'][j] )
-				if method   == 'single'  : S.append([i1, i2, np.amin(S2)])
+						cl1 = clusters[i1]['elements_x'][i]
+						cl2 = clusters[i2]['elements_x'][j]
+						S2[i][j] = dist(cl1, cl2)
+				if method == 'single'  : S.append([i1, i2, np.amin(S2)])
 				elif method == 'complete': S.append([i1, i2, np.amax(S2)])
 				elif method == 'average' : S.append([i1, i2, np.mean(S2)])
-		mDistID = np.argmin(np.array(S)[:,2])
-		return S[mDistID][0], S[mDistID][1], S[mDistID][2]
+		min_id = np.argmin(np.array(S)[:,2])
+		return S[min_id][0], S[min_id][1], S[min_id][2]
 
 def mergeTwoClusters(cl1, cl2, new_cl_id):
-    new_cl = {'cluster_i':  new_cl_id,
-              'elements_x': cl1['elements_x'] + cl2['elements_x'],
-              'elements_i': cl1['elements_i'] + cl2['elements_i']
-               }
-    return new_cl
+	new_cl = {'cluster_i':  new_cl_id,
+			  'elements_x': cl1['elements_x'] + cl2['elements_x'],
+			  'elements_i': cl1['elements_i'] + cl2['elements_i']
+			  }
+	return new_cl
+
+def outputLabels(X, clusters_i):
+	labels  = np.zeros(len(X))
+	for k, cl_ids in enumerate(clusters_i):
+		labels[cl_ids] = k
+	return labels
+
+def outputCenters(X, clusters_i):
+	centers = []
+	for cl_ids in clusters_i:
+		centers.append([ np.mean(col) for col in zip(*X[cl_ids]) ])
+	return centers
 
 def outputLC(X, clusters_i):
 	labels  = np.zeros(len(X))
 	centers = [ [] for i in range(len(clusters_i)) ]
-	for k, cluster in enumerate(clusters_i):
-		labels[cluster] = k
-		centers[k]      = [ np.mean(col) for col in zip(*X[cluster]) ]
+	for k, cl_ids in enumerate(clusters_i):
+		labels[cl_ids] = k
+		centers[k]     = [ np.mean(col) for col in zip(*X[cl_ids]) ]
 	return labels, centers
 
 def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 	X                = copy.deepcopy(DATA)
-	clusters_pool    = initialClusters(X)
-	clusterings_pool = []
+	pool             = initialClusters(X)
+	clusterings      = []
 	linkage_matrix   = []
+	labels           = []
+	centers          = []
 	
-	clusterings_pool.append( {'clusters_l':    0,
-							  'clusters_k': len(clusters_pool),
-							  'clusters_x': [cl['elements_x'] for cl in clusters_pool],
-							  'clusters_i': [cl['elements_i'] for cl in clusters_pool]
+	clusterings.append( {'clusters_l': 0,
+						 'clusters_k': len(pool),
+						 'clusters_x': [cl['elements_x'] for cl in pool],
+						 'clusters_i': [cl['elements_i'] for cl in pool]
 							  } )
 							  
-	new_cl_id	 	= len(clusters_pool)
+	new_cl_id	 	= len(pool)
 	new_clust_id	= 0
-	while len(clusters_pool) > 1:
-		i1, i2, dis = closetClusters(clusters_pool, linkage, affinity)
+	while len(pool) > 1:
+		i1, i2, dis = closetClusters(pool, linkage, affinity)
 		
 		new_cl_id  += 1
-		new_cl      = mergeTwoClusters(clusters_pool[i1], clusters_pool[i2], new_cl_id)
+		new_cl      = mergeTwoClusters(pool[i1], pool[i2], new_cl_id)
 		
-		for id in sorted([i1, i2], reverse=True): del clusters_pool[id]
-		clusters_pool.append(new_cl)
+		for id in sorted([i1, i2], reverse=True): del pool[id]
+		pool.append(new_cl)
 		
 		new_clust_id+= 1
 		new_clust	 = {'clusters_l': new_clust_id,
-						'clusters_k': len(clusters_pool),
-						'clusters_x': [cl['elements_x'] for cl in clusters_pool],
-						'clusters_i': [cl['elements_i'] for cl in clusters_pool]
+						'clusters_k': len(pool),
+						'clusters_x': [cl['elements_x'] for cl in pool],
+						'clusters_i': [cl['elements_i'] for cl in pool]
 						}
 		if new_clust['clusters_k'] == n_clusters: 
 			labels, centers = outputLC(X, new_clust['clusters_x'])
 		
 		
-		linkage_matrix.append([i1, i2, dis, new_cl['elements_x'])
-		clusterings_pool.append()
+		linkage_matrix.append([i1, i2, dis, len(new_cl['elements_x'])])
+		clusterings.append(new_clust)
 		
-		class model:
-			def __init__(self):
-				self.clusterings   = clusterings_pool
-				self.linkageMatrix = np.array(linkage_matrix)
-				self.labels		   = labels
-				self.centers	   = centers
+	class model:
+		def __init__(self):
+			self.clusterings   = clusterings
+			self.linkageMatrix = np.array(linkage_matrix)
+			self.labels		   = labels
+			self.centers	   = centers
 		
-		return model()
+	return model()
