@@ -7,10 +7,10 @@
 This function returns a hierarchical clustering class model that containes model.clutserings, model.linkagematrix, model.labels, and model.centers 
 '''
 
-from itertools import combinations
 import numpy as np
-import math
-import copyfrom scipy.cluster.hierarchy import dendrogram
+import math, copy
+from itertools import combinations
+from scipy.cluster.hierarchy import dendrogram
 
 #import matplotlib.pyplot as plt
 #from sklearn.cluster import KMeans
@@ -18,10 +18,6 @@ import copyfrom scipy.cluster.hierarchy import dendrogram
 
 
 # ========================================================================
-import numpy as np
-import math
-from itertools import combinations
-import copy
 
 def euc(a,b): 
 	return math.sqrt(sum([ (float(a[i]) - float(b[i]))**2 for i in range(len(a)) ])) 
@@ -91,7 +87,7 @@ def outputCenters(X, clusters_i):
 	return centers
 
 def outputLC(X, clusters_i):
-	labels  = np.zeros(len(X))
+	labels  = np.zeros(len(X), dtype=int)
 	centers = [ [] for i in range(len(clusters_i)) ]
 	for k, cl_ids in enumerate(clusters_i):
 		labels[cl_ids] = k
@@ -120,6 +116,8 @@ def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 		new_cl_id  += 1
 		new_cl      = mergeTwoClusters(pool[i1], pool[i2], new_cl_id)
 		
+		linkage_matrix.append([pool[i1]['cluster_i'], pool[i2]['cluster_i'], dis, len(new_cl['elements_i'])])
+		
 		for id in sorted([i1, i2], reverse=True): del pool[id]
 		pool.append(new_cl)
 		
@@ -129,13 +127,11 @@ def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 						'clusters_x': [cl['elements_x'] for cl in pool],
 						'clusters_i': [cl['elements_i'] for cl in pool]
 						}
-		if new_clust['clusters_k'] == n_clusters: 
-			labels, centers = outputLC(X, new_clust['clusters_x'])
-		
-		
-		linkage_matrix.append([i1, i2, dis, len(new_cl['elements_x'])])
 		clusterings.append(new_clust)
 		
+		if new_clust['clusters_k'] == n_clusters: 
+			labels, centers = outputLC(X, new_clust['clusters_i'])	
+			
 	class model:
 		def __init__(self):
 			self.clusterings   = clusterings
@@ -144,3 +140,52 @@ def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 			self.centers	   = centers
 		
 	return model()
+
+def plotDendrogram(Z, **kwargs):
+	linkage_mat = copy.deepcopy(Z)
+	linkage_mat[:, 2] = np.arange(Z.shape[0])
+	plt.figure(figsize=(10,6))
+	plt.title('Hierarchical Clustering Dendrogram')
+	plt.xlabel('Sample index')
+	plt.ylabel('Distance')
+	dendrogram( linkage_mat,
+				leaf_rotation = 90,
+				leaf_font_size = 8,
+				#show_leaf_counts=True,
+				#truncate_mode='lastp', # show only the last p merged clusters
+				#p=12,  
+				#show_contracted=True,	# to get a distribution impression in truncated branches
+				**kwargs
+				)
+	plt.show()
+	
+# ==================================================================
+import random
+import matplotlib.pyplot as plt
+
+X = []
+M = [[3,3],[9,9]]
+
+for m in M:
+    X += np.random.multivariate_normal(m, np.identity(2)/2, size=10).tolist()
+
+random.shuffle(X)
+X = np.array(X)
+plt.scatter( *zip(*X) )
+plt.show()
+
+
+
+linkage='average'
+affinity='euclidean'
+
+mdl = hierarchical(X, n_clusters=2, linkage=linkage, affinity=affinity)
+print(mdl.labels)
+
+clr = ['g','b']
+plt.scatter( *zip(*X), color= [clr[i] for i in mdl.labels] )
+plt.show()
+plt.close()
+
+print(mdl.linkageMatrix)
+plotDendrogram(Z= mdl.linkageMatrix, labels= mdl.labels)
