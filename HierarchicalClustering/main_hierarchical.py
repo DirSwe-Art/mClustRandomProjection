@@ -68,7 +68,7 @@ def closetClusters(clusters, method, affinity):
 		return S[min_id][0], S[min_id][1], S[min_id][2]
 
 def mergeTwoClusters(cl1, cl2, new_cl_id):
-	new_cl = {'cluster_i':  new_cl_id,
+	new_cl = {'cluster_i':  int(new_cl_id),
 			  'elements_x': cl1['elements_x'] + cl2['elements_x'],
 			  'elements_i': cl1['elements_i'] + cl2['elements_i']
 			  }
@@ -92,7 +92,7 @@ def outputLC(X, clusters_i):
 	for k, cl_ids in enumerate(clusters_i):
 		labels[cl_ids] = k
 		centers[k]     = [ np.mean(col) for col in zip(*X[cl_ids]) ]
-	return labels, centers
+	return np.array(labels), centers
 
 def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 	X                = copy.deepcopy(DATA)
@@ -107,22 +107,24 @@ def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 						 'clusters_x': [cl['elements_x'] for cl in pool],
 						 'clusters_i': [cl['elements_i'] for cl in pool]
 							  } )
-							  
-	new_cl_id	 	= len(pool)
+						  
+	new_cl_id	 	= len(pool)-1
 	new_clust_id	= 0
 	while len(pool) > 1:
+		print(len(pool), len(clusterings))	
 		i1, i2, dis = closetClusters(pool, linkage, affinity)
 		
 		new_cl_id  += 1
 		new_cl      = mergeTwoClusters(pool[i1], pool[i2], new_cl_id)
 		
-		linkage_matrix.append([pool[i1]['cluster_i'], pool[i2]['cluster_i'], dis, len(new_cl['elements_i'])])
+		linkage_matrix.append([pool[i1]['cluster_i'], pool[i2]['cluster_i'], dis, len(new_cl['elements_i']) ])#, new_cl_id])
 		
-		for id in sorted([i1, i2], reverse=True): del pool[id]
+		for id in sorted([i1, i2], reverse=True): 
+			del pool[id]
 		pool.append(new_cl)
 		
 		new_clust_id+= 1
-		new_clust	 = {'clusters_l': new_clust_id,
+		new_clust	 = {'clusters_l': int(new_clust_id),
 						'clusters_k': len(pool),
 						'clusters_x': [cl['elements_x'] for cl in pool],
 						'clusters_i': [cl['elements_i'] for cl in pool]
@@ -131,6 +133,7 @@ def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 		
 		if new_clust['clusters_k'] == n_clusters: 
 			labels, centers = outputLC(X, new_clust['clusters_i'])	
+		
 			
 	class model:
 		def __init__(self):
@@ -155,6 +158,7 @@ def plotDendrogram(Z, **kwargs):
 				#truncate_mode='lastp', # show only the last p merged clusters
 				#p=12,  
 				#show_contracted=True,	# to get a distribution impression in truncated branches
+				#above_threshold_color='y',
 				**kwargs
 				)
 	plt.show()
@@ -167,7 +171,7 @@ X = []
 M = [[3,3],[9,9]]
 
 for m in M:
-    X += np.random.multivariate_normal(m, np.identity(2)/2, size=10).tolist()
+    X += np.random.multivariate_normal(m, np.identity(2)/2, size=20).tolist()
 
 random.shuffle(X)
 X = np.array(X)
@@ -187,5 +191,9 @@ plt.scatter( *zip(*X), color= [clr[i] for i in mdl.labels] )
 plt.show()
 plt.close()
 
-print(mdl.linkageMatrix)
-plotDendrogram(Z= mdl.linkageMatrix, labels= mdl.labels)
+Z = mdl.linkageMatrix
+print(Z)
+
+#plt.figure()
+#dn = dendrogram(Z)
+plotDendrogram(Z, labels= mdl.labels)
