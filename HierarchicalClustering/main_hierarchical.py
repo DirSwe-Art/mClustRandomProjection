@@ -62,9 +62,9 @@ def closetClusters(clustersDict, method, affinity):
 				for i in range(m):
 					for j in range(n):
 						S2[i][j] = dist( clustersDict[i1]['elements_x'][i], clustersDict[i2]['elements_x'][j] )
-					if method   == 'single'  : S.append([i1, i2, np.amin(S2)])
-					elif method == 'complete': S.append([i1, i2, np.amax(S2)])
-					elif method == 'average' : S.append([i1, i2, np.mean(S2)])
+				if method   == 'single'  : S.append([i1, i2, np.amin(S2)])
+				elif method == 'complete': S.append([i1, i2, np.amax(S2)])
+				elif method == 'average' : S.append([i1, i2, np.mean(S2)])
 		mDistID = np.argmin(np.array(S)[:,2])
 		return S[mDistID][0], S[mDistID][1], S[mDistID][2]
 
