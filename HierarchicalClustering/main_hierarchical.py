@@ -108,33 +108,42 @@ def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 						 'clusters_i': [cl['elements_i'] for cl in pool]
 							  } )
 						  
-	new_cl_id	 	= len(pool)-1
-	new_clust_id	= 0
+	new_cl_id	 	= len(pool)-1 # the last index in the pool
+	new_clust_id	= 0			  # the last index in the clusterings
 	while len(pool) > 1:
-		print(len(pool), len(clusterings))	
+		print(len(clusterings), len(pool))	
+		
+		# identify the closest two clusters in the pool
 		i1, i2, dis = closetClusters(pool, linkage, affinity)
 		
+		# merge them
 		new_cl_id  += 1
 		new_cl      = mergeTwoClusters(pool[i1], pool[i2], new_cl_id)
 		
+		# add a record to the linkage matrix (1st id, 2nd id, distance, merged cluster length)
 		linkage_matrix.append([pool[i1]['cluster_i'], pool[i2]['cluster_i'], dis, len(new_cl['elements_i']) ])#, new_cl_id])
 		
+		# remove the identified closest two clusters from the pool
 		for id in sorted([i1, i2], reverse=True): 
 			del pool[id]
+		
+		# append the new merged cluster to the pool 
 		pool.append(new_cl)
 		
+		# form a new clustering dict containes the pool clusters and add it to the clusterings list
 		new_clust_id+= 1
-		new_clust	 = {'clusters_l': int(new_clust_id),
+		new_clust	 = {'clusters_l': new_clust_id,
 						'clusters_k': len(pool),
 						'clusters_x': [cl['elements_x'] for cl in pool],
 						'clusters_i': [cl['elements_i'] for cl in pool]
 						}
 		clusterings.append(new_clust)
 		
+		# output the required clustering's labels and centers
 		if new_clust['clusters_k'] == n_clusters: 
 			labels, centers = outputLC(X, new_clust['clusters_i'])	
 		
-			
+	# form a class to save the hierarchical model		
 	class model:
 		def __init__(self):
 			self.clusterings   = clusterings
@@ -146,6 +155,20 @@ def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 
 def plotDendrogram(Z, **kwargs):
 	linkage_mat = copy.deepcopy(Z)
+	#linkage_mat[:, 2] = np.arange(Z.shape[0])
+	plt.figure(figsize=(10,6))
+	plt.title('Hierarchical Clustering Dendrogram')
+	plt.xlabel('Sample index')
+	plt.ylabel('Distance')
+	dendrogram( linkage_mat,
+				leaf_rotation = 90,
+				leaf_font_size = 8,
+				**kwargs
+				)
+	plt.show()
+
+def plotDendrogram1(Z, **kwargs):
+	linkage_mat = copy.deepcopy(Z)
 	linkage_mat[:, 2] = np.arange(Z.shape[0])
 	plt.figure(figsize=(10,6))
 	plt.title('Hierarchical Clustering Dendrogram')
@@ -154,11 +177,6 @@ def plotDendrogram(Z, **kwargs):
 	dendrogram( linkage_mat,
 				leaf_rotation = 90,
 				leaf_font_size = 8,
-				#show_leaf_counts=True,
-				truncate_mode='lastp', # show only the last p merged clusters
-				#p=12,  
-				#show_contracted=True,	# to get a distribution impression in truncated branches
-				#above_threshold_color='y',
 				**kwargs
 				)
 	plt.show()
@@ -175,6 +193,7 @@ for m in M:
 
 random.shuffle(X)
 X = np.array(X)
+X = X - np.mean(X)
 plt.scatter( *zip(*X) )
 plt.show()
 
@@ -197,3 +216,4 @@ print(Z)
 #plt.figure()
 #dn = dendrogram(Z)
 plotDendrogram(Z, labels= mdl.labels)
+plotDendrogram1(Z, labels= mdl.labels)
