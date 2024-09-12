@@ -147,39 +147,29 @@ def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 	class model:
 		def __init__(self):
 			self.clusterings   = clusterings
-			self.linkageMatrix = np.array(linkage_matrix)
+			self.linkageMatrix = linkage_matrix
 			self.labels		   = labels
 			self.centers	   = centers
 		
 	return model()
 
 def plotDendrogram(Z, **kwargs):
-	linkage_mat = copy.deepcopy(Z)
-	#linkage_mat[:, 2] = np.arange(Z.shape[0])
+	linkage_mat = np.array(copy.deepcopy(Z))
+	linkage_mat[:, 2] = [ float(i)/max(linkage_mat[:, 2]) for i in linkage_mat[:, 2] ]
 	plt.figure(figsize=(10,6))
 	plt.title('Hierarchical Clustering Dendrogram')
 	plt.xlabel('Sample index')
-	plt.ylabel('Distance')
+	plt.ylabel('Normalized Distance')
 	dendrogram( linkage_mat,
 				leaf_rotation = 90,
 				leaf_font_size = 8,
+				#truncate_mode='lastp',
+				#show_contracted=True,
 				**kwargs
 				)
 	plt.show()
 
-def plotDendrogram1(Z, **kwargs):
-	linkage_mat = copy.deepcopy(Z)
-	linkage_mat[:, 2] = np.arange(Z.shape[0])
-	plt.figure(figsize=(10,6))
-	plt.title('Hierarchical Clustering Dendrogram')
-	plt.xlabel('Sample index')
-	plt.ylabel('Distance')
-	dendrogram( linkage_mat,
-				leaf_rotation = 90,
-				leaf_font_size = 8,
-				**kwargs
-				)
-	plt.show()
+
 	
 # ==================================================================
 import random
@@ -203,8 +193,34 @@ linkage='average'
 affinity='euclidean'
 
 mdl = hierarchical(X, n_clusters=2, linkage=linkage, affinity=affinity)
-print(mdl.labels)
 
+
+while True:
+	try:
+		clust_k   = str(input('    Enter the number of clusters you want to view:'))
+		if clust_k == 'q': break
+		clust_    = [ clust for clust in mdl.clusterings if clust['clusters_k'] == int(clust_k)]
+		clust_x   = clust_[0]['clusters_x']
+		clust_i   = clust_[0]['clusters_i']
+		
+		y, C      = outputLC(X, clust_i)	
+		
+		for i, cl in enumerate(clust_x):
+			F1, F2 = zip(*cl)
+			plt.scatter( F1, F2)
+		
+		plotDendrogram(mdl.linkageMatrix, labels=y)
+		
+		'''	
+		C = centers(clust_x)
+		clusteredImage = np.array([ C[i] for i in Y ])
+		display_Image(DATA, clusteredImage, imRow, imCol, imDim)
+		'''
+
+	except ValueError:
+		if numberOfClusters == 'q': print("\nProgram is ended"); break
+		print("Invalid number of clusters")
+'''
 clr = ['g','b']
 plt.scatter( *zip(*X), color= [clr[i] for i in mdl.labels] )
 plt.show()
@@ -216,4 +232,4 @@ print(Z)
 #plt.figure()
 #dn = dendrogram(Z)
 plotDendrogram(Z, labels= mdl.labels)
-plotDendrogram1(Z, labels= mdl.labels)
+'''
