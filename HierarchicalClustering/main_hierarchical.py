@@ -11,6 +11,7 @@ import numpy as np
 import math, copy
 from itertools import combinations
 from scipy.cluster.hierarchy import dendrogram
+import pandas as pd
 
 #import matplotlib.pyplot as plt
 #from sklearn.cluster import KMeans
@@ -160,14 +161,27 @@ def plotDendrogram(Z, **kwargs):
 	plt.title('Hierarchical Clustering Dendrogram')
 	plt.xlabel('Sample index')
 	plt.ylabel('Normalized Distance')
-	dendrogram( linkage_mat,
+	colors = [ 'C'+str(i) for i in range(79) ]
+	denZ = dendrogram( linkage_mat,
 				leaf_rotation = 90,
 				leaf_font_size = 8,
-				#truncate_mode='lastp',
+				**kwargs,
+				#truncate_mode='level',
 				#show_contracted=True,
-				**kwargs
+				link_color_func=lambda k: 'C0' if k<30 else 'C1'#y[k] or y[k-1] == 0 else 'C1'
+
 				)
+	for key, value in denZ.items(): print('\n\n', key, '\n', value, '\n', len(value))
+	#def lcf():
+		#for i, label in enumerate(denZ['ivl']): denZ['leaves_color_list'][i]='C'+str(label) 
+
+	#print(denZ['leaves'])
+	#print(denZ['ivl'])
+	#print(denZ['leaves_color_list'])
+	#for leaf, leaf_color in zip(plt.gca().get_xticklabels(), denZ["leaves_color_list"]):
+	#	leaf.set_color(leaf_color)
 	plt.show()
+	
 
 
 	
@@ -198,7 +212,6 @@ mdl = hierarchical(X, n_clusters=2, linkage=linkage, affinity=affinity)
 while True:
 	try:
 		clust_k   = str(input('    Enter the number of clusters you want to view:'))
-		if clust_k == 'q': break
 		clust_    = [ clust for clust in mdl.clusterings if clust['clusters_k'] == int(clust_k)]
 		clust_x   = clust_[0]['clusters_x']
 		clust_i   = clust_[0]['clusters_i']
@@ -209,7 +222,7 @@ while True:
 			F1, F2 = zip(*cl)
 			plt.scatter( F1, F2)
 		
-		plotDendrogram(mdl.linkageMatrix, labels=y)
+		plotDendrogram(mdl.linkageMatrix)#, labels=y)
 		
 		'''	
 		C = centers(clust_x)
@@ -218,7 +231,7 @@ while True:
 		'''
 
 	except ValueError:
-		if numberOfClusters == 'q': print("\nProgram is ended"); break
+		if clust_k == 'q': print("\nProgram is ended"); break
 		print("Invalid number of clusters")
 '''
 clr = ['g','b']
