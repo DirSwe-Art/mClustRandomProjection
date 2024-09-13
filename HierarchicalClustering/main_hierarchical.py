@@ -6,7 +6,7 @@
 '''
 This function returns a hierarchical clustering class model that containes model.clutserings, model.linkagematrix, model.labels, and model.centers 
 '''
-
+'''
 import numpy as np
 import math, copy
 from itertools import combinations
@@ -230,16 +230,17 @@ while True:
 		
 		plotDendrogram(mdl.linkageMatrix, labels=y)
 		
-		'''	
+			
 		C = centers(clust_x)
 		clusteredImage = np.array([ C[i] for i in Y ])
 		display_Image(DATA, clusteredImage, imRow, imCol, imDim)
-		'''
+		
 
 	except ValueError:
 		if clust_k == 'q': print("\nProgram is ended"); break
 		print("Invalid number of clusters")
-'''
+
+
 clr = ['g','b']
 plt.scatter( *zip(*X), color= [clr[i] for i in mdl.labels] )
 plt.show()
@@ -251,10 +252,10 @@ print(Z)
 #plt.figure()
 #dn = dendrogram(Z)
 plotDendrogram(Z, labels= mdl.labels)
+
 '''
 
 
-'''
 import numpy as np
 import scipy.cluster.hierarchy as sch
 import matplotlib.pyplot as plt
@@ -331,7 +332,8 @@ plt.xlabel('Sample Index')
 plt.ylabel('Distance')
 plt.show()
 
-'''
+
+
 
 	
 # ==================================================================
