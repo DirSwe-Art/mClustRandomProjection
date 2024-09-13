@@ -211,7 +211,7 @@ def plotDendrogram(Z, **kwargs):
 		lbl.set_color(leaf_colors[leaf_idx])
 	
 	'''	
-	# labels are not used
+	# labels are not used, and no customized colors are needed
 	ax = plt.gca()
 	x_labels = ax.get_xmajorticklabels()
 	for i, lbl in enumerate(x_labels):
@@ -237,20 +237,57 @@ def randomData():
 	plt.scatter( *zip(*X) )
 	plt.show()
 	
+	plt.savefig(r'results/random_clustering_'+str(k)+'.jpg')
+	
+	plt.close('all')	
+	
 	return X
+	
+def imageData(file):
+	IMG = plt.imread(file)					# uint8 data type
+	imRow, imCol, imDim = IMG.shape
+	X = []
+	
+	for r in range(imRow):
+		for c in range(imCol):
+			X.append( IMG[r][c] )
+	
+	X = np.array(X, dtype='uint8')	
+	return X, imRow, imCol, imDim
+
+def imageDisplay(X, XX, imR, imC, imD, text=None):
+	IMG_X  = np.array(copy.deepcopy(X), dtype='uint8').reshape(imR, imC, imD)
+	IMG_XX = np.array(copy.deepcopy(XX), dtype='uint8').reshape(imR, imC, imD)
+	
+	plt.close('all')
+	f, (ax1, ax2) = plt.subplots(2,1, sharex=True, sharey=True)
+	ax1.imshow(IMG_X)
+	ax1.set_title('Original Image')
+	
+	ax2.imshow(IMG_XX)
+	ax2.set_title('Segmented Image')
+	
+	plt.xticks([])
+	plt.yticks([])
+	plt.savefig(r'results/'+text+'segmented_'+str(k)+'.jpg')
+	plt.close('all')
 
 # ==================================================================
 
-X 			= randomData()
-linkage		='average'
-affinity	='euclidean'
-n_clusters	= 2
-mdl 		= hierarchical(X, n_clusters=n_clusters, linkage=linkage, affinity=affinity)
+#X 				= randomData()
+X,imR,imC,imD  	= imageData(img2.bmp)
+
+linkage			= 'average'
+affinity		= 'euclidean'
+k				= 2
+mdl 			= hierarchical(X, n_clusters=k, linkage=linkage, affinity=affinity)
 
 
 
 while True:
 	try:
+		### important ###
+		# set whether labels  are used with the corresponding link coloring. 
 		clust_k   = str(input('    Enter the number of clusters you want to view:'))
 		clust_    = [ clust for clust in mdl.clusterings if clust['clusters_k'] == int(clust_k)]
 		clust_x   = clust_[0]['clusters_x']
@@ -262,19 +299,22 @@ while True:
 		colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']
 		leaf_colors = {i: colors[lebel] for i, lebel in enumerate(y)}
 
+		# plotting in case of using numerical data
+		'''
 		for i, cl in enumerate(clust_x):
 			F1, F2 = zip(*cl)
 			plt.scatter( F1, F2, c = [ colors[i] for _ in range(len(F1))  ] )
 		plt.show()
-	
-		# using labels y
-		plotDendrogram(Z)#, labels=y)
-		
-		'''	
-		C = centers(clust_x)
-		clusteredImage = np.array([ C[i] for i in Y ])
-		display_Image(DATA, clusteredImage, imRow, imCol, imDim)
 		'''
+		
+		# displaying image in case of using images
+		clusteredImage = np.array([ C[i] for i in y ])
+		imageDisplay(X, clusteredImage, imR, imC, imD)
+
+		# using labels y
+		plotDendrogram(Z, labels=y)
+		
+
 
 	except ValueError:
 		if clust_k == 'q': print("\nProgram is ended"); break
