@@ -8,15 +8,11 @@ This function returns a hierarchical clustering class model that containes model
 '''
 
 import numpy as np
-import math, copy
-from itertools import combinations
-from scipy.cluster.hierarchy import dendrogram
 import pandas as pd
 import matplotlib.pyplot as plt
-
-#from sklearn.cluster import KMeans
-#from scipy.linalg import fractional_matrix_power
-
+import math, copy, random
+from itertools import combinations
+from scipy.cluster.hierarchy import dendrogram
 
 # ========================================================================
 
@@ -159,7 +155,6 @@ def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 		
 	return model()
 
-
 def linkColorFunction(link_id):
 	n_leaves    = len(y)
 	link_colors = {}
@@ -227,32 +222,30 @@ def plotDendrogram(Z, **kwargs):
 	plt.ylabel('Normalized Distance')
 	plt.show()
 	
-
+# ========================================================================
+def randomData():
+	X = []
+	M = [[2, 2],[-2, 2],[-2, -2],[2, -2]]
+	for m in M:
+		X += np.random.multivariate_normal(m, np.identity(2)/3, size=50).tolist()
 	
+	random.shuffle(X)
+	X = np.array(X)
+		X = X - X.mean(axis=0)					# center the data
 	
+	plt.scatter( *zip(*X) )
+	plt.show()
+	
+	return X
 
 # ==================================================================
-import random
 
-X = []
-M = [[3,3],[9,9]]
-
-for m in M:
-    X += np.random.multivariate_normal(m, np.identity(2)/2, size=20).tolist()
-
-random.shuffle(X)
-X = np.array(X)
-X = X - np.mean(X)
-
-plt.scatter( *zip(*X) )
-plt.show()
-
-
-
-linkage='average'
-affinity='euclidean'
-
-mdl = hierarchical(X, n_clusters=2, linkage=linkage, affinity=affinity)
+X 			= randomData
+linkage		='average'
+affinity	='euclidean'
+n_clusters	= 2
+mdl 		= hierarchical(X, n_clusters=n_clusters, linkage=linkage, affinity=affinity)
+colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']
 
 
 while True:
@@ -264,7 +257,7 @@ while True:
 		Z         = mdl.linkageMatrix
 		
 		y, C      = outputLC(X, clust_i)	
-		colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']	
+			
 		leaf_colors = {i: colors[lebel] for i, lebel in enumerate(y)}
 
 		for i, cl in enumerate(clust_x):
@@ -284,19 +277,7 @@ while True:
 	except ValueError:
 		if clust_k == 'q': print("\nProgram is ended"); break
 		print("Invalid number of clusters")
-'''
-clr = ['g','b']
-plt.scatter( *zip(*X), color= [clr[i] for i in mdl.labels] )
-plt.show()
-plt.close()
 
-Z = mdl.linkageMatrix
-print(Z)
-
-#plt.figure()
-#dn = dendrogram(Z)
-plotDendrogram(Z, labels= mdl.labels)
-'''
 
 
 
