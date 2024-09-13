@@ -199,21 +199,23 @@ def plotDendrogram(Z, **kwargs):
 	Z2[:, 2]     = [ float(i)/max(Z2[:, 2]) for i in Z2[:, 2] ]
 
 	denZ = dendrogram( Z2,
-				   #color_threshold       = 0,
-				   #above_threshold_color = 'grey',
-				   #link_color_func       = linkColorFunction,
 				   leaf_rotation         = 90,
 				   leaf_font_size        = 10,
 				   **kwargs
+				   # customized link color:
+				   #color_threshold       = 0,
+				   #above_threshold_color = 'grey',
+				   #link_color_func       = linkColorFunction,
+
 				   )
-	
+	# using the given labels y
 	ax = plt.gca()
 	x_labels = ax.get_xmajorticklabels()
 	for lbl, leaf_idx in zip(x_labels, denZ['leaves']):
 		lbl.set_color(leaf_colors[leaf_idx])
 	
 	'''	
-	# when labels are not used
+	# labels are not used
 	ax = plt.gca()
 	x_labels = ax.get_xmajorticklabels()
 	for lbl in x_labels:
@@ -242,7 +244,6 @@ random.shuffle(X)
 X = np.array(X)
 X = X - np.mean(X)
 
-plt.figure(figsize=(10,6))
 plt.scatter( *zip(*X) )
 plt.show()
 
@@ -263,27 +264,15 @@ while True:
 		Z         = mdl.linkageMatrix
 		
 		y, C      = outputLC(X, clust_i)	
+		colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']	
+		leaf_colors = {i: colors[lebel] for i, lebel in enumerate(y)}
 
-		colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']
-		
-		import matplotlib.colors as mclr
-		plt.close('all')
-		plt.figure(figsize=(10,6))
 		for i, cl in enumerate(clust_x):
 			F1, F2 = zip(*cl)
-			plt.scatter( F1, F2, [ mclr.to_rgb(colors[i]) for i in y ] )
+			plt.scatter( F1, F2, c = [ colors[i] for _ in range(len(F1))  ] )
 		plt.show()
-		
-		leaf_colors = {i: colors[lebel] for i, lebel in enumerate(y)}
-		
-
-		
-		
-
-		
-		
-
 	
+		# using labels y
 		plotDendrogram(Z, labels=y)
 		
 		'''	
