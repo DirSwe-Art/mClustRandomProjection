@@ -177,10 +177,10 @@ def linkColorFunction(link_id):
 		if len(merged_clusters) == 1:
 			# If both children belong to the same cluster, color the link accordingly
 			link_colors[i + n_leaves] = colors[next(iter(merged_clusters))]
-		elif len(merged_clusters) > 1 and len(left_clusters)  == 1:
-			link_colors[i + n_leaves] = colors[next(iter(left_clusters))]		
-		elif len(merged_clusters) > 1 and len(right_clusters) == 1:
-			link_colors[i + n_leaves] = colors[next(iter(right_clusters))]
+		#elif len(merged_clusters) > 1 and len(left_clusters)  == 1:
+		#	link_colors[i + n_leaves] = colors[next(iter(left_clusters))]		
+		#elif len(merged_clusters) > 1 and len(right_clusters) == 1:
+		#	link_colors[i + n_leaves] = colors[next(iter(right_clusters))]
 		else:
 			# Otherwise, color it grey to indicate it merges different clusters
 			link_colors[i + n_leaves] = 'grey'
@@ -198,20 +198,20 @@ def plotDendrogram(Z, **kwargs):
 				   leaf_rotation         = 0,
 				   leaf_font_size        = 10,
 				   **kwargs,
-				   # customized link color give labels y:
+				   # customized link color based on give labels
 				   color_threshold       = 0,
 				   above_threshold_color = 'grey',
 				   link_color_func       = linkColorFunction,
 
 				   )
-	# using the given labels y
+	# customized label color based on the given labels
 	ax = plt.gca()
 	x_labels = ax.get_xmajorticklabels()
 	for lbl, leaf_idx in zip(x_labels, denZ['leaves']):
 		lbl.set_color(leaf_colors[leaf_idx])
 	
 	'''	
-	# labels are not used, and no customized colors are needed
+	# labels and customized colors are not used
 	ax = plt.gca()
 	x_labels = ax.get_xmajorticklabels()
 	for i, lbl in enumerate(x_labels):
@@ -221,10 +221,14 @@ def plotDendrogram(Z, **kwargs):
 	plt.title('Dendrogram with Cluster-based Link and Leaf Colors')
 	plt.xlabel('Sample index')
 	plt.ylabel('Normalized Distance')
+	plt.savefig(r'results/dendrogram_'+str(k)+'.jpg')
 	plt.show()
 	
 # ========================================================================
 def randomData():
+	import os
+	if not os.path.exists('results'): os.makedirs('results')
+	
 	X = []
 	M = [[2, 2],[-2, 2],[-2, -2],[2, -2]]
 	for m in M:
@@ -235,15 +239,14 @@ def randomData():
 	X = X - X.mean(axis=0)					# center the data
 	
 	plt.scatter( *zip(*X) )
-	plt.show()
-	
-	plt.savefig(r'results/random_clustering_'+str(k)+'.jpg')
-	
+	plt.show()	
 	plt.close('all')	
 	
 	return X
 	
 def imageData(file):
+	import os
+	if not os.path.exists('results'): os.makedirs('results')
 	IMG = plt.imread(file)					# uint8 data type
 	imRow, imCol, imDim = IMG.shape
 	X = []
@@ -255,7 +258,7 @@ def imageData(file):
 	X = np.array(X, dtype='uint8')	
 	return X, imRow, imCol, imDim
 
-def imageDisplay(X, XX, imR, imC, imD, text=None):
+def imageDisplay(X, XX, imR, imC, imD, text=''):
 	IMG_X  = np.array(copy.deepcopy(X), dtype='uint8').reshape(imR, imC, imD)
 	IMG_XX = np.array(copy.deepcopy(XX), dtype='uint8').reshape(imR, imC, imD)
 	
@@ -270,12 +273,13 @@ def imageDisplay(X, XX, imR, imC, imD, text=None):
 	plt.xticks([])
 	plt.yticks([])
 	plt.savefig(r'results/'+text+'segmented_'+str(k)+'.jpg')
+	plt.show()
 	plt.close('all')
 
 # ==================================================================
 
 #X 				= randomData()
-X,imR,imC,imD  	= imageData(img2.bmp)
+X,imR,imC,imD  	= imageData('img2.bmp')
 
 linkage			= 'average'
 affinity		= 'euclidean'
@@ -304,11 +308,14 @@ while True:
 		for i, cl in enumerate(clust_x):
 			F1, F2 = zip(*cl)
 			plt.scatter( F1, F2, c = [ colors[i] for _ in range(len(F1))  ] )
+		plt.savefig(r'results/random_clustering_'+str(k)+'.jpg')
 		plt.show()
+		plt.close('all')
 		'''
 		
 		# displaying image in case of using images
 		clusteredImage = np.array([ C[i] for i in y ])
+		k              = copy.deepcopy(clust_k)
 		imageDisplay(X, clusteredImage, imR, imC, imD)
 
 		# using labels y
