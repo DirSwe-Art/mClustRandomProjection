@@ -10,7 +10,7 @@ This function returns a hierarchical clustering class model that containes model
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import math, copy, random
+import math, copy, random, os
 from itertools import combinations
 from scipy.cluster.hierarchy import dendrogram
 
@@ -108,7 +108,8 @@ def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 	new_cl_id	 	= len(pool)-1 # the last index in the pool
 	new_clust_id	= 0			  # the last index in the clusterings
 	while len(pool) > 1:
-		#print(len(clusterings), len(pool))	
+		#os.system('cls' if os.name == 'nt' else "printf '\033c'") # to clear what printed from the screen
+		print(len(clusterings), len(pool), end=' ', flush=True)	
 		
 		# identify the closest two clusters in the pool
 		i1, i2, dis = closetClusters(pool, linkage, affinity)
@@ -144,7 +145,7 @@ def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 		# output the required clustering's labels and centers
 		if new_clust['clusters_k'] == n_clusters: 
 			labels, centers = outputLC(X, new_clust['clusters_i'])	
-	print(linkage_matrix)	
+	#print(linkage_matrix)	
 	# form a class to save the hierarchical model		
 	class model:
 		def __init__(self):
@@ -194,13 +195,13 @@ def plotDendrogram(Z, **kwargs):
 	Z2[:, 2]     = [ float(i)/max(Z2[:, 2]) for i in Z2[:, 2] ]
 
 	denZ = dendrogram( Z2,
-				   leaf_rotation         = 90,
+				   leaf_rotation         = 0,
 				   leaf_font_size        = 10,
-				   **kwargs
-				   # customized link color:
-				   #color_threshold       = 0,
-				   #above_threshold_color = 'grey',
-				   #link_color_func       = linkColorFunction,
+				   **kwargs,
+				   # customized link color give labels y:
+				   color_threshold       = 0,
+				   above_threshold_color = 'grey',
+				   link_color_func       = linkColorFunction,
 
 				   )
 	# using the given labels y
@@ -213,8 +214,8 @@ def plotDendrogram(Z, **kwargs):
 	# labels are not used
 	ax = plt.gca()
 	x_labels = ax.get_xmajorticklabels()
-	for lbl in x_labels:
-		lbl.set_color(leaf_colors[int(lbl.get_text())])
+	for i, lbl in enumerate(x_labels):
+		lbl.set_color(denZ['leaves_color_list'][i])
 	'''
 	
 	plt.title('Dendrogram with Cluster-based Link and Leaf Colors')
@@ -227,11 +228,11 @@ def randomData():
 	X = []
 	M = [[2, 2],[-2, 2],[-2, -2],[2, -2]]
 	for m in M:
-		X += np.random.multivariate_normal(m, np.identity(2)/3, size=50).tolist()
+		X += np.random.multivariate_normal(m, np.identity(2)/3, size=20).tolist()
 	
 	random.shuffle(X)
 	X = np.array(X)
-		X = X - X.mean(axis=0)					# center the data
+	X = X - X.mean(axis=0)					# center the data
 	
 	plt.scatter( *zip(*X) )
 	plt.show()
@@ -240,12 +241,12 @@ def randomData():
 
 # ==================================================================
 
-X 			= randomData
+X 			= randomData()
 linkage		='average'
 affinity	='euclidean'
 n_clusters	= 2
 mdl 		= hierarchical(X, n_clusters=n_clusters, linkage=linkage, affinity=affinity)
-colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']
+
 
 
 while True:
@@ -257,7 +258,8 @@ while True:
 		Z         = mdl.linkageMatrix
 		
 		y, C      = outputLC(X, clust_i)	
-			
+		
+		colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']
 		leaf_colors = {i: colors[lebel] for i, lebel in enumerate(y)}
 
 		for i, cl in enumerate(clust_x):
@@ -266,7 +268,7 @@ while True:
 		plt.show()
 	
 		# using labels y
-		plotDendrogram(Z, labels=y)
+		plotDendrogram(Z)#, labels=y)
 		
 		'''	
 		C = centers(clust_x)
