@@ -207,9 +207,6 @@ def plotDendrogram(Z, **kwargs):
 	for lbl, leaf_idx in zip(x_labels, denZ['leaves']):
 		lbl.set_color(leaf_colors[leaf_idx])
 	
-	#for leaf, leaf_color in zip(plt.gca().get_xticklabels(), denZ["leaves_color_list"]):
-	#	leaf.set_color(leaf_color)
-	
 	plt.title('Dendrogram with Cluster-based Link and Leaf Colors')
 	plt.xlabel('Sample index')
 	plt.ylabel('Normalized Distance')
