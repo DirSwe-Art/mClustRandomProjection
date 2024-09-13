@@ -12,8 +12,8 @@ import math, copy
 from itertools import combinations
 from scipy.cluster.hierarchy import dendrogram
 import pandas as pd
+import matplotlib.pyplot as plt
 
-#import matplotlib.pyplot as plt
 #from sklearn.cluster import KMeans
 #from scipy.linalg import fractional_matrix_power
 
@@ -181,6 +181,10 @@ def linkColorFunction(link_id):
 		if len(merged_clusters) == 1:
 			# If both children belong to the same cluster, color the link accordingly
 			link_colors[i + n_leaves] = colors[next(iter(merged_clusters))]
+		elif len(merged_clusters) > 1 and len(left_clusters)  == 1:
+			link_colors[i + n_leaves] = colors[next(iter(left_clusters))]		
+		elif len(merged_clusters) > 1 and len(right_clusters) == 1:
+			link_colors[i + n_leaves] = colors[next(iter(right_clusters))]
 		else:
 			# Otherwise, color it grey to indicate it merges different clusters
 			link_colors[i + n_leaves] = 'grey'
@@ -188,24 +192,33 @@ def linkColorFunction(link_id):
 	return link_colors.get(link_id, 'grey')
 	
 def plotDendrogram(Z, **kwargs):
+	plt.close('all')
 	plt.figure(figsize=(10,6))
 	
 	Z2           = np.array(copy.deepcopy(Z))
 	Z2[:, 2]     = [ float(i)/max(Z2[:, 2]) for i in Z2[:, 2] ]
 
 	denZ = dendrogram( Z2,
-				   color_threshold       = 0,
-				   above_threshold_color = 'C1',
-				   link_color_func       = linkColorFunction,
+				   #color_threshold       = 0,
+				   #above_threshold_color = 'grey',
+				   #link_color_func       = linkColorFunction,
 				   leaf_rotation         = 90,
 				   leaf_font_size        = 10,
 				   **kwargs
 				   )
-
+	
 	ax = plt.gca()
 	x_labels = ax.get_xmajorticklabels()
 	for lbl, leaf_idx in zip(x_labels, denZ['leaves']):
 		lbl.set_color(leaf_colors[leaf_idx])
+	
+	'''	
+	# when labels are not used
+	ax = plt.gca()
+	x_labels = ax.get_xmajorticklabels()
+	for lbl in x_labels:
+		lbl.set_color(leaf_colors[int(lbl.get_text())])
+	'''
 	
 	plt.title('Dendrogram with Cluster-based Link and Leaf Colors')
 	plt.xlabel('Sample index')
@@ -218,7 +231,6 @@ def plotDendrogram(Z, **kwargs):
 
 # ==================================================================
 import random
-import matplotlib.pyplot as plt
 
 X = []
 M = [[3,3],[9,9]]
@@ -229,6 +241,8 @@ for m in M:
 random.shuffle(X)
 X = np.array(X)
 X = X - np.mean(X)
+
+plt.figure(figsize=(10,6))
 plt.scatter( *zip(*X) )
 plt.show()
 
@@ -249,14 +263,27 @@ while True:
 		Z         = mdl.linkageMatrix
 		
 		y, C      = outputLC(X, clust_i)	
+
+		colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']
 		
+		import matplotlib.colors as mclr
+		plt.close('all')
+		plt.figure(figsize=(10,6))
 		for i, cl in enumerate(clust_x):
 			F1, F2 = zip(*cl)
-			plt.scatter( F1, F2)
+			plt.scatter( F1, F2, [ mclr.to_rgb(colors[i]) for i in y ] )
+		plt.show()
 		
-		colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']
 		leaf_colors = {i: colors[lebel] for i, lebel in enumerate(y)}
 		
+
+		
+		
+
+		
+		
+
+	
 		plotDendrogram(Z, labels=y)
 		
 		'''	
