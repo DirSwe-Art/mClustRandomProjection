@@ -6,7 +6,7 @@
 '''
 This function returns a hierarchical clustering class model that containes model.clutserings, model.linkagematrix, model.labels, and model.centers 
 '''
-'''
+
 import numpy as np
 import math, copy
 from itertools import combinations
@@ -159,27 +159,53 @@ def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 		
 	return model()
 
-def plotDendrogram(linkage_mat, **kwargs):
-	colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6']
-	leaf_colors = [colors[lebel] for lebel in y]
+
+def linkColorFunction(link_id):
+	n_leaves    = len(y)
+	link_colors = {}
 	
+	def get_clusters_from_node(node_id, n_leaves):
+		"""Returns a set of clusters that belong to a given node in the dendrogram."""
+		if node_id < n_leaves:
+			return {y[node_id]}
+		left_child  = int( Z.values[node_id - n_leaves][0] )
+		right_child = int( Z.values[node_id - n_leaves][1] )
+		return get_clusters_from_node(left_child, n_leaves).union( get_clusters_from_node(right_child, n_leaves) )
+	
+	for i in range(len(Z)):
+		left, right     = int(Z.values[i, 0]), int(Z.values[i, 1])
+		left_clusters   = get_clusters_from_node(left, n_leaves)
+		right_clusters  = get_clusters_from_node(right, n_leaves)
+		merged_clusters = left_clusters.union(right_clusters)
+		
+		if len(merged_clusters) == 1:
+			# If both children belong to the same cluster, color the link accordingly
+			link_colors[i + n_leaves] = colors[next(iter(merged_clusters))]
+		else:
+			# Otherwise, color it grey to indicate it merges different clusters
+			link_colors[i + n_leaves] = 'grey'
+
+	return link_colors.get(link_id, 'grey')
+	
+def plotDendrogram(Z, **kwargs):
 	plt.figure(figsize=(10,6))
 	
-	Z            = np.array(copy.deepcopy(linkage_mat))
-	Z[:, 2]      = [ float(i)/max(Z[:, 2]) for i in Z[:, 2] ]
+	Z2           = np.array(copy.deepcopy(Z))
+	Z2[:, 2]     = [ float(i)/max(Z2[:, 2]) for i in Z2[:, 2] ]
 
-	denZ = dendrogram( Z,
+	denZ = dendrogram( Z2,
 				   color_threshold       = 0,
-				   above_threshold_color = 'grey',
-				   #link_color_func       = lambda k: colors[y[k]],
+				   above_threshold_color = 'C1',
+				   link_color_func       = linkColorFunction,
 				   leaf_rotation         = 90,
-				   leaf_font_size        = 8,
+				   leaf_font_size        = 10,
 				   **kwargs
 				   )
-	ax           = plt.gca()
-	x_labels     = ax.get_xmajorticklabels()
-	for lbl, color in zip(x_labels, leaf_colors):
-		lbl.set_color(color)
+
+	ax = plt.gca()
+	x_labels = ax.get_xmajorticklabels()
+	for lbl, leaf_idx in zip(x_labels, denZ['leaves']):
+		lbl.set_color(leaf_colors[leaf_idx])
 	
 	#for leaf, leaf_color in zip(plt.gca().get_xticklabels(), denZ["leaves_color_list"]):
 	#	leaf.set_color(leaf_color)
@@ -190,6 +216,8 @@ def plotDendrogram(linkage_mat, **kwargs):
 	plt.show()
 	
 
+	
+	
 
 # ==================================================================
 import random
@@ -221,6 +249,7 @@ while True:
 		clust_    = [ clust for clust in mdl.clusterings if clust['clusters_k'] == int(clust_k)]
 		clust_x   = clust_[0]['clusters_x']
 		clust_i   = clust_[0]['clusters_i']
+		Z         = mdl.linkageMatrix
 		
 		y, C      = outputLC(X, clust_i)	
 		
@@ -228,19 +257,21 @@ while True:
 			F1, F2 = zip(*cl)
 			plt.scatter( F1, F2)
 		
-		plotDendrogram(mdl.linkageMatrix, labels=y)
+		colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']
+		leaf_colors = {i: colors[lebel] for i, lebel in enumerate(y)}
 		
-			
+		plotDendrogram(Z, labels=y)
+		
+		'''	
 		C = centers(clust_x)
 		clusteredImage = np.array([ C[i] for i in Y ])
 		display_Image(DATA, clusteredImage, imRow, imCol, imDim)
-		
+		'''
 
 	except ValueError:
 		if clust_k == 'q': print("\nProgram is ended"); break
 		print("Invalid number of clusters")
-
-
+'''
 clr = ['g','b']
 plt.scatter( *zip(*X), color= [clr[i] for i in mdl.labels] )
 plt.show()
@@ -252,86 +283,7 @@ print(Z)
 #plt.figure()
 #dn = dendrogram(Z)
 plotDendrogram(Z, labels= mdl.labels)
-
 '''
-
-
-import numpy as np
-import scipy.cluster.hierarchy as sch
-import matplotlib.pyplot as plt
-from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
-
-# Sample data
-np.random.seed(42)
-data = np.random.rand(10, 4)  # 10 samples, 4 features
-
-# Perform hierarchical clustering
-Z = linkage(data, method='ward')
-
-# Define the number of clusters
-num_clusters = 3
-
-# Determine cluster membership for each leaf using fcluster
-cluster_assignments = fcluster(Z, num_clusters, criterion='maxclust')
-
-# Define a color map for clusters
-colors = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6']  # Extend this list if more clusters are needed
-
-# Create a dictionary to map each leaf index to its cluster color
-leaf_colors = {i: colors[cluster - 1] for i, cluster in enumerate(cluster_assignments)}
-
-# Create a color list for links based on the merging clusters
-link_colors = {}
-
-# Function to recursively determine the clusters in a subtree
-def get_clusters_from_node(node_id, n_leaves):
-    """Returns a set of clusters that belong to a given node in the dendrogram."""
-    if node_id < n_leaves:
-        return {cluster_assignments[node_id]}
-    left_child = Z[int(node_id - n_leaves)][0]
-    right_child = Z[int(node_id - n_leaves)][1]
-    return get_clusters_from_node(left_child, n_leaves) | get_clusters_from_node(right_child, n_leaves)
-
-# Populate link colors based on the clusters of their children
-n_leaves = len(cluster_assignments)
-for i in range(len(Z)):
-    left, right = int(Z[i, 0]), int(Z[i, 1])
-    left_clusters = get_clusters_from_node(left, n_leaves)
-    right_clusters = get_clusters_from_node(right, n_leaves)
-    merged_clusters = left_clusters | right_clusters
-    if len(merged_clusters) == 1:
-        # If both children belong to the same cluster, color the link accordingly
-        link_colors[i + n_leaves] = colors[next(iter(merged_clusters)) - 1]
-    else:
-        # Otherwise, color it grey to indicate it merges different clusters
-        link_colors[i + n_leaves] = 'grey'
-
-# Link color function for the dendrogram
-def link_color_func(link_id):
-    return link_colors.get(link_id, 'grey')
-
-# Create the dendrogram plot
-plt.figure(figsize=(10, 7))
-dendro = dendrogram(
-    Z,
-    color_threshold=0,  # Ensure custom coloring applies to all links
-    above_threshold_color='grey',  # Default color for high-level links
-    link_color_func=link_color_func,  # Use our custom link coloring function
-    leaf_rotation=90,
-    leaf_font_size=10,
-)
-
-# Color the leaf labels
-ax = plt.gca()
-x_labels = ax.get_xmajorticklabels()
-for lbl in x_labels:
-    lbl.set_color(leaf_colors[int(lbl.get_text())])
-
-plt.title('Dendrogram with Cluster-Based Link and Leaf Colors')
-plt.xlabel('Sample Index')
-plt.ylabel('Distance')
-plt.show()
-
 
 
 
