@@ -65,7 +65,7 @@ def aggregated(clusterings, k):
 	
 	for i in ids:
 		for j in ids:
-			count  = len([ 1 for Y in clusterings if Y[i]==Y[j] ])
+			count    = len([ 1 for Y in clusterings if Y[i]==Y[j] ])
 			nS[i,j] = count
 	
 	return GaussianMixture(n_components = k).fit_predict(nS).tolsit()
