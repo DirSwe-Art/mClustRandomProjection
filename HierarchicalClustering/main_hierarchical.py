@@ -95,7 +95,7 @@ def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 	X                = copy.deepcopy(DATA)
 	pool             = initialClusters(X)
 	clusterings      = []
-	linkage_matrix   = pd.DataFrame({'cl1_i':[], 'cl2_i':[], 'distance':[], 'new_cl_length':[]})
+	linkage_matrix   = pd.DataFrame({'cl1_i':[], 'cl2_i':[], 'distance':[], 'size':[]})
 	labels           = []
 	centers          = []
 	
@@ -122,7 +122,7 @@ def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 		new_link    = pd.DataFrame({	'cl1_i':         [pool[i1]['cluster_i']], 
 										'cl2_i':         [pool[i2]['cluster_i']], 
 										'distance':      [dis], 
-										'new_cl_length': [len(new_cl['elements_i'])]
+										'size':   [len(new_cl['elements_i'])]
 									}, index=[new_cl_id])
 		linkage_matrix = pd.concat( [linkage_matrix, new_link], ignore_index=False  )
 		
