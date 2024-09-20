@@ -22,16 +22,16 @@ def euc(a,b):
 def man(a,b):
 	return sum([ abs(float(a[i]) - float(b[i])) for i in range(len(a))])
 
-def dist(a,b):
-	if affinity == 'euclidean': return euc(a,b)
-	if affinity == 'manhatten': return man(a,b)
+def dist(a,b, metric='euclidean'):
+	if metric == 'euclidean': return euc(a,b)
+	if metric == 'manhatten': return man(a,b)
 
 def initialClusters(DATA):
 	return [ {'cluster_i':   i,
 			  'elements_x': [x],
 			  'elements_i': [i] } for i, x in enumerate(DATA) ]
 
-def closetClusters(clusters, method, affinity):
+def closetClusters(clusters, method, metric):
 	S           = []
 	comb_ids    = list( combinations(range(len(clusters)),2) )
 	
@@ -39,7 +39,7 @@ def closetClusters(clusters, method, affinity):
 		for i1, i2 in comb_ids:
 			mu1 = [ np.mean(col) for col in zip(*clusters[i1]['elements_x']) ]
 			mu2 = [ np.mean(col) for col in zip(*clusters[i2]['elements_x']) ]
-			S.append([i1, i2, dist(mu1, mu2)])
+			S.append([i1, i2, dist(mu1, mu2, metric)])
 		
 		min_id= np.argmin(np.array(S)[:,2])
 		return S[min_id][0], S[min_id][1], S[min_id][2]
@@ -50,14 +50,14 @@ def closetClusters(clusters, method, affinity):
 			if m == 1 and n == 1:
 				cl1 = clusters[i1]['elements_x'][0]
 				cl2 = clusters[i2]['elements_x'][0]
-				S.append([i1, i2, dist(cl1, cl2)])
+				S.append([i1, i2, dist(cl1, cl2, metric)])
 			else:
 				S2= np.zeros((m,n))
 				for i in range(m):
 					for j in range(n):
 						cl1 = clusters[i1]['elements_x'][i]
 						cl2 = clusters[i2]['elements_x'][j]
-						S2[i][j] = dist(cl1, cl2)
+						S2[i][j] = dist(cl1, cl2, metric)
 				if method == 'single'  : S.append([i1, i2, np.amin(S2)])
 				elif method == 'complete': S.append([i1, i2, np.amax(S2)])
 				elif method == 'average' : S.append([i1, i2, np.mean(S2)])
@@ -91,7 +91,7 @@ def outputLC(X, clusters_i):
 		centers[k]     = [ np.mean(col) for col in zip(*X[cl_ids]) ]
 	return np.array(labels), centers
 
-def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
+def hierarchical(DATA, n_clusters=2, linkage='average', metric='euclidean'):
 	X                = copy.deepcopy(DATA)
 	pool             = initialClusters(X)
 	clusterings      = []
@@ -112,7 +112,7 @@ def hierarchical(DATA, n_clusters=2, linkage='average', affinity='euclidean'):
 		print(len(clusterings), len(pool), end=' ', flush=True)	
 		
 		# identify the closest two clusters in the pool
-		i1, i2, dis = closetClusters(pool, linkage, affinity)
+		i1, i2, dis = closetClusters(pool, linkage, metric)
 		
 		# merge them
 		new_cl_id  += 1
@@ -163,7 +163,7 @@ def linkColorFunction(link_id):
 	def get_clusters_from_node(node_id, n_leaves):
 		"""Returns a set of clusters that belong to a given node in the dendrogram."""
 		if node_id < n_leaves:
-			return {y[node_id]}
+			return {y[int(node_id)]}
 		left_child  = int( Z.values[node_id - n_leaves][0] )
 		right_child = int( Z.values[node_id - n_leaves][1] )
 		return get_clusters_from_node(left_child, n_leaves).union( get_clusters_from_node(right_child, n_leaves) )
@@ -282,9 +282,9 @@ def imageDisplay(X, XX, imR, imC, imD, text=''):
 X,imR,imC,imD  	= imageData('img2.bmp')
 
 linkage			= 'average'
-affinity		= 'euclidean'
+metric			= 'euclidean'
 k				= 2
-mdl 			= hierarchical(X, n_clusters=k, linkage=linkage, affinity=affinity)
+mdl 			= hierarchical(X, n_clusters=k, linkage=linkage, metric=metric)
 
 
 
