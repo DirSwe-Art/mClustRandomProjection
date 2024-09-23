@@ -230,8 +230,8 @@ def randProjClusterings(X, n_clusters, n_views, n_projections, dis_metric='dist_
 	Y      = aggMdl.fit_predict(A); print('Clusterings are groupped with an agglomeartive model.')
 	plotDendrogram(aggMdl, Y)
 	'''
-	_ , Y = dbscan(A, eps=2,min_samples=2, metric="precomputed")
-	print('max_A:',np.max(A), 'min_A:', np.min(A),'\nY')
+	_ , Y = dbscan(A, eps=1,min_samples=2, metric="precomputed")
+	print('max_A:',np.max(A), 'min_A:', np.min(A),'\nY:', Y)
 	
 	
 	
