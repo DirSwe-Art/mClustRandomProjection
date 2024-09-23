@@ -5,7 +5,7 @@
 
 from sklearn import random_projection
 from sklearn.mixture import GaussianMixture
-from sklearn.cluster import AgglomerativeClustering
+from sklearn.cluster import AgglomerativeClustering, dbscan
 from sklearn.metrics.pairwise import pairwise_distances
 from collections import Counter
 from itertools import combinations
@@ -27,16 +27,16 @@ def dist_clusterings(Ya, Yb):
 	
 	return d
 	
-def approximate_dist_clusterings(Ya, Yb, th=100):
+def approximate_dist_clusterings(Ya, Yb, th=300):
 	# Returns an approximate distance between two clustering solutions if the data size is larger than 100 points
 	if len(Ya) < th: return dist_clusterings(Ya, Yb)
 	
 	ds_rand_Ys    = []
-	for i in range(5):
+	for i in range(10):
 		rand_ids = np.random.choice(range(len(Ya)), th, replace=False) # replace=False a value a is selected once.
 		ds_rand_Ys.append( dist_clusterings([Ya[id] for id in rand_ids], [Yb[id] for id in rand_ids]) )
-	
-	return np.mean(ds_rand_Ys)
+	output_ = np.mean(ds_rand_Ys)
+	return output_
 
 def affinity(data, affinity_metric='dist_clustering'):
 	if   affinity_metric == 'dist_clustering':              return pairwise_distances(data, metric=dist_clusterings)
@@ -229,7 +229,7 @@ def randProjClusterings(X, n_clusters, n_views, n_projections, dis_metric='dist_
 	Y      = aggMdl.fit_predict(A); print('Clusterings are groupped with an agglomeartive model.')
 	plotDendrogram(aggMdl, Y)
 	
-	
+	'''
 	# we can call a function to filter the clusterings from the linkage matrix
 	G_ids = selectGroupsOfClusterings(Y, P); print('Clusterings are filtered.')
 	Z      = []
@@ -255,7 +255,7 @@ def randProjClusterings(X, n_clusters, n_views, n_projections, dis_metric='dist_
 			Z.append(ensembeled(C))
 		elif representation_method == 'aggregated': 
 			Z.append(aggregated(C))
-	'''
+	
 	print('Groups of similar clusterings are aggregated and represented.')
 	return Z
 	
@@ -280,7 +280,7 @@ def generate_data(type='432random'):			# 4 features, 2 clusters, 2 views
 		return DATA, k, n_views, datatype
 		
 	elif type == 'image':
-		DATA, imRow, imCol, imDim = dataimg('source_images/image.bmp')
+		DATA, imRow, imCol, imDim = dataimg('source_images/img3.bmp')
 		k = 2
 		n_views = 4
 		datatype = 'image'
@@ -354,11 +354,11 @@ def random_clusters(DATA, colors, t):
 def image_clusters(DATA, colors, t):
 	IMG_DATA = copy.deepcopy(DATA).reshape(imRow, imCol, imDim)
 	
-	f, (ax1, ax3) = plt.subplots(3,1, sharex=False, sharey=False, figsize=(6, 11))
+	f, (ax1, ax3) = plt.subplots(2,1, sharex=False, sharey=False, figsize=(6, 11))
 	ax1.imshow(IMG_DATA)
 	ax1.set_title('Source image')								# view the original space
 	
-	ax3.imshow(np.array(colors).reshape(imRow, imCol, imDim)) 	# view the segmented space (center colors)
+	ax3.imshow(np.array(colors, dtype='uint8').reshape(imRow, imCol, imDim)) 	# view the segmented space (center colors)
 	ax3.set_title('Clustering Solution')
 	
 	plt.savefig(r'results/image_clustering_n_'+str(t+1)+'.jpg')
@@ -368,17 +368,19 @@ def image_clusters(DATA, colors, t):
 #sys.path.append("MultiViewClusteringViaOrthogonalization")
 #from main_multiview.py import generate_data, data223, data432, dataimg, plot_clusters, random_clusters, image_clusters
 
-#DATA, k, n_views, datatype, imRow, imCol, imDim = generate_data(type= 'image') 				# 'image'
-DATA, k, n_v, datatype  = generate_data(type= '223random') 									# '432random', '223random'
-coutput_clusterings = randProjClusterings(DATA, n_clusters=k, n_views=5, n_projections=5, dis_metric='dist_clustering', representation_method='aggregated' )
+DATA, k, n_views, datatype, imRow, imCol, imDim = generate_data(type= 'image') 				# 'image'
+#DATA, k, n_v, datatype  = generate_data(type= '223random') 									# '432random', '223random'
+coutput_clusterings = randProjClusterings(DATA, n_clusters=k, n_views=8, n_projections=60, dis_metric='approximate_dist_clusterings', representation_method='ensembeled' ) # ensembeled, aggregated
 
 
-for t, clust in enumerate(coutput_clusterings):
+for t, y in enumerate(coutput_clusterings):
 	if datatype == 'image':
-		clr = np.array([ [np.mean(col) for col in zip(np.array(DATA)[np.array(DATA)==cl])] for cl in clust  ], dtype='uint8') 	# For coloring pixels of each cluster by the mean color (centroid) 
+		clr = [ [0, 0, 0], [255, 255, 255] ] 	# For coloring pixels of each cluster by black and white 
+		#clr = [ [np.mean(col) for col in zip(*DATA[y==cl])] for cl in set(y) ] 	# For coloring pixels of each cluster by the mean color (centroid) 
 	else:
 		clr = ['green','yellow','black','blue']				# For coloring data points of each cluster by a given color
-	plot_clusters( DATA, [ clr[i] for i in clust ], t )				# Coloring original (DATA) and transformed (X) based on X clustering
+	
+	plot_clusters( DATA, [ clr[i] for i in y ], t )				# Coloring original (DATA) and transformed (X) based on X clustering
 
 
 '''
