@@ -224,13 +224,14 @@ def randProjClusterings(X, n_clusters, n_views, n_projections, dis_metric='dist_
 		P.append(Sp)
 	
 	P      = np.array(P); print(n_projections, 'projections and clusterings are generated.')
-	A      = affinity(P, affinity_metric=dis_metric); print('Clusterings dissimilarity matrix is generated.'); print('max_A:',np.max(A), 'min_A:', np.min(A))
+	A      = affinity(P, affinity_metric=dis_metric); print('Clusterings dissimilarity matrix is generated.')
 	'''
 	aggMdl = AgglomerativeClustering( n_clusters = n_views, linkage="average", metric="precomputed", compute_distances=True ).fit(A)
 	Y      = aggMdl.fit_predict(A); print('Clusterings are groupped with an agglomeartive model.')
 	plotDendrogram(aggMdl, Y)
 	'''
-	_ , Y = dbscan(A, eps=1,min_samples=10, metric="precomputed")
+	_ , Y = dbscan(A, eps=2,min_samples=2, metric="precomputed")
+	print('max_A:',np.max(A), 'min_A:', np.min(A),'\nY')
 	
 	
 	
