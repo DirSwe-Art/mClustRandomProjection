@@ -39,7 +39,7 @@ def dist_clusterings(Ya, Yb):
 			d += 1
 	
 	return d
-'''
+
 # enhanced function
 def dist_clusterings(Ya, Yb):
     # Ensure inputs are numpy arrays
@@ -47,16 +47,39 @@ def dist_clusterings(Ya, Yb):
     Yb = np.array(Yb)
     
     # Create boolean masks for pairwise equality comparisons
-    Ya_equal = np.equal(Ya, Ya)  # Pairwise comparison of Ya
-    Yb_equal = np.equal(Yb, Yb)  # Pairwise comparison of Yb
+    Ya_equal = np.equal.outer(Ya, Ya)  # Pairwise comparison of Ya # convert to lil
+    Yb_equal = np.equal.outer(Yb, Yb)  # Pairwise comparison of Yb # convert to lil
     
     # XOR operation on the masks: True where only one is equal and the other isn't
-    mismatch = np.triu(Ya_equal ^ Yb_equal, k=1)  # Only upper triangle to avoid double-counting
+    mismatch = np.triu(Ya_equal ^ Yb_equal, k=1)  # Only upper triangle to avoid double-counting # process it with sparse matrix
     
     # Count the number of mismatches
     d = np.sum(mismatch)
     
     return d
+'''
+
+def dist_clusterings(Ya, Yb):
+    # Ensure the inputs are NumPy arrays for efficient operations
+    Ya = np.array(Ya)
+    Yb = np.array(Yb)
+    
+    # Total number of elements
+    n = len(Ya)
+    
+    # Initialize distance counter
+    d = 0
+
+    # Loop over combinations of pairs (i, j) where i < j
+    for i in range(n):
+        for j in range(i+1, n):
+            # XOR condition to check if the clustering mismatch happens
+            if (Ya[i] == Ya[j]) ^ (Yb[i] == Yb[j]):
+                d += 1
+
+    return d
+
+
 	
 def approximate_dist_clusterings(Ya, Yb, th=300):
 	# Returns an approximate distance between two clustering solutions if the data size is larger than 100 points
@@ -66,8 +89,7 @@ def approximate_dist_clusterings(Ya, Yb, th=300):
 	for i in range(10):
 		rand_ids = np.random.choice(range(len(Ya)), th, replace=False) # replace=False a value a is selected once.
 		ds_rand_Ys.append( dist_clusterings([Ya[id] for id in rand_ids], [Yb[id] for id in rand_ids]) )
-	output_ = np.mean(ds_rand_Ys)
-	return output_
+	return np.mean(ds_rand_Ys)
 
 def affinity(data, affinity_metric='dist_clusterings'):
 	if   affinity_metric == 'dist_clusterings':              return pairwise_distances(data, metric=dist_clusterings)
