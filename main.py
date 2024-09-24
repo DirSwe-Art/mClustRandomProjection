@@ -73,6 +73,7 @@ def ensembeled(clusterings):
 	return labels_majority
 
 '''
+# original function
 def aggregated(clusterings):
 	# returns a clustering where the label of each data point is estimated from NxN matrix of pairwisw number of clusterings two points occured in the same cluster. #
 	
@@ -85,10 +86,13 @@ def aggregated(clusterings):
 			nS[i,j] = count
 	
 	return GaussianMixture(n_components = len(set(clusterings[0]))).fit_predict(nS).tolist()
-'''
 
 
+# better function
 def aggregated(clusterings):
+	# returns a clustering where the label of each data point is estimated from NxN matrix that containes 
+	# the number of clusterings of each pairwise points where they belong to the same cluster. #
+
     ids = list(range(len(clusterings[0])))
     comb_ids = combinations(range(len(clusterings[0])), 2)
 
@@ -102,7 +106,33 @@ def aggregated(clusterings):
 
     nS = nS.tocsr()
     return GaussianMixture(n_components=len(set(clusterings[0]))).fit_predict(nS.toarray()).tolist()
+'''
 
+
+import dask
+import dask.array as da
+
+def aggregated(clusterings, chunk_size=100000):
+    ids = list(range(len(clusterings[0])))
+    comb_ids = combinations(range(len(clusterings[0])), 2)
+    
+    # Convert to Dask delayed objects
+    comb_ids_chunked = dask.delayed(list)(comb_ids)  # Lazy eval
+    chunks = dask.bag.from_delayed(comb_ids_chunked).map(lambda x: x[:chunk_size])
+
+    nS = lil_matrix((len(ids), len(ids)))
+
+    def process_chunk(chunk):
+        for i, j in chunk:
+            count = len([1 for Y in clusterings if Y[i] == Y[j]])
+            if count > 0:
+                nS[i, j] = count
+                nS[j, i] = count
+
+    # Apply processing on each chunk in parallel
+    dask.compute(*[dask.delayed(process_chunk)(chunk) for chunk in chunks])
+
+    return GaussianMixture(n_components=len(set(clusterings[0]))).fit_predict(nS.toarray()).tolist()
 
 
 
