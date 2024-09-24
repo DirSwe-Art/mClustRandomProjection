@@ -5,7 +5,7 @@
 
 from sklearn import random_projection
 from sklearn.mixture import GaussianMixture
-from sklearn.cluster import AgglomerativeClustering, dbscan
+from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics.pairwise import pairwise_distances
 from collections import Counter
 from itertools import combinations
@@ -14,6 +14,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random, copy, scipy, sys
 from scipy.sparse import lil_matrix
+import dask
+import dask.array as da
 
 # ========================================================================
 def constructProjectionMatrix(d):
@@ -109,10 +111,10 @@ def aggregated(clusterings):
 '''
 
 
-import dask
-import dask.array as da
+
 
 def aggregated(clusterings, chunk_size=100000):
+	# print('memory efficient processing')
     ids = list(range(len(clusterings[0])))
     comb_ids = combinations(range(len(clusterings[0])), 2)
     
