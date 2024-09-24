@@ -29,7 +29,7 @@ def dist_clusterings(Ya, Yb):
 	# Returns the distance between two clustering solutions
 	d          = 0
 	
-	comb_ids   = list( combinations(range(len(Ya)), 2) )
+	comb_ids   = combinations(range(len(Ya)), 2)
 	for i1, i2 in comb_ids:
 		if (Ya[i1]==Ya[i2] and Yb[i1]!=Yb[i2]) or (Yb[i1]==Yb[i2] and Ya[i1]!=Ya[i2]):
 			d += 1
@@ -90,16 +90,17 @@ def aggregated(clusterings):
 
 def aggregated(clusterings):
     ids = list(range(len(clusterings[0])))
-    nS = lil_matrix((len(ids), len(ids)))  # Use a sparse matrix
+    comb_ids = combinations(range(len(clusterings[0])), 2)
 
-    for i in ids:
-        for j in ids:
-            if i != j:  # Skip diagonal elements if they don't need to be filled
-                count = len([1 for Y in clusterings if Y[i] == Y[j]])
-                if count > 0:  # Only store non-zero values
-                    nS[i, j] = count
-    
-    nS = nS.tocsr()  # Convert to Compressed Sparse Row (CSR) format for efficient operations
+    nS = lil_matrix((len(ids), len(ids)))
+
+    for i, j in comb_ids:  # Iterate over combinations lazily
+        count = len([1 for Y in clusterings if Y[i] == Y[j]])
+        if count > 0:  # Store non-zero values only
+            nS[i, j] = count
+            nS[j, i] = count  # Keep symmetry if needed
+
+    nS = nS.tocsr()
     return GaussianMixture(n_components=len(set(clusterings[0]))).fit_predict(nS.toarray()).tolist()
 
 
