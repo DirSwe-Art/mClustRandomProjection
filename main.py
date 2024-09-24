@@ -27,6 +27,8 @@ def constructProjectionMatrix(d):
 	
 	return M
 	
+'''
+# original function
 def dist_clusterings(Ya, Yb):
 	# Returns the distance between two clustering solutions
 	d          = 0
@@ -37,6 +39,24 @@ def dist_clusterings(Ya, Yb):
 			d += 1
 	
 	return d
+'''
+# enhanced function
+def dist_clusterings(Ya, Yb):
+    # Ensure inputs are numpy arrays
+    Ya = np.array(Ya)
+    Yb = np.array(Yb)
+    
+    # Create boolean masks for pairwise equality comparisons
+    Ya_equal = np.equal.outer(Ya, Ya)  # Pairwise comparison of Ya
+    Yb_equal = np.equal.outer(Yb, Yb)  # Pairwise comparison of Yb
+    
+    # XOR operation on the masks: True where only one is equal and the other isn't
+    mismatch = np.triu(Ya_equal ^ Yb_equal, k=1)  # Only upper triangle to avoid double-counting
+    
+    # Count the number of mismatches
+    d = np.sum(mismatch)
+    
+    return d
 	
 def approximate_dist_clusterings(Ya, Yb, th=300):
 	# Returns an approximate distance between two clustering solutions if the data size is larger than 100 points
@@ -50,8 +70,8 @@ def approximate_dist_clusterings(Ya, Yb, th=300):
 	return output_
 
 def affinity(data, affinity_metric='dist_clustering'):
-	if   affinity_metric == 'dist_clusterings':              return pairwise_distances(data, metric=dist_clusterings)
-	elif affinity_metric == 'approximate_dist_clusterings': return pairwise_distances(data, metric=approximate_dist_clusterings)
+	if   affinity_metric == 'dist_clusterings':              return pairwise_distances(data, metric=dist_clusterings, n_jobs=-1)
+	elif affinity_metric == 'approximate_dist_clusterings': return pairwise_distances(data, metric=approximate_dist_clusterings, n_jobs=-1)
 	# elif affinity_metric == 'hamming_dist': return ...  we can add more metrics #
 
 def central(clusterings):
