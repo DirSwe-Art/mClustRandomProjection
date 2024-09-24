@@ -13,9 +13,18 @@ from scipy.cluster.hierarchy import dendrogram
 import numpy as np
 import matplotlib.pyplot as plt
 import random, copy, scipy, sys
+from scipy.sparse import lil_matrix
 
 # ========================================================================
-
+def constructProjectionMatrix(d):
+	# Returns a random projection transformation matrix spanned by a linearly independent (orthogonal) unit vectors.
+	
+	A    = np.random.normal(0, 1/d, size=(d,d)) # A random d x d matrix with entries from N(0, 1/d)
+	Q, R = np.linalg.qr(A) 					   	# QR decomposition to A. (Q: orthogonal matrix, R: upper triangular matrix)
+	M    = Q @ Q.T				             	# Prjection matrix (projects data onto a space spanned by the unit vectors in Q).
+	
+	return M
+	
 def dist_clusterings(Ya, Yb):
 	# Returns the distance between two clustering solutions
 	d          = 0
@@ -39,9 +48,9 @@ def approximate_dist_clusterings(Ya, Yb, th=300):
 	return output_
 
 def affinity(data, affinity_metric='dist_clustering'):
-	if   affinity_metric == 'dist_clustering':              return pairwise_distances(data, metric=dist_clusterings)
+	if   affinity_metric == 'dist_clusterings':              return pairwise_distances(data, metric=dist_clusterings)
 	elif affinity_metric == 'approximate_dist_clusterings': return pairwise_distances(data, metric=approximate_dist_clusterings)
-	# elif affinity_metric == 'hamming_dist': return ...  we can add more metrics
+	# elif affinity_metric == 'hamming_dist': return ...  we can add more metrics #
 
 def central(clusterings):
 	# returns a clustering from the pool that has the minimum sum of distnaces with all other clutserings. #
@@ -63,6 +72,7 @@ def ensembeled(clusterings):
 	
 	return labels_majority
 
+'''
 def aggregated(clusterings):
 	# returns a clustering where the label of each data point is estimated from NxN matrix of pairwisw number of clusterings two points occured in the same cluster. #
 	
@@ -75,8 +85,29 @@ def aggregated(clusterings):
 			nS[i,j] = count
 	
 	return GaussianMixture(n_components = len(set(clusterings[0]))).fit_predict(nS).tolist()
+'''
+
+
+def aggregated(clusterings):
+    ids = list(range(len(clusterings[0])))
+    nS = lil_matrix((len(ids), len(ids)))  # Use a sparse matrix
+
+    for i in ids:
+        for j in ids:
+            if i != j:  # Skip diagonal elements if they don't need to be filled
+                count = len([1 for Y in clusterings if Y[i] == Y[j]])
+                if count > 0:  # Only store non-zero values
+                    nS[i, j] = count
+    
+    nS = nS.tocsr()  # Convert to Compressed Sparse Row (CSR) format for efficient operations
+    return GaussianMixture(n_components=len(set(clusterings[0]))).fit_predict(nS.toarray()).tolist()
+
+
+
 
 def selectGroupsOfClusterings(Y, clusterings):
+	# Returns the indices of clusterings that alternates groups with large sizes and large dissimilarities
+	
 	cluster_labels 	     = Y
 	#num_clusters         = len(np.unique(Y)) # num_clusters = n_views+3
 	
@@ -133,6 +164,7 @@ def selectGroupsOfClusterings(Y, clusterings):
 	return selected_clusters
 
 def plotDendrogram(model, Y):
+	# plots the dendrogram with various options concerning coloring labels and links. #
 	def linkColorFunction(link_id):
 		colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']
 		n_leaves    = len(Y)
@@ -219,44 +251,27 @@ def randProjClusterings(X, n_clusters, n_views, n_projections, dis_metric='dist_
 	P = []
 	for p in range(n_projections):
 		XX = copy.deepcopy(X)
-		Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(XX)
+		M  = constructProjectionMatrix(XX.shape[1])
+		Xp = XX @ M
+		#Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(XX)
 		Sp = GaussianMixture(n_components=n_clusters).fit_predict(Xp)
 		P.append(Sp)
 	
-	P      = np.array(P); print(n_projections, 'projections and clusterings are generated.')
-	A      = affinity(P, affinity_metric=dis_metric); print('Clusterings dissimilarity matrix is generated.')
+	P      = np.array(P)
+	print('*** %d projections and clusterings are generated. ***'%(n_projections))
 	
-	aggMdl = AgglomerativeClustering( n_clusters = n_views, linkage="average", metric="precomputed", compute_distances=True ).fit(A)
-	Y      = aggMdl.fit_predict(A); print('Clusterings are groupped with an agglomeartive model.')
-	plotDendrogram(aggMdl, Y)
+	A      = affinity(P, affinity_metric=dis_metric)
+	print('*** Clusterings dissimilarity matrix is generated. ***')
 	
-	'''
-	# using dbscan algorithm
-	_ , Y = dbscan(A, eps=1,min_samples=2, metric="precomputed")
-	print('max_A:',np.max(A), 'min_A:', np.min(A),'\nY:', Y)
-	'''
-	
-	
-	'''
-	# we can call a function to filter the clusterings from the linkage matrix
-	G_ids = selectGroupsOfClusterings(Y, P); print('Clusterings are filtered.')
-	Z      = []
-	for i in G_ids:
-		C  = P[np.where(Y==i)]
-		
-		if representation_method == 'central': 
-			Z.append(central(C))
-		elif representation_method == 'ensembeled': 
-			Z.append(ensembeled(C))
-		elif representation_method == 'aggregated': 
-			Z.append(aggregated(C))
-	'''	
+	Y	   = AgglomerativeClustering( n_clusters=n_views, linkage="average", metric="precomputed", compute_distances=True ).fit_predict(A)
+	print('*** Clusterings are groupped with an agglomeartive model. ***') 
+
 	Z      = []
 	for i in set(Y):
-		C  = P[np.where(Y==i)]
+		C  = P[Y==i]
 		
 		if len(C) == 1:
-			Z.append(C[0])
+			Z.append(C[0].tolist())
 		elif representation_method == 'central': 
 			Z.append(central(C))
 		elif representation_method == 'ensembeled': 
@@ -264,8 +279,8 @@ def randProjClusterings(X, n_clusters, n_views, n_projections, dis_metric='dist_
 		elif representation_method == 'aggregated': 
 			Z.append(aggregated(C))
 	
-	print('Groups of similar clusterings are aggregated and represented.')
-	return Z
+	print('*** Groups of similar clusterings are aggregated and represented. ***')
+	return Z, plotDendrogram(AgglomerativeClustering( n_clusters=n_views, linkage="average", metric="precomputed", compute_distances=True ).fit(A), Y)
 	
 # ====================================================================== #
 
@@ -353,9 +368,9 @@ def random_clusters(DATA, colors, t):
 		ax2a.set_ylabel('Feature 4')
 	
 	if len(DATA[0]) > 2:
-		plt.savefig(r'results/random_3_clustering_n_'+str(t+1)+'.jpg')
+		plt.savefig(r'results/random_3_clustering_n_'+str(t)+'.jpg')
 	else:
-		plt.savefig(r'results/random_2_clustering_n_'+str(t+1)+'.jpg')
+		plt.savefig(r'results/random_2_clustering_n_'+str(t)+'.jpg')
 	
 	plt.close('all')	
 
@@ -369,7 +384,7 @@ def image_clusters(DATA, colors, t):
 	ax3.imshow(np.array(colors, dtype='uint8').reshape(imRow, imCol, imDim)) 	# view the segmented space (center colors)
 	ax3.set_title('Clustering Solution')
 	
-	plt.savefig(r'results/image_clustering_n_'+str(t+1)+'.jpg')
+	plt.savefig(r'results/image_clustering_n_'+str(t)+'.jpg')
 	plt.close('all')	
 	
 
@@ -377,8 +392,8 @@ def image_clusters(DATA, colors, t):
 #from main_multiview.py import generate_data, data223, data432, dataimg, plot_clusters, random_clusters, image_clusters
 
 DATA, k, n_views, datatype, imRow, imCol, imDim = generate_data(type= 'image') 				# 'image'
-#DATA, k, n_v, datatype  = generate_data(type= '223random') 									# '432random', '223random'
-coutput_clusterings = randProjClusterings(DATA, n_clusters=k, n_views=8, n_projections=60, dis_metric='approximate_dist_clusterings', representation_method='ensembeled' ) # ensembeled, aggregated
+#DATA, k, n_v, datatype  = generate_data(type= '432random') 									# '432random', '223random'
+coutput_clusterings, _ = randProjClusterings(DATA, n_clusters=k, n_views=8, n_projections=20, dis_metric='dist_clusterings', representation_method='aggregated' ) # centeral, ensembeled, aggregated
 
 
 for t, y in enumerate(coutput_clusterings):
@@ -390,66 +405,3 @@ for t, y in enumerate(coutput_clusterings):
 	
 	plot_clusters( DATA, [ clr[i] for i in y ], t )				# Coloring original (DATA) and transformed (X) based on X clustering
 
-
-'''
-
-def filterClusterings(model, clusterings, n_views):  
-	labels    = model.labels_
-	n_leaves  = len(labels)
-	distGrps  = [ [] for i in set(labels) ]
-
-	def get_clusters_from_node(node_id, n_leaves):
-		"""Returns a set of clusters that belong to a given node in the dendrogram."""
-		if node_id < n_leaves:
-			return {labels[int(node_id)]}
-		left_child  = model.chlidren_[int(node_id - n_leaves)][0]
-		right_child = model.chlidren_[int(node_id - n_leaves)][1]
-		return get_clusters_from_node(left_child, n_leaves).union( get_clusters_from_node(right_child, n_leaves) )
-
-	for i in range(len(model.children_)):
-		left, right     = model.chlidren_[i, 0], model.chlidren_[i, 1]
-		left_clusters   = get_clusters_from_node(left, n_leaves)
-		right_clusters  = get_clusters_from_node(right, n_leaves)
-		merged_clusters = left_clusters.union(right_clusters)
-		
-		if len(merged_clusters) == 1:
-			# If both children belong to the same cluster, add its disance to dist 
-			distGrps[next(iter(merged_clusters))].append(model.distances_[i])
-
-	mxDistGrps = [ max(disGrp) for disGrp in distGrps ]
-	mxSizeGrps = [ len( labels[np.where(labels==y)] ) for y in set(labels)]
-
-	disGrpsSrt = np.argsort(mxDistGrps)
-	sizGrpsSrt = np.argsort(mxSizeGrps)
-	
-
-	
-	
-	
-	
-	
-	
-	counts    = np.zeros(model.children_.shape[0])
-	n_samples = len(model.labels_)
-    for i, merge in enumerate(model.children_):
-        current_count = 0
-        for child_idx in merge:
-            if child_idx < n_samples:
-                current_count += 1  # leaf node
-            else:
-                current_count += counts[child_idx - n_samples]
-        counts[i] = current_count
-	
-    linkage_matrix = np.column_stack([model.children_, model.distances_, counts]).astype(float)
-
-	for i, idx in enumerate(range(len(clusterings[0]))):
-		idL = np.where( (linkage_matrix[:,0] == idx) | (linkage_matrix[:,1] == idx))
-		idL = idx[0][0]							# leave's index in the linkage_matrix
-		l = labels[i]							# label of the leave
-		d = linkage_matrix[idL][2]				# distance of the leave
-		dist[l].append(d)						# append it to the corresponding distance
-	dist = [ max(cl) for cl in dist ]			# maximum distance in each cluster
-	
-	dendG     = dendrogram(linkage_matrix, labels=model.labels_)
-	
-'''
