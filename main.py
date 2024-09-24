@@ -47,8 +47,8 @@ def dist_clusterings(Ya, Yb):
     Yb = np.array(Yb)
     
     # Create boolean masks for pairwise equality comparisons
-    Ya_equal = np.equal.outer(Ya, Ya)  # Pairwise comparison of Ya
-    Yb_equal = np.equal.outer(Yb, Yb)  # Pairwise comparison of Yb
+    Ya_equal = np.equal(Ya, Ya)  # Pairwise comparison of Ya
+    Yb_equal = np.equal(Yb, Yb)  # Pairwise comparison of Yb
     
     # XOR operation on the masks: True where only one is equal and the other isn't
     mismatch = np.triu(Ya_equal ^ Yb_equal, k=1)  # Only upper triangle to avoid double-counting
@@ -69,9 +69,9 @@ def approximate_dist_clusterings(Ya, Yb, th=300):
 	output_ = np.mean(ds_rand_Ys)
 	return output_
 
-def affinity(data, affinity_metric='dist_clustering'):
-	if   affinity_metric == 'dist_clusterings':              return pairwise_distances(data, metric=dist_clusterings, n_jobs=-1)
-	elif affinity_metric == 'approximate_dist_clusterings': return pairwise_distances(data, metric=approximate_dist_clusterings, n_jobs=-1)
+def affinity(data, affinity_metric='dist_clusterings'):
+	if   affinity_metric == 'dist_clusterings':              return pairwise_distances(data, metric=dist_clusterings)
+	elif affinity_metric == 'approximate_dist_clusterings': return pairwise_distances(data, metric=approximate_dist_clusterings)
 	# elif affinity_metric == 'hamming_dist': return ...  we can add more metrics #
 
 def central(clusterings):
@@ -300,7 +300,7 @@ def plotDendrogram(model, Y):
 	plt.savefig(r'results/dendrogram_'+str(datatype)+str(k)+'.jpg')
 	plt.show()
 	
-def randProjClusterings(X, n_clusters, n_views, n_projections, dis_metric='dist_clustering', representation_method='aggregated' ):
+def randProjClusterings(X, n_clusters, n_views, n_projections, dis_metric='dist_clusterings', representation_method='aggregated' ):
 	P = []
 	for p in range(n_projections):
 		XX = copy.deepcopy(X)
