@@ -26,7 +26,27 @@ def dist_clusterings(Ya, Yb):
 			d += 1
 	
 	return d
-	
+
+'''
+# enhanced function
+def dist_clusterings(Ya, Yb):
+    # Ensure inputs are numpy arrays
+    Ya = np.array(Ya)
+    Yb = np.array(Yb)
+    
+    # Create boolean masks for pairwise equality comparisons
+    Ya_equal = np.equal.outer(Ya, Ya)  # Pairwise comparison of Ya
+    Yb_equal = np.equal.outer(Yb, Yb)  # Pairwise comparison of Yb
+    
+    # XOR operation on the masks: True where only one is equal and the other isn't
+    mismatch = np.triu(Ya_equal ^ Yb_equal, k=1)  # Only upper triangle to avoid double-counting
+    
+    # Count the number of mismatches
+    d = np.sum(mismatch)
+    
+    return d
+'''
+
 def approximate_dist_clusterings(Ya, Yb, th=300):
 	# Returns an approximate distance between two clustering solutions if the data size is larger than 100 points
 	if len(Ya) < th: return dist_clusterings(Ya, Yb)
@@ -75,6 +95,32 @@ def aggregated(clusterings):
 			nS[i,j] = count
 	
 	return GaussianMixture(n_components = len(set(clusterings[0]))).fit_predict(nS).tolist()
+
+'''
+# using dask
+def aggregated(clusterings, chunk_size=100000):
+	# print('memory efficient processing')
+    ids = list(range(len(clusterings[0])))
+    comb_ids = combinations(range(len(clusterings[0])), 2)
+    
+    # Convert to Dask delayed objects
+    comb_ids_chunked = dask.delayed(list)(comb_ids)  # Lazy eval
+    chunks = dask.bag.from_delayed(comb_ids_chunked).map(lambda x: x[:chunk_size])
+
+    nS = lil_matrix((len(ids), len(ids)))
+
+    def process_chunk(chunk):
+        for i, j in chunk:
+            count = len([1 for Y in clusterings if Y[i] == Y[j]])
+            if count > 0:
+                nS[i, j] = count
+                nS[j, i] = count
+
+    # Apply processing on each chunk in parallel
+    dask.compute(*[dask.delayed(process_chunk)(chunk) for chunk in chunks])
+
+    return GaussianMixture(n_components=len(set(clusterings[0]))).fit_predict(nS.toarray()).tolist()
+'''
 
 def selectGroupsOfClusterings(Y, clusterings):
 	cluster_labels 	     = Y
@@ -269,7 +315,7 @@ def randProjClusterings(X, n_clusters, n_views, n_projections, dis_metric='dist_
 	
 # ====================================================================== #
 
-def generate_data(type='432random'):			# 4 features, 2 clusters, 2 views	
+def generate_data(type='432random'):	
 	import os
 	if not os.path.exists('results'): os.makedirs('results')
 	
@@ -370,8 +416,9 @@ def image_clusters(DATA, colors, t):
 	ax3.set_title('Clustering Solution')
 	
 	plt.savefig(r'results/image_clustering_n_'+str(t+1)+'.jpg')
-	plt.close('all')	
-	
+	plt.close('all')
+
+# ====================================================================== #
 
 #sys.path.append("MultiViewClusteringViaOrthogonalization")
 #from main_multiview.py import generate_data, data223, data432, dataimg, plot_clusters, random_clusters, image_clusters
