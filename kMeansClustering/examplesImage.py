@@ -29,7 +29,7 @@ def prepare_data(image):
 	
 	return X, imRow, imCol, imDim
 
-def display_image(X, XX, imRow, imCol, imDim, text=None):
+def display_image(X, XX, imRow, imCol, imDim, text=None, resultsPath=resultsPath):
 	X  = np.array(X, dtype='uint8')
 	XX = np.array(XX, dtype='uint8')
 	IMG_X  = X.reshape(imRow, imCol, imDim)
@@ -63,7 +63,7 @@ X,r,c,d 		= prepare_data(image)
 C, L, Y 		= kmeans(X, k, eps)
 XX      		= np.array( [C[i] for i in Y] ) # replace each data point with its cluster's center (color)
 
-display_image(X, XX, r, c, d, text='mine_')
+display_image(X, XX, r, c, d, text='mine_', resultsPath=resultsPath)
 
 
 #Image.fromarray(np.uint8(X.reshape(r,c, d))).show()
@@ -78,7 +78,7 @@ Y       = cl.predict(X)
 centers = [ center for center in cl.cluster_centers_]
 XX      = np.array( [centers[i] for i in Y] )
 
-display_image(X, XX, r, c, d, text='lib_')
+display_image(X, XX, r, c, d, text='lib_', resultsPath=resultsPath)
 
 
 

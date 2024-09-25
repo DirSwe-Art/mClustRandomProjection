@@ -3,8 +3,7 @@
 # Authors: DirarSweidan
 # License: DSB 3-Claus
 
-import random
-import copy
+import copy, os, random
 import numpy as np 
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
@@ -14,9 +13,6 @@ from scipy.linalg import fractional_matrix_power
 # ========================================================================
 
 def generate_data(type='4-2-2'):			# 4 features, 2 clusters, 2 views
-	import os
-	if not os.path.exists(resultsPath): os.makedirs(resultsPath)
-	
 	if type == '4-3-2':
 		DATA = data432()
 		k = 3
@@ -80,12 +76,12 @@ def dataimg(file):
 	return X, imRow, imCol, imDim
 	
 	
-def plot_clusters(DATA, X, colors, t):
-	if datatype == 'F-C-V': return random_clusters(DATA, X, colors, t)
-	if datatype == 'image': return image_clusters(DATA, X, colors, t) 
+def plot_clusters(DATA, X, colors, t, resultsPath):
+	if datatype == 'F-C-V': return random_clusters(DATA, X, colors, t, resultsPath)
+	if datatype == 'image': return image_clusters(DATA, X, colors, t, resultsPath) 
 	
 	
-def random_clusters(DATA, X, colors, t):
+def random_clusters(DATA, X, colors, t, resultsPath):
 	fig, ((ax1a, ax2a),(ax1b, ax2b)) = plt.subplots(2, 2, figsize=(15, 11), sharex=False, sharey=False)
 	
 	ax1a.scatter( *np.array([ *zip(*DATA) ])[:2], c=colors, marker='.' )
@@ -118,7 +114,7 @@ def random_clusters(DATA, X, colors, t):
 	plt.close('all')	
 
 
-def image_clusters(DATA, X, colors, t):
+def image_clusters(DATA, X, colors, t, resultsPath):
 	IMG_DATA = np.array(copy.deepcopy(DATA), dtype='uint8').reshape(imRow, imCol, imDim)
 	IMG_X    = np.array(copy.deepcopy(X), dtype='uint8').reshape(imRow, imCol, imDim)
 	
@@ -148,7 +144,7 @@ def princ_flex_framework_AlternativeClustering(DATA, a, alternatives, k, datatyp
 		
 		if datatype == 'image': clr = np.array(h.cluster_centers_, dtype='uint8') 	# For coloring pixels of each cluster by the mean color (centroid) 
 		else: 					clr = ['green','yellow','black','blue']				# For coloring data points of each cluster by a given color
-		plot_clusters( DATA, X, [ clr[i] for i in h.predict(X) ], t )				# Coloring original (DATA) and transformed (X) based on X clustering
+		plot_clusters( DATA, X, [ clr[i] for i in h.predict(X) ], t, resultsPath )	# Coloring original (DATA) and transformed (X) based on X clustering
 		
 		S = np.zeros( (len(DATA[0]),len(DATA[0])) ) # Sigma: data point variation for (k-1) centroids where this data point unlikely belongs to PI'
 		
@@ -174,9 +170,12 @@ def princ_flex_framework_AlternativeClustering(DATA, a, alternatives, k, datatyp
 # ================================================================================
 
 
+resultsPath  = r'C:/ExperimentalResults/Results/results_PrincipledFlexibleFrameworkForFindingAlternativeClusterings/'
+if not os.path.exists(resultsPath): os.makedirs(resultsPath)
+
 alternatives = 5
 a			 = 2
-resultsPath  = r'C:/ExperimentalResults/Results/results_PrincipledFlexibleFrameworkForFindingAlternativeClusterings/'
+
 
 DATA, k, datatype  = generate_data(type= '4-3-2') 						# '2-2-3', '4-3-2'
 #DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 	# 'image'

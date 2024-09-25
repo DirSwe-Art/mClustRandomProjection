@@ -187,7 +187,7 @@ def linkColorFunction(link_id):
 
 	return link_colors.get(link_id, 'grey')
 	
-def plotDendrogram(Z, **kwargs):
+def plotDendrogram(Z, **kwargs, resultsPath):
 	plt.close('all')
 	plt.figure(figsize=(10,6))
 	
@@ -226,8 +226,6 @@ def plotDendrogram(Z, **kwargs):
 	
 # ========================================================================
 def randomData():
-	if not os.path.exists(resultsPath): os.makedirs(resultsPath)
-	
 	X = []
 	M = [[2, 2],[-2, 2],[-2, -2],[2, -2]]
 	for m in M:
@@ -255,7 +253,7 @@ def imageData(file):
 	X = np.array(X, dtype='uint8')	
 	return X, imRow, imCol, imDim
 
-def imageDisplay(X, XX, imR, imC, imD, text=''):
+def imageDisplay(X, XX, imR, imC, imD, text='', resultsPath):
 	IMG_X  = np.array(copy.deepcopy(X), dtype='uint8').reshape(imR, imC, imD)
 	IMG_XX = np.array(copy.deepcopy(XX), dtype='uint8').reshape(imR, imC, imD)
 	
@@ -318,7 +316,7 @@ while True:
 		# displaying image in case of using images
 		clusteredImage = np.array([ C[i] for i in y ])
 		k              = copy.deepcopy(clust_k)
-		imageDisplay(X, clusteredImage, imR, imC, imD)
+		imageDisplay(X, clusteredImage, imR, imC, imD, resultsPath)
 
 		# using labels y
 		plotDendrogram(Z, labels=y)

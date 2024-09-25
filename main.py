@@ -156,7 +156,7 @@ def selectGroupsOfClusterings(Y, clusterings):
 	print("Order of selected clusters:", selected_clusters)
 	return selected_clusters
 
-def plotDendrogram(model, Y):
+def plotDendrogram(model, Y, resultsPath):
 	# plots the dendrogram with various options concerning coloring labels and links. #
 	def linkColorFunction(link_id):
 		colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']
@@ -339,11 +339,11 @@ def dataimg(file):
 			
 	return np.array(X, dtype='uint8'), imRow, imCol, imDim
 
-def plot_clusters(DATA, colors, t):
-	if datatype=='223random' or datatype=='432random': return random_clusters(DATA, colors, t)
-	if datatype == 'image': return image_clusters(DATA, colors, t) 
+def plot_clusters(DATA, colors, t, resultsPath):
+	if datatype=='223random' or datatype=='432random': return random_clusters(DATA, colors, t, resultsPath)
+	if datatype == 'image': return image_clusters(DATA, colors, t, resultsPath) 
 	
-def random_clusters(DATA, colors, t):
+def random_clusters(DATA, colors, t, resultsPath):
 	fig, (ax1a, ax2a) = plt.subplots(2, 1, figsize=(6, 11), sharex=False, sharey=False)
 	
 	ax1a.scatter( *np.array([ *zip(*DATA) ])[:2], c=colors, marker='.' )
@@ -364,7 +364,7 @@ def random_clusters(DATA, colors, t):
 	
 	plt.close('all')	
 
-def image_clusters(DATA, colors, t):
+def image_clusters(DATA, colors, t, resultsPath):
 	IMG_DATA = copy.deepcopy(DATA).reshape(imRow, imCol, imDim)
 	
 	f, (ax1, ax3) = plt.subplots(2,1, sharex=False, sharey=False, figsize=(6, 11))
@@ -405,5 +405,5 @@ for clust_id, labels in enumerate(clust_arr):
 		# Coloring data points with thier cluster correspondiing color
 		clr = ['green','yellow','black','blue']
 	
-	plot_clusters( DATA, [ clr[i] for i in labels ], clust_id )
+	plot_clusters( DATA, [ clr[i] for i in labels ], clust_id, resultsPath )
 
