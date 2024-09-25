@@ -237,7 +237,7 @@ def plotDendrogram(model, Y):
 	plt.title('Dendrogram with Cluster-based Link and Leaf Colors')
 	plt.xlabel('Sample index')
 	plt.ylabel('Normalized Distance')
-	plt.savefig(r'results/dendrogram_'+str(datatype)+str(k)+'.jpg')
+	plt.savefig(resultsPath+'dendrogram_'+str(datatype)+str(k)+'.jpg')
 	plt.show()
 	
 def randProjClusterings(X, n_clusters, n_views, n_projections, dis_metric='dist_clusterings', representation_method='aggregated' ):
@@ -278,9 +278,6 @@ def randProjClusterings(X, n_clusters, n_views, n_projections, dis_metric='dist_
 # ====================================================================== #
 
 def generate_data(type='432random'):
-	import os
-	if not os.path.exists('results'): os.makedirs('results')
-	
 	if type == '432random':
 		DATA = data432()
 		k = 3
@@ -361,9 +358,9 @@ def random_clusters(DATA, colors, t):
 		ax2a.set_ylabel('Feature 4')
 	
 	if len(DATA[0]) > 2:
-		plt.savefig(r'results/random_3_clustering_n_'+str(t)+'.jpg')
+		plt.savefig(resultsPath+'random_3_clustering_n_'+str(t)+'.jpg')
 	else:
-		plt.savefig(r'results/random_2_clustering_n_'+str(t)+'.jpg')
+		plt.savefig(resultsPath+'random_2_clustering_n_'+str(t)+'.jpg')
 	
 	plt.close('all')	
 
@@ -377,14 +374,14 @@ def image_clusters(DATA, colors, t):
 	ax3.imshow(np.array(colors, dtype='uint8').reshape(imRow, imCol, imDim)) 	# view the segmented space (center colors)
 	ax3.set_title('Clustering Solution')
 	
-	plt.savefig(r'results/image_clustering_n_'+str(t)+'.jpg')
+	plt.savefig(resultsPath+'image_clustering_n_'+str(t)+'.jpg')
 	plt.close('all')	
 	
 # ====================================================================== #
 
 
-
-
+resultsPath     = r'C:/ExperimentalResults/Results/results_MultipleClusteringsViaRandomProjection/'
+if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 DATA, k, n_views, datatype, imRow, imCol, imDim = generate_data(type= 'image')	# 'image'
 

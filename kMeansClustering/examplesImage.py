@@ -9,7 +9,7 @@ Last modified:  2024_  _
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import numpy as np
-import random
+import random, os
 from kMeansFromScratch import kmeans
 from sklearn.cluster import KMeans
 #from PIL import Image
@@ -17,9 +17,6 @@ from sklearn.cluster import KMeans
 # =============================================================== definitions
 
 def prepare_data(image):
-	import os
-	if not os.path.exists('results'): os.makedirs('results')
-	
 	IMG = plt.imread(image)	# uint8 data type
 	#IMG = np.array( Image.open(image, formats=['bmp']) )
 	
@@ -48,19 +45,23 @@ def display_image(X, XX, imRow, imCol, imDim, text=None):
 	
 	plt.xticks([])
 	plt.yticks([])
-	plt.savefig(r'results/'+text+'segmented_'+str(k)+'.jpg')
+	plt.savefig(resultsPath+text+'segmented_'+str(k)+'.jpg')
 	
 
 # ================================================================== Clustering X
 
-k       = 2
-eps     = 0.0001
-image   = 'source_images/img.bmp' # 'img.jpg'
+resultsPath     = r'C:/ExperimentalResults/Results/results_kMeansClustering/'
+if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
-X,r,c,d = prepare_data(image)
+k       		= 2
+eps     		= 0.0001
+image   		= 'source_images/img.bmp' # 'img.jpg'
 
-C, L, Y = kmeans(X, k, eps)
-XX      = np.array( [C[i] for i in Y] ) # replace each data point with its cluster's center (color)
+
+X,r,c,d 		= prepare_data(image)
+
+C, L, Y 		= kmeans(X, k, eps)
+XX      		= np.array( [C[i] for i in Y] ) # replace each data point with its cluster's center (color)
 
 display_image(X, XX, r, c, d, text='mine_')
 

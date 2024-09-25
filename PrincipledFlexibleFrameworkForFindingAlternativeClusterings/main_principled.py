@@ -5,7 +5,7 @@
 
 import random
 import copy
-import numpy as np
+import numpy as np 
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from scipy.linalg import fractional_matrix_power
@@ -15,7 +15,7 @@ from scipy.linalg import fractional_matrix_power
 
 def generate_data(type='4-2-2'):			# 4 features, 2 clusters, 2 views
 	import os
-	if not os.path.exists('results'): os.makedirs('results')
+	if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 	
 	if type == '4-3-2':
 		DATA = data432()
@@ -111,9 +111,9 @@ def random_clusters(DATA, X, colors, t):
 		ax2b.set_ylabel('Feature 4')
 	
 	if len(DATA[0]) > 2:
-		plt.savefig(r'results/random_3_clustering_n_'+str(t+1)+'.jpg')
+		plt.savefig(resultsPath+'random_3_clustering_n_'+str(t+1)+'.jpg')
 	else:
-		plt.savefig(r'results/random_2_clustering_n_'+str(t+1)+'.jpg')
+		plt.savefig(resultsPath+'random_2_clustering_n_'+str(t+1)+'.jpg')
 	
 	plt.close('all')	
 
@@ -132,7 +132,7 @@ def image_clusters(DATA, X, colors, t):
 	ax3.imshow(np.array(colors).reshape(imRow, imCol, imDim))	# view the segmented space (center colors)
 	ax3.set_title('Clustering Solution')
 	
-	plt.savefig(r'results/image_clustering_n_'+str(t+1)+'.jpg')
+	plt.savefig(resultsPath+'image_clustering_n_'+str(t+1)+'.jpg')
 	plt.close('all')	
 	
 
@@ -173,8 +173,10 @@ def princ_flex_framework_AlternativeClustering(DATA, a, alternatives, k, datatyp
 		
 # ================================================================================
 
+
 alternatives = 5
-a = 2
+a			 = 2
+resultsPath  = r'C:/ExperimentalResults/Results/results_PrincipledFlexibleFrameworkForFindingAlternativeClusterings/'
 
 DATA, k, datatype  = generate_data(type= '4-3-2') 						# '2-2-3', '4-3-2'
 #DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 	# 'image'

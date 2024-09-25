@@ -3,8 +3,7 @@
 # Authors: DirarSweidan
 # License: DSB 3-Claus
 
-import random
-import copy
+import copy, os, random
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
@@ -13,10 +12,7 @@ from scipy.linalg import fractional_matrix_power
 
 # ========================================================================
 
-def generate_data(type='4-3-2'):			# 4 features, 2 clusters, 2 views	
-	import os
-	if not os.path.exists('results'): os.makedirs('results')
-	
+def generate_data(type='4-3-2'):			# 4 features, 2 clusters, 2 views		
 	if type == '4-3-2':
 		DATA = data432()
 		k = 3
@@ -79,12 +75,12 @@ def dataimg(file):
 	return X, imRow, imCol, imDim
 	
 	
-def plot_clusters(DATA, X, colors, t):
-	if datatype == 'F-C-V': return random_clusters(DATA, X, colors, t)
-	if datatype == 'image': return image_clusters(DATA, X, colors, t) 
+def plot_clusters(DATA, X, colors, t, resultsPath):
+	if datatype == 'F-C-V': return random_clusters(DATA, X, colors, t, resultsPath)
+	if datatype == 'image': return image_clusters(DATA, X, colors, t, resultsPath) 
 	
 	
-def random_clusters(DATA, X, colors, t):
+def random_clusters(DATA, X, colors, t, resultsPath):
 	fig, ((ax1a, ax2a),(ax1b, ax2b)) = plt.subplots(2, 2, figsize=(15, 11), sharex=False, sharey=False)
 	
 	ax1a.scatter( *np.array([ *zip(*DATA) ])[:2], c=colors, marker='.' )
@@ -110,14 +106,14 @@ def random_clusters(DATA, X, colors, t):
 		ax2b.set_ylabel('Feature 4')
 	
 	if len(DATA[0]) > 2:
-		plt.savefig(r'results/random_3_clustering_n_'+str(t+1)+'.jpg')
+		plt.savefig(resultsPath+'random_3_clustering_n_'+str(t+1)+'.jpg')
 	else:
-		plt.savefig(r'results/random_2_clustering_n_'+str(t+1)+'.jpg')
+		plt.savefig(resultsPath+'random_2_clustering_n_'+str(t+1)+'.jpg')
 	
 	plt.close('all')	
 
 
-def image_clusters(DATA, X, colors, t):
+def image_clusters(DATA, X, colors, t, resultsPath):
 	IMG_DATA = np.array(copy.deepcopy(DATA), dtype='uint8').reshape(imRow, imCol, imDim)
 	IMG_X    = np.array(copy.deepcopy(X), dtype='uint8').reshape(imRow, imCol, imDim)
 	
@@ -131,7 +127,7 @@ def image_clusters(DATA, X, colors, t):
 	ax3.imshow(np.array(colors).reshape(imRow, imCol, imDim)) 	# view the segmented space (center colors)
 	ax3.set_title('Clustering Solution')
 	
-	plt.savefig(r'results/image_clustering_n_'+str(t+1)+'.jpg')
+	plt.savefig(resultsPath+'image_clustering_n_'+str(t+1)+'.jpg')
 	plt.close('all')	
 	
 
@@ -147,7 +143,7 @@ def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
 		
 		if datatype == 'image': clr = np.array(h.cluster_centers_, dtype='uint8') 	# For coloring pixels of each cluster by the mean color (centroid) 
 		else: 					clr = ['green','yellow','black','blue']				# For coloring data points of each cluster by a given color
-		plot_clusters( DATA, X, [ clr[i] for i in h.predict(X) ], t ) 				# Coloring original (DATA) and transformed (X) based on X clustering
+		plot_clusters( DATA, X, [ clr[i] for i in h.predict(X) ], t , resultsPath)	# Coloring original (DATA) and transformed (X) based on X clustering
 		
 		if t == alternatives - 1: break
 		
@@ -169,10 +165,13 @@ def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
 			
 # ========================================================================
 
-alternatives = 5 
+alternatives 		= 5 
+resultsPath  		= r'C:\ExperimentalResults\Results\results_MultiViewClusteringViaOrthogonalization'
+if not os.path.exists(resultsPath): os.makedirs(resultsPath)
+
 
 #DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 				# 'image'
-DATA, k, datatype  = generate_data(type= '4-3-2') 									# '2-2-3', '4-3-2'
+DATA, k, datatype  	= generate_data(type= '4-3-2') 									# '2-2-3', '4-3-2'
 
 
 mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype)

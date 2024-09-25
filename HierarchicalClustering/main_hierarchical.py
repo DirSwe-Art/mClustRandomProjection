@@ -221,13 +221,12 @@ def plotDendrogram(Z, **kwargs):
 	plt.title('Dendrogram with Cluster-based Link and Leaf Colors')
 	plt.xlabel('Sample index')
 	plt.ylabel('Normalized Distance')
-	plt.savefig(r'results/dendrogram_'+str(k)+'.jpg')
+	plt.savefig(resultsPath+'dendrogram_'+str(k)+'.jpg')
 	plt.show()
 	
 # ========================================================================
 def randomData():
-	import os
-	if not os.path.exists('results'): os.makedirs('results')
+	if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 	
 	X = []
 	M = [[2, 2],[-2, 2],[-2, -2],[2, -2]]
@@ -245,8 +244,6 @@ def randomData():
 	return X
 	
 def imageData(file):
-	import os
-	if not os.path.exists('results'): os.makedirs('results')
 	IMG = plt.imread(file)					# uint8 data type
 	imRow, imCol, imDim = IMG.shape
 	X = []
@@ -272,11 +269,16 @@ def imageDisplay(X, XX, imR, imC, imD, text=''):
 	
 	plt.xticks([])
 	plt.yticks([])
-	plt.savefig(r'results/'+text+'segmented_'+str(k)+'.jpg')
+	plt.savefig(resultsPath+text+'segmented_'+str(k)+'.jpg')
 	plt.show()
 	plt.close('all')
 
 # ==================================================================
+
+resultsPath     = r'C:/ExperimentalResults/Results/results_HierarchicalClustering/'
+if not os.path.exists(resultsPath): os.makedirs(resultsPath)
+
+
 
 #X 				= randomData()
 X,imR,imC,imD  	= imageData('img2.bmp')
@@ -308,7 +310,7 @@ while True:
 		for i, cl in enumerate(clust_x):
 			F1, F2 = zip(*cl)
 			plt.scatter( F1, F2, c = [ colors[i] for _ in range(len(F1))  ] )
-		plt.savefig(r'results/random_clustering_'+str(k)+'.jpg')
+		plt.savefig(resultsPath+'random_clustering_'+str(k)+'.jpg')
 		plt.show()
 		plt.close('all')
 		'''
