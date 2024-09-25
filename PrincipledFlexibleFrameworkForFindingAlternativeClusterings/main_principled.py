@@ -134,7 +134,7 @@ def image_clusters(DATA, X, colors, t, resultsPath):
 
 # ================================================================================
 # Paper: Z. Qi et al. (2009). A principled and flexible framework for finding alternative clusterings. SIGKDD (pp. 717-726).
-def princ_flex_framework_AlternativeClustering(DATA, a, alternatives, k, datatype):
+def princ_flex_framework_AlternativeClustering(DATA, a, alternatives, k, datatype, resultsPath):
 	X = copy.deepcopy(DATA)
 	
 	for t in range(alternatives):
@@ -180,6 +180,6 @@ a			 = 2
 DATA, k, datatype  = generate_data(type= '4-3-2') 						# '2-2-3', '4-3-2'
 #DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 	# 'image'
 
-princ_flex_framework_AlternativeClustering(DATA, a, alternatives, k, datatype)
+princ_flex_framework_AlternativeClustering(DATA, a, alternatives, k, datatype, resultsPath)
 
 

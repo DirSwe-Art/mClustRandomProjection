@@ -12,7 +12,7 @@ from itertools import combinations
 from scipy.cluster.hierarchy import dendrogram
 import numpy as np
 import matplotlib.pyplot as plt
-import random, copy, sys
+import random, copy, sys, os
 from scipy.sparse import lil_matrix
 
 
@@ -237,10 +237,10 @@ def plotDendrogram(model, Y, resultsPath):
 	plt.title('Dendrogram with Cluster-based Link and Leaf Colors')
 	plt.xlabel('Sample index')
 	plt.ylabel('Normalized Distance')
-	plt.savefig(resultsPath+'dendrogram_'+str(datatype)+str(k)+'.jpg')
+	plt.savefig(resultsPath+'dendrogram_'+str(datatype)+str(n_clusters)+'.jpg')
 	plt.show()
 	
-def randProjClusterings(X, n_clusters, n_views, n_projections, dis_metric='dist_clusterings', representation_method='aggregated' ):
+def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=30, dis_metric='dist_clusterings', clusterings_rep='aggregated' ):
 	P = []
 	for p in range(n_projections):
 		XX = copy.deepcopy(X)
@@ -265,15 +265,15 @@ def randProjClusterings(X, n_clusters, n_views, n_projections, dis_metric='dist_
 		
 		if len(C) == 1:
 			Z.append(C[0].tolist())
-		elif representation_method == 'central': 
+		elif clusterings_rep == 'central': 
 			Z.append(central(C))
-		elif representation_method == 'ensembeled': 
+		elif clusterings_rep == 'ensembeled': 
 			Z.append(ensembeled(C))
-		elif representation_method == 'aggregated': 
+		elif clusterings_rep == 'aggregated': 
 			Z.append(aggregated(C))
 	
 	print('*** Groups of similar clusterings are aggregated and represented. ***')
-	return Z, plotDendrogram(AgglomerativeClustering( n_clusters=n_views, linkage="average", metric="precomputed", compute_distances=True ).fit(A), Y)
+	return Z, AgglomerativeClustering( n_clusters=n_views, linkage="average", metric="precomputed", compute_distances=True ).fit(A)
 	
 # ====================================================================== #
 
@@ -293,7 +293,7 @@ def generate_data(type='432random'):
 		return DATA, k, n_views, datatype
 		
 	elif type == 'image':
-		DATA, imRow, imCol, imDim = dataimg('source_images/img3.bmp')
+		DATA, imRow, imCol, imDim = dataimg('source_images/dir_sim.bmp')
 		k = 2
 		n_views = 4
 		datatype = 'image'
@@ -383,15 +383,29 @@ def image_clusters(DATA, colors, t, resultsPath):
 resultsPath     = r'C:/ExperimentalResults/Results/results_MultipleClusteringsViaRandomProjection/'
 if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
-DATA, k, n_views, datatype, imRow, imCol, imDim = generate_data(type= 'image')	# 'image'
+
+
+(DATA, n_clusters, 
+ n_views, datatype,   
+ imRow, imCol, imDim)= generate_data(type= 'image')		# 'image'
+#					)= generate_data(type= '223random')	# '432random', '223random'
+
+n_projections 		 = 30
+dis_metric			 = 'dist_clusterings'				# 'dist_clusterings', 'approximate_dist_clusterings'
+clusterings_rep 	 = 'aggregated'						# 'centeral', 'ensembeled', 'aggregated'
 
 
 
-#DATA, k, n_v, datatype  = generate_data(type= '432random')						# '432random', '223random'
+clust_arr, clust_mdl = randProjClusterings(
+						DATA, 
+						n_clusters 	    = n_clusters, 
+						n_views 	    = n_views,
+						n_projections   = n_projections, 
+						dis_metric 	    = dis_metric, 
+						clusterings_rep = clusterings_rep ) 
 
 
-
-clust_arr, clust_mdl = randProjClusterings(DATA, n_clusters=k, n_views=8, n_projections=20, dis_metric='dist_clusterings', representation_method='aggregated' ) # centeral, ensembeled, aggregated
+plotDendrogram(clust_mdl, clust_mdl.labels_, resultsPath)
 
 
 for clust_id, labels in enumerate(clust_arr):

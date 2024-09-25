@@ -133,7 +133,7 @@ def image_clusters(DATA, X, colors, t, resultsPath):
 
 # ========================================================================
 # Paper: Y. Cui et al. (2007). Non-redundant multi-view clustering via orthogonalization. ICDM (pp. 133-142).
-def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
+def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype, resultsPath):
 	X   = copy.deepcopy(DATA)
 	
 	for t in range(alternatives):
@@ -165,16 +165,18 @@ def mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype):
 			
 # ========================================================================
 
-alternatives 		= 5 
 resultsPath  		= r'C:\ExperimentalResults\Results\results_MultiViewClusteringViaOrthogonalization'
 if not os.path.exists(resultsPath): os.makedirs(resultsPath)
+
+
+alternatives 		= 5 
 
 
 #DATA, k, datatype, imRow, imCol, imDim = generate_data(type= 'image') 				# 'image'
 DATA, k, datatype  	= generate_data(type= '4-3-2') 									# '2-2-3', '4-3-2'
 
 
-mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype)
+mView_Clustering_via_Orthogonalization(DATA, alternatives, k, datatype, resultsPath)
 
 
 
