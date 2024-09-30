@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random, copy, sys, os
 from scipy.sparse import lil_matrix
-import dask
+#import dask
 
 
 # ========================================================================
@@ -419,7 +419,7 @@ clusterings_rep 	 = 'aggregated'						# 'centeral', 'ensembeled', 'aggregated'
 clust_arr, clust_mdl = randProjClusterings(
 						DATA, 
 						n_clusters 	    = n_clusters, 
-						n_views 	    = n_views,
+						n_views 	    = 4,
 						n_projections   = n_projections, 
 						dis_metric 	    = dis_metric, 
 						clusterings_rep = clusterings_rep ) 
@@ -437,7 +437,7 @@ for clust_id, labels in enumerate(clust_arr):
 		#clr = [ [np.mean(col) for col in zip(*DATA[labels==cl])] for cl in set(labels) ] 
 	else:
 		# Coloring data points with thier cluster correspondiing color
-		clr = ['orange', 'green', 'cornflowerblue', 'black', 'yellow']
+		clr = ['brown', 'green', 'black' ,'cornflowerblue', 'yellow', 'orange']
 	
 	plot_clusters( DATA, [ clr[i] for i in labels ], clust_id, resultsPath )
 	
