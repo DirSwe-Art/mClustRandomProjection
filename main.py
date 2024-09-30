@@ -14,6 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random, copy, sys, os
 from scipy.sparse import lil_matrix
+import dask
 
 
 # ========================================================================
@@ -23,9 +24,27 @@ def constructProjectionMatrix(d):
 	A    = np.random.normal(0, 1/d, size=(d,d)) # A random d x d matrix with entries from N(0, 1/d)
 	Q, R = np.linalg.qr(A) 					   	# QR decomposition to A. (Q: orthogonal matrix, R: upper triangular matrix)
 	M    = Q @ Q.T				             	# Prjection matrix (projects data onto a space spanned by the unit vectors in Q).
-	
 	return M
 
+# enhanced function
+def dist_clusterings(Ya, Yb):
+    # Ensure inputs are numpy arrays
+    Ya = np.array(Ya)
+    Yb = np.array(Yb)
+    
+    # Create boolean masks for pairwise equality comparisons
+    Ya_equal = np.equal.outer(Ya, Ya)  # Pairwise comparison of Ya
+    Yb_equal = np.equal.outer(Yb, Yb)  # Pairwise comparison of Yb
+    
+    # XOR operation on the masks: True where only one is equal and the other isn't
+    mismatch = np.triu(Ya_equal ^ Yb_equal, k=1)  # Only upper triangle to avoid double-counting
+    
+    # Count the number of mismatches
+    d = np.sum(mismatch)
+    
+    return d
+
+'''
 def dist_clusterings(Ya, Yb):
     # Ensure the inputs are NumPy arrays for efficient operations
     Ya = np.array(Ya)
@@ -44,8 +63,8 @@ def dist_clusterings(Ya, Yb):
             if (Ya[i] == Ya[j]) ^ (Yb[i] == Yb[j]):
                 d += 1
     return d
-	
-def approximate_dist_clusterings(Ya, Yb, th=300):
+'''	
+def approximate_dist_clusterings(Ya, Yb, th=1000):
 	# Returns an approximate distance between two clustering solutions if the data size is larger than 100 points
 	if len(Ya) < th: return dist_clusterings(Ya, Yb)
 	
@@ -79,6 +98,7 @@ def ensembeled(clusterings):
 		labels_majority.append(label)
 	
 	return labels_majority
+
 
 def aggregated(clusterings):
 	# returns a clustering where the label of each data point is estimated from NxN matrix that containes 
@@ -244,9 +264,9 @@ def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=30, dis_metric
 	P = []
 	for p in range(n_projections):
 		XX = copy.deepcopy(X)
-		M  = constructProjectionMatrix(XX.shape[1])
-		Xp = XX @ M
-		#Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(XX)
+		#M  = constructProjectionMatrix(XX.shape[1])
+		#Xp = XX @ M
+		Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(XX)
 		Sp = GaussianMixture(n_components=n_clusters).fit_predict(Xp)
 		P.append(Sp)
 	
@@ -288,14 +308,14 @@ def generate_data(type='432random'):
 	elif type == '223random':
 		DATA = data223()
 		k = 2
-		n_views = 3
+		n_views = 2
 		datatype = '223random'
 		return DATA, k, n_views, datatype
 		
 	elif type == 'image':
-		DATA, imRow, imCol, imDim = dataimg('source_images/dir_sim.bmp')
+		DATA, imRow, imCol, imDim = dataimg('source_images/img1.bmp')
 		k = 2
-		n_views = 4
+		n_views = 12
 		datatype = 'image'
 		return DATA, k, n_views, datatype, imRow, imCol, imDim
 
@@ -303,7 +323,7 @@ def data223():								# 2 features, 2 clusters, 3 views
 	X = []
 	M = [[0,2], [0,4], [2.5,2], [2.5,4]]
 	for m in M:
-		X += np.random.multivariate_normal(m, np.identity(2)/3, size=125).tolist()
+		X += np.random.multivariate_normal(m, np.identity(2)/3, size=300).tolist()
 	
 	X = np.array(X)
 	X = X - X.mean(axis=0)					# center the data
@@ -311,20 +331,20 @@ def data223():								# 2 features, 2 clusters, 3 views
 	
 def data432():								# 4 features, 3 clusters, 2 views
 	X1 = []									# First view of the data (with F1, F2 features of each x)
-	M  = [[7, 2], [3, 7], [10, 9]]			# Three centroids
-	S  = [100, 100, 300]					# The first view's number of data points in each cluster
+	M  = [[2.5, 12.5], [9.5, 15], [16.5, 10.5]]			# Three centroids
+	S  = [300, 300, 900]					# The first view's number of data points in each cluster
 	
 	for i in range(len(S)):
 		X1 += np.random.multivariate_normal(M[i], np.identity(2)/3, size=S[i]).tolist()
 	
 	X2 = []									# Second view of the data (with F3, F4 features of each x)
-	M  = [[5, 4], [7, 11], [12, 6]]			# Three centroids
-	S  = [200, 200, 100]					# The second view's number of data points in each cluster
+	M  = [[5, 8], [6.5, 10.5], [8,8]]			# Three centroids
+	S  = [600, 600, 300]					# The second view's number of data points in each cluster
 	
 	for i in range(len(S)):
 		X2 += np.random.multivariate_normal(M[i], np.identity(2)/3, size=S[i]).tolist()
 	
-	X  = np.array([ X1[i] + X2[i] for i in range(len(X1)) ]) # Combine the two views (F1, F2, F3, F4)
+	X  = np.array([ X2[i] + X1[i] for i in range(len(X1)) ]) # Combine the two views (F1, F2, F3, F4)
 	X  = X - X.mean(axis=0)					# Center the data (shift the data points toward the origine)
 	return X
 
@@ -344,37 +364,37 @@ def plot_clusters(DATA, colors, t, resultsPath):
 	if datatype == 'image': return image_clusters(DATA, colors, t, resultsPath) 
 	
 def random_clusters(DATA, colors, t, resultsPath):
-	fig, (ax1a, ax2a) = plt.subplots(2, 1, figsize=(6, 11), sharex=False, sharey=False)
+	fig, (ax1a, ax2a) = plt.subplots(1, 2, figsize=(12, 5), sharex=False, sharey=False)
 	
-	ax1a.scatter( *np.array([ *zip(*DATA) ])[:2], c=colors, marker='.' )
+	ax1a.scatter( *np.array([ *zip(*DATA) ])[:2], c=colors, marker='+' )
 	ax1a.set_title('Original Space')
 	ax1a.set_xlabel('Feature 1')
 	ax1a.set_ylabel('Feature 2')
 	
 	if len(DATA[0]) > 2:
-		ax2a.scatter( *np.array([ *zip(*DATA) ])[2:4], c=colors, marker='.' )
+		ax2a.scatter( *np.array([ *zip(*DATA) ])[2:4], c=colors, marker='+' )
 		ax2a.set_title('Original Space')
 		ax2a.set_xlabel('Feature 3')
 		ax2a.set_ylabel('Feature 4')
 	
 	if len(DATA[0]) > 2:
-		plt.savefig(resultsPath+'random_3_clustering_n_'+str(t)+'.jpg')
+		plt.savefig(resultsPath+'random_3_clustering_n_'+str(t)+'.png')
 	else:
-		plt.savefig(resultsPath+'random_2_clustering_n_'+str(t)+'.jpg')
+		plt.savefig(resultsPath+'random_2_clustering_n_'+str(t)+'.png')
 	
 	plt.close('all')	
 
 def image_clusters(DATA, colors, t, resultsPath):
 	IMG_DATA = copy.deepcopy(DATA).reshape(imRow, imCol, imDim)
 	
-	f, (ax1, ax3) = plt.subplots(2,1, sharex=False, sharey=False, figsize=(6, 11))
+	f, (ax1, ax3) = plt.subplots(1, 2, sharex=False, sharey=False, figsize=(12, 5))
 	ax1.imshow(IMG_DATA)
 	ax1.set_title('Source image')								# view the original space
 	
 	ax3.imshow(np.array(colors, dtype='uint8').reshape(imRow, imCol, imDim)) 	# view the segmented space (center colors)
 	ax3.set_title('Clustering Solution')
 	
-	plt.savefig(resultsPath+'image_clustering_n_'+str(t)+'.jpg')
+	plt.savefig(resultsPath+'image_clustering_n_'+str(t)+'.png')
 	plt.close('all')	
 	
 # ====================================================================== #
@@ -388,7 +408,7 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 (DATA, n_clusters, 
  n_views, datatype,   
 # imRow, imCol, imDim)= generate_data(type= 'image')		# 'image'
- 					 )= generate_data(type= '223random')	# '432random', '223random'
+ 					 )= generate_data(type= '432random')	# '432random', '223random'
 
 n_projections 		 = 60
 dis_metric			 = 'dist_clusterings'				# 'dist_clusterings', 'approximate_dist_clusterings'
@@ -405,7 +425,7 @@ clust_arr, clust_mdl = randProjClusterings(
 						clusterings_rep = clusterings_rep ) 
 
 
-plotDendrogram(clust_mdl, clust_mdl.labels_, resultsPath)
+#plotDendrogram(clust_mdl, clust_mdl.labels_, resultsPath)
 
 
 for clust_id, labels in enumerate(clust_arr):
@@ -417,7 +437,7 @@ for clust_id, labels in enumerate(clust_arr):
 		#clr = [ [np.mean(col) for col in zip(*DATA[labels==cl])] for cl in set(labels) ] 
 	else:
 		# Coloring data points with thier cluster correspondiing color
-		clr = ['blue','green','yellow','black']
+		clr = ['orange', 'green', 'cornflowerblue', 'black', 'yellow']
 	
 	plot_clusters( DATA, [ clr[i] for i in labels ], clust_id, resultsPath )
-
+	
