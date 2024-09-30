@@ -301,7 +301,7 @@ def generate_data(type='432random'):
 
 def data223():								# 2 features, 2 clusters, 3 views
 	X = []
-	M = [[0,2], [0,4], [2.5,2], [2.5,4]
+	M = [[0,2], [0,4], [2.5,2], [2.5,4]]
 	for m in M:
 		X += np.random.multivariate_normal(m, np.identity(2)/3, size=125).tolist()
 	
@@ -390,7 +390,7 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 # imRow, imCol, imDim)= generate_data(type= 'image')		# 'image'
  					 )= generate_data(type= '223random')	# '432random', '223random'
 
-n_projections 		 = 30
+n_projections 		 = 60
 dis_metric			 = 'dist_clusterings'				# 'dist_clusterings', 'approximate_dist_clusterings'
 clusterings_rep 	 = 'aggregated'						# 'centeral', 'ensembeled', 'aggregated'
 
