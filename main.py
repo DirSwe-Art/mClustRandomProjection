@@ -301,7 +301,7 @@ def generate_data(type='432random'):
 
 def data223():								# 2 features, 2 clusters, 3 views
 	X = []
-	M = [[2, 2],[-2, 2],[-2, -2],[2, -2]]
+	M = [[0,2], [0,4], [2.5,2], [2.5,4]
 	for m in M:
 		X += np.random.multivariate_normal(m, np.identity(2)/3, size=125).tolist()
 	
@@ -387,8 +387,8 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 (DATA, n_clusters, 
  n_views, datatype,   
- imRow, imCol, imDim)= generate_data(type= 'image')		# 'image'
-#					)= generate_data(type= '223random')	# '432random', '223random'
+# imRow, imCol, imDim)= generate_data(type= 'image')		# 'image'
+ 					 )= generate_data(type= '223random')	# '432random', '223random'
 
 n_projections 		 = 30
 dis_metric			 = 'dist_clusterings'				# 'dist_clusterings', 'approximate_dist_clusterings'
@@ -417,7 +417,7 @@ for clust_id, labels in enumerate(clust_arr):
 		#clr = [ [np.mean(col) for col in zip(*DATA[labels==cl])] for cl in set(labels) ] 
 	else:
 		# Coloring data points with thier cluster correspondiing color
-		clr = ['green','yellow','black','blue']
+		clr = ['blue','green','yellow','black']
 	
 	plot_clusters( DATA, [ clr[i] for i in labels ], clust_id, resultsPath )
 
