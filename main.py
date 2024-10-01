@@ -31,16 +31,15 @@ def constructProjectionMatrix(d):
 
 # enhanced function
 def dist_clusterings(Ya, Yb):
-    # Ensure inputs are numpy arrays
-    Ya = np.array(Ya)
+    Ya = np.array(Ya)							# Ensure inputs are numpy arrays
     Yb = np.array(Yb)
     
     # Create boolean masks for pairwise equality comparisons
-    Ya_equal = np.equal.outer(Ya, Ya)  # Pairwise comparison of Ya
-    Yb_equal = np.equal.outer(Yb, Yb)  # Pairwise comparison of Yb
+    Ya_equal = np.equal.outer(Ya, Ya)  			# Pairwise comparison of Ya
+    Yb_equal = np.equal.outer(Yb, Yb)  			# Pairwise comparison of Yb
     
     # XOR operation on the masks: True where only one is equal and the other isn't
-    mismatch = np.triu(Ya_equal ^ Yb_equal, k=1)  # Only upper triangle to avoid double-counting
+    mismatch = np.triu(Ya_equal ^ Yb_equal, k=1)# Only upper triangle to avoid double-counting
     
     # Count the number of mismatches
     d = np.sum(mismatch)
@@ -67,7 +66,7 @@ def dist_clusterings(Ya, Yb):
                 d += 1
     return d
 '''	
-def approximate_dist_clusterings(Ya, Yb, th=100):
+def approximate_dist_clusterings(Ya, Yb, th=300):
 	# Returns an approximate distance between two clustering solutions if the data size is larger than 100 points
 	if len(Ya) < th: return dist_clusterings(Ya, Yb)
 	
@@ -413,7 +412,7 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
  imRow, imCol, imDim)= generate_data(type= 'image')		# 'image'
 # 					 )= generate_data(type= '432random')	# '432random', '223random'
 
-n_projections 		 = 30
+n_projections 		 = 60
 dis_metric			 = 'approximate_dist_clusterings'				# 'dist_clusterings', 'approximate_dist_clusterings'
 clusterings_rep 	 = 'ensembeled'						# 'centeral', 'ensembeled', 'aggregated'
 
