@@ -19,9 +19,12 @@ from scipy.sparse import lil_matrix
 
 # ========================================================================
 def constructProjectionMatrix(d):
-	# Returns a random projection transformation matrix spanned by a linearly independent (orthogonal) unit vectors.
+	# Returns a random projection transformation matrix spanned by a linearly independent (orthogonal) unit vectors. #
 	
-	A    = np.random.normal(0, 1/d, size=(d,d)) # A random d x d matrix with entries from N(0, 1/d)
+	bit_generator = np.random.PCG64DXSM()		# Create a 128-bit bit generator (PCG64DXSM)
+	rng  = np.random.Generator(bit_generator)	# Create a Generator instance using the 128-bit bit generator
+	A    = rng.normal(0, 1/d, size=(d,d))		# Generator's normal method to generate the matrix A
+	#A    = np.random.normal(0, 1/d, size=(d,d)) # A random d x d matrix with entries from N(0, 1/d)
 	Q, R = np.linalg.qr(A) 					   	# QR decomposition to A. (Q: orthogonal matrix, R: upper triangular matrix)
 	M    = Q @ Q.T				             	# Prjection matrix (projects data onto a space spanned by the unit vectors in Q).
 	return M
