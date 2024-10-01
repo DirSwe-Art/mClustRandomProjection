@@ -266,9 +266,9 @@ def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=30, dis_metric
 	P = []
 	for p in range(n_projections):
 		XX = copy.deepcopy(X)
-		M  = constructProjectionMatrix(XX.shape[1])
-		Xp = XX @ M
-		#Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(XX)
+		#M  = constructProjectionMatrix(XX.shape[1])
+		#Xp = XX @ M
+		Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(XX)
 		Sp = GaussianMixture(n_components=n_clusters).fit_predict(Xp)
 		P.append(Sp)
 	
@@ -409,12 +409,12 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 (DATA, n_clusters, 
  n_views, datatype,   
- imRow, imCol, imDim)= generate_data(type= 'image')		# 'image'
-# 					 )= generate_data(type= '432random')	# '432random', '223random'
+# imRow, imCol, imDim)= generate_data(type= 'image')		# 'image'
+ 					 )= generate_data(type= '223random')	# '432random', '223random'
 
 n_projections 		 = 60
-dis_metric			 = 'approximate_dist_clusterings'				# 'dist_clusterings', 'approximate_dist_clusterings'
-clusterings_rep 	 = 'ensembeled'						# 'centeral', 'ensembeled', 'aggregated'
+dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
+clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
 
 
 
