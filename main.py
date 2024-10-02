@@ -263,7 +263,7 @@ def plotDendrogram(model, Y, resultsPath):
 	plt.savefig(resultsPath+'dendrogram_'+str(datatype)+str(n_clusters)+'.jpg')
 	#plt.show()
 	
-def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=30, dis_metric='dist_clusterings', clusterings_rep='aggregated' ):
+def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=60, dis_metric='dist_clusterings', clusterings_rep='aggregated' ):
 	P = []
 	for p in range(n_projections):
 		XX = copy.deepcopy(X)
@@ -283,7 +283,7 @@ def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=30, dis_metric
 	print('*** Clusterings are groupped with an agglomeartive model. ***') 
 
 	L      = []
-	G      = M.predict(A)
+	G      = M.labels_
 	for l in set(G):
 		C  = P[G==l]
 		
