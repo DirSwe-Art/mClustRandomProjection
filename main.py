@@ -12,7 +12,7 @@ from itertools import combinations
 from scipy.cluster.hierarchy import dendrogram
 import numpy as np
 import matplotlib.pyplot as plt
-import random, copy, sys, os
+import random, copy, sys, os, math
 from scipy.sparse import lil_matrix
 #import dask
 
@@ -21,14 +21,16 @@ from scipy.sparse import lil_matrix
 def constructProjectionMatrix(d):
 	# Returns a random projection transformation matrix spanned by a linearly independent (orthogonal) unit vectors. #
 	
-	bit_generator = np.random.PCG64DXSM()		# Create a 128-bit bit generator (PCG64DXSM)
-	rng  = np.random.Generator(bit_generator)	# Create a Generator instance using the 128-bit bit generator
-	A    = rng.normal(0, 1/d, size=(d,d))		# Generator's normal method to generate the matrix A
-	#A    = np.random.normal(0, 1/d, size=(d,d)) # A random d x d matrix with entries from N(0, 1/d)
-	Q, R = np.linalg.qr(A) 					   	# QR decomposition to A. (Q: orthogonal matrix, R: upper triangular matrix)
-	#M    = Q @ Q.T				             	# Prjection matrix (projects data onto a space spanned by the unit vectors in Q).
-	M    = Q @ np.linalg.inv(Q.T @ Q) @ Q.T		# General Prjection matrix Q (Q.T Q)^-1 Q.T
-	return M
+	#bit_generator = np.random.PCG64DXSM()		# Create a 128-bit bit generator (PCG64DXSM)
+	#rng  = np.random.Generator(bit_generator)	# Create a Generator instance using the 128-bit bit generator
+	#A    = rng.normal(0, 1/math.sqrt(d), size=(d,d))		# Generator's normal method to generate the matrix A
+	A    = np.random.normal(0, 1/d, size=(d,d)) # A random d x d matrix with entries from N(0, 1/d)
+	#Q, R = np.linalg.qr(A) 	# QR decomposition to A. (Q: orthogonal matrix, R: upper triangular matrix)
+	#M    = Q @ Q.T				             	# Prjection matrix (projects data onto a space spanned by the unit vectors in Q).#
+	#M    = A @ np.linalg.inv(A.T @ A) @ A.T
+	#M    = A  @ A.T
+	#M    = Q @ np.linalg.inv(Q.T @ Q) @ Q.T		# General Prjection matrix Q (Q.T Q)^-1 Q.T
+	return A
 
 # enhanced function
 def dist_clusterings(Ya, Yb):
@@ -260,7 +262,7 @@ def plotDendrogram(model, Y, resultsPath):
 	plt.title('Dendrogram with Cluster-based Link and Leaf Colors')
 	plt.xlabel('Sample index')
 	plt.ylabel('Normalized Distance')
-	plt.savefig(resultsPath+'dendrogram_'+str(datatype)+str(n_clusters)+'.jpg')
+	plt.savefig(resultsPath+'dendrogram_'+datatype[0:6]+str(n_clusters)+'.jpg')
 	#plt.show()
 	
 def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=60, dis_metric='dist_clusterings', clusterings_rep='aggregated' ):
@@ -269,9 +271,9 @@ def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=60, dis_metric
 	P = []
 	for p in range(n_projections):
 		XX = copy.deepcopy(X)
-		#Mp = constructProjectionMatrix(XX.shape[1])
-		#Xp = XX @ Mp
-		Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(XX)
+		Mp = constructProjectionMatrix(XX.shape[1])
+		Xp = XX @ Mp
+		#Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(XX)
 		Sp = GaussianMixture(n_components=n_clusters).fit_predict(Xp)
 		P.append(Sp)
 	
@@ -281,11 +283,11 @@ def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=60, dis_metric
 	A      = affinity(P, affinity_metric=dis_metric)
 	print('*** Clusterings dissimilarity matrix is generated. ***')
 	
-	M	   = AgglomerativeClustering( n_clusters=n_views, linkage="average", metric="precomputed", compute_distances=True ).fit(A)
+	Mdl    = AgglomerativeClustering( n_clusters=n_views, linkage="average", metric="precomputed", compute_distances=True ).fit(A)
 	print('*** Clusterings are groupped with an agglomeartive model. ***') 
 
 	L      = []
-	G      = M.labels_
+	G      = Mdl.labels_
 	for l in set(G):
 		C  = P[G==l]
 		
@@ -299,7 +301,7 @@ def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=60, dis_metric
 			L.append(aggregated(C))
 	
 	print('*** Groups of similar clusterings are aggregated and represented. ***')
-	return L, M
+	return L, Mdl
 	
 # ====================================================================== #
 
@@ -319,10 +321,10 @@ def generate_data(data='random432'):
 		return DATA, k, n_views, datatype
 		
 	elif data[0:5] == 'image':
-		DATA, imRow, imCol, imDim = dataimg('source_images/'+str(data))
+		DATA, imRow, imCol, imDim = dataimg('source_images/'+data)
 		k = 2
 		n_views = 9
-		datatype = data[0:5]
+		datatype = data
 		return DATA, k, n_views, datatype, imRow, imCol, imDim
 
 def data223():								# 2 features, 2 clusters, 3 views
@@ -400,7 +402,7 @@ def image_clusters(DATA, colors, t, resultsPath):
 	ax3.imshow(np.array(colors, dtype='uint8').reshape(imRow, imCol, imDim)) 	# view the segmented space (center colors)
 	ax3.set_title('Clustering Solution')
 	
-	plt.savefig(resultsPath+datatype[:-4]+'_'+str(t)+'.png')
+	plt.savefig(resultsPath+datatype[0:6]+'_'+str(t)+'.png')
 	plt.close('all')	
 	
 # ====================================================================== #
@@ -413,10 +415,10 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 (DATA, n_clusters, 
  n_views, datatype,   
- imRow, imCol, imDim)= generate_data(data= 'image2.bmp')	# 'image1.bmp', 'image2.bmp', 'image3.bmp', 'image4.bmp'
+ imRow, imCol, imDim)= generate_data(data= 'image1.bmp')	# 'image1.bmp', 'image2.bmp', 'image3.bmp', 'image4.bmp'
 # 					 )= generate_data(data= '223random')	# '432random', '223random'
 
-n_projections 		 = 120
+n_projections 		 = 30
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
 clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
 
