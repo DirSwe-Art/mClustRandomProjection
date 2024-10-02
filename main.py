@@ -264,6 +264,8 @@ def plotDendrogram(model, Y, resultsPath):
 	#plt.show()
 	
 def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=60, dis_metric='dist_clusterings', clusterings_rep='aggregated' ):
+	print('\n*** Program is started with the following parameters values: ***\n*** %d projections, %d views, each with %d clusters. ***\n'%(n_projections, n_views, n_clusters))
+	
 	P = []
 	for p in range(n_projections):
 		XX = copy.deepcopy(X)
@@ -364,8 +366,8 @@ def dataimg(file):
 	return np.array(X, dtype='uint8'), imRow, imCol, imDim
 
 def plot_clusters(DATA, colors, t, resultsPath):
-	if datatype=='223random' or datatype=='432random': return random_clusters(DATA, colors, t, resultsPath)
-	if datatype == 'image': return image_clusters(DATA, colors, t, resultsPath) 
+	if datatype      =='random223' or datatype=='random432': return random_clusters(DATA, colors, t, resultsPath)
+	if datatype[0:5] == 'image': return image_clusters(DATA, colors, t, resultsPath) 
 	
 def random_clusters(DATA, colors, t, resultsPath):
 	fig, (ax1a, ax2a) = plt.subplots(1, 2, figsize=(12, 5), sharex=False, sharey=False)
@@ -398,7 +400,7 @@ def image_clusters(DATA, colors, t, resultsPath):
 	ax3.imshow(np.array(colors, dtype='uint8').reshape(imRow, imCol, imDim)) 	# view the segmented space (center colors)
 	ax3.set_title('Clustering Solution')
 	
-	plt.savefig(resultsPath+'image_clustering_n_'+str(t)+'.png')
+	plt.savefig(resultsPath+datatype[:-4]+'_'+str(t)+'.png')
 	plt.close('all')	
 	
 # ====================================================================== #
@@ -411,7 +413,7 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 (DATA, n_clusters, 
  n_views, datatype,   
- imRow, imCol, imDim)= generate_data(data= 'image1.bmp')	# 'image1.bmp', 'image2.bmp', 'image3.bmp'
+ imRow, imCol, imDim)= generate_data(data= 'image2.bmp')	# 'image1.bmp', 'image2.bmp', 'image3.bmp', 'image4.bmp'
 # 					 )= generate_data(data= '223random')	# '432random', '223random'
 
 n_projections 		 = 120
@@ -432,7 +434,7 @@ plotDendrogram(clust_mdl, clust_mdl.labels_, resultsPath)
 
 
 for clust_id, labels in enumerate(clust_arr):
-	if datatype == 'image':
+	if datatype[0:5] == 'image':
 		# Coloring RGB pixels with thier cluster correspondiing color (2 colors, 1 for each cluster)
 		clr = [ [0, 0, 0], [255, 255, 255] ] 	 
 		
