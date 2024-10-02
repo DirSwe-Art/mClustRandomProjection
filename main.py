@@ -283,7 +283,7 @@ def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=60, dis_metric
 	print('*** Clusterings are groupped with an agglomeartive model. ***') 
 
 	L      = []
-	G      = M.labels_
+	G      = M.labels_; print(G)
 	for l in set(G):
 		C  = P[G==l]
 		
@@ -319,7 +319,7 @@ def generate_data(type='432random'):
 	elif type == 'image':
 		DATA, imRow, imCol, imDim = dataimg('source_images/img1.bmp')
 		k = 2
-		n_views = 12
+		n_views = 9
 		datatype = 'image'
 		return DATA, k, n_views, datatype, imRow, imCol, imDim
 
@@ -411,13 +411,14 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 (DATA, n_clusters, 
  n_views, datatype,   
-# imRow, imCol, imDim)= generate_data(type= 'image')		# 'image'
- 					 )= generate_data(type= '223random')	# '432random', '223random'
+ imRow, imCol, imDim)= generate_data(type= 'image')		# 'image'
+# 					 )= generate_data(type= '223random')	# '432random', '223random'
 
-n_projections 		 = 120
+n_projections 		 = 15
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
 clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
 
+print('k: %d, p:, %d, q: %d' %(n_clusters, n_projections, n_views, ) )
 
 
 clust_arr, clust_mdl = randProjClusterings(
