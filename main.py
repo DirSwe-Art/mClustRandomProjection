@@ -320,7 +320,7 @@ def generate_data(data='random432'):
 		DATA, imRow, imCol, imDim = dataimg('source_images/'+str(data))
 		k = 2
 		n_views = 9
-		datatype = data
+		datatype = data[0:5]
 		return DATA, k, n_views, datatype, imRow, imCol, imDim
 
 def data223():								# 2 features, 2 clusters, 3 views
@@ -411,8 +411,8 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 (DATA, n_clusters, 
  n_views, datatype,   
- imRow, imCol, imDim)= generate_data(type= 'image')		# 'image'
-# 					 )= generate_data(type= '223random')	# '432random', '223random'
+ imRow, imCol, imDim)= generate_data(data= 'image1.bmp')	# 'image1.bmp', 'image2.bmp', 'image3.bmp'
+# 					 )= generate_data(data= '223random')	# '432random', '223random'
 
 n_projections 		 = 120
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
