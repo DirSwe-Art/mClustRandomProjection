@@ -26,7 +26,8 @@ def constructProjectionMatrix(d):
 	A    = rng.normal(0, 1/d, size=(d,d))		# Generator's normal method to generate the matrix A
 	#A    = np.random.normal(0, 1/d, size=(d,d)) # A random d x d matrix with entries from N(0, 1/d)
 	Q, R = np.linalg.qr(A) 					   	# QR decomposition to A. (Q: orthogonal matrix, R: upper triangular matrix)
-	M    = Q @ Q.T				             	# Prjection matrix (projects data onto a space spanned by the unit vectors in Q).
+	#M    = Q @ Q.T				             	# Prjection matrix (projects data onto a space spanned by the unit vectors in Q).
+	M    = Q @ np.linalg.inv(Q.T @ Q) @ Q.T		# General Prjection matrix Q (Q.T Q)^-1 Q.T
 	return M
 
 # enhanced function
@@ -260,15 +261,15 @@ def plotDendrogram(model, Y, resultsPath):
 	plt.xlabel('Sample index')
 	plt.ylabel('Normalized Distance')
 	plt.savefig(resultsPath+'dendrogram_'+str(datatype)+str(n_clusters)+'.jpg')
-	plt.show()
+	#plt.show()
 	
 def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=30, dis_metric='dist_clusterings', clusterings_rep='aggregated' ):
 	P = []
 	for p in range(n_projections):
 		XX = copy.deepcopy(X)
-		#M  = constructProjectionMatrix(XX.shape[1])
-		#Xp = XX @ M
-		Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(XX)
+		M  = constructProjectionMatrix(XX.shape[1])
+		Xp = XX @ M
+		#Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(XX)
 		Sp = GaussianMixture(n_components=n_clusters).fit_predict(Xp)
 		P.append(Sp)
 	
@@ -412,7 +413,7 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 # imRow, imCol, imDim)= generate_data(type= 'image')		# 'image'
  					 )= generate_data(type= '223random')	# '432random', '223random'
 
-n_projections 		 = 60
+n_projections 		 = 120
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
 clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
 
@@ -427,7 +428,7 @@ clust_arr, clust_mdl = randProjClusterings(
 						clusterings_rep = clusterings_rep ) 
 
 
-#plotDendrogram(clust_mdl, clust_mdl.labels_, resultsPath)
+plotDendrogram(clust_mdl, clust_mdl.labels_, resultsPath)
 
 
 for clust_id, labels in enumerate(clust_arr):
