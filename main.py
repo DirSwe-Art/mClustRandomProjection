@@ -267,9 +267,9 @@ def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=60, dis_metric
 	P = []
 	for p in range(n_projections):
 		XX = copy.deepcopy(X)
-		Mp = constructProjectionMatrix(XX.shape[1])
-		Xp = XX @ Mp
-		#Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(XX)
+		#Mp = constructProjectionMatrix(XX.shape[1])
+		#Xp = XX @ Mp
+		Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(XX)
 		Sp = GaussianMixture(n_components=n_clusters).fit_predict(Xp)
 		P.append(Sp)
 	
@@ -283,7 +283,7 @@ def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=60, dis_metric
 	print('*** Clusterings are groupped with an agglomeartive model. ***') 
 
 	L      = []
-	G      = M.labels_; print(G)
+	G      = M.labels_
 	for l in set(G):
 		C  = P[G==l]
 		
@@ -301,26 +301,26 @@ def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=60, dis_metric
 	
 # ====================================================================== #
 
-def generate_data(type='432random'):
-	if type == '432random':
+def generate_data(data='random432'):
+	if data == 'random432':
 		DATA = data432()
 		k = 3
 		n_views = 2
-		datatype = '432random'
+		datatype = data
 		return DATA, k, n_views, datatype
 		
-	elif type == '223random':
+	elif data == 'random223':
 		DATA = data223()
 		k = 2
 		n_views = 2
-		datatype = '223random'
+		datatype = data
 		return DATA, k, n_views, datatype
 		
-	elif type == 'image':
-		DATA, imRow, imCol, imDim = dataimg('source_images/img1.bmp')
+	elif data[0:5] == 'image':
+		DATA, imRow, imCol, imDim = dataimg('source_images/'+str(data))
 		k = 2
 		n_views = 9
-		datatype = 'image'
+		datatype = data
 		return DATA, k, n_views, datatype, imRow, imCol, imDim
 
 def data223():								# 2 features, 2 clusters, 3 views
@@ -414,11 +414,9 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
  imRow, imCol, imDim)= generate_data(type= 'image')		# 'image'
 # 					 )= generate_data(type= '223random')	# '432random', '223random'
 
-n_projections 		 = 15
+n_projections 		 = 120
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
 clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
-
-print('k: %d, p:, %d, q: %d' %(n_clusters, n_projections, n_views, ) )
 
 
 clust_arr, clust_mdl = randProjClusterings(
