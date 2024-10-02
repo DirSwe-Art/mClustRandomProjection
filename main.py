@@ -267,8 +267,8 @@ def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=30, dis_metric
 	P = []
 	for p in range(n_projections):
 		XX = copy.deepcopy(X)
-		M  = constructProjectionMatrix(XX.shape[1])
-		Xp = XX @ M
+		Mp = constructProjectionMatrix(XX.shape[1])
+		Xp = XX @ Mp
 		#Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(XX)
 		Sp = GaussianMixture(n_components=n_clusters).fit_predict(Xp)
 		P.append(Sp)
@@ -279,24 +279,25 @@ def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=30, dis_metric
 	A      = affinity(P, affinity_metric=dis_metric)
 	print('*** Clusterings dissimilarity matrix is generated. ***')
 	
-	Y	   = AgglomerativeClustering( n_clusters=n_views, linkage="average", metric="precomputed", compute_distances=True ).fit_predict(A)
+	M	   = AgglomerativeClustering( n_clusters=n_views, linkage="average", metric="precomputed", compute_distances=True ).fit(A)
 	print('*** Clusterings are groupped with an agglomeartive model. ***') 
 
-	Z      = []
-	for i in set(Y):
-		C  = P[Y==i]
+	L      = []
+	G      = M.predict(A)
+	for l in set(G):
+		C  = P[G==l]
 		
 		if len(C) == 1:
-			Z.append(C[0].tolist())
+			L.append(C[0].tolist())
 		elif clusterings_rep == 'central': 
-			Z.append(central(C))
+			L.append(central(C))
 		elif clusterings_rep == 'ensembeled': 
-			Z.append(ensembeled(C))
+			L.append(ensembeled(C))
 		elif clusterings_rep == 'aggregated': 
-			Z.append(aggregated(C))
+			L.append(aggregated(C))
 	
 	print('*** Groups of similar clusterings are aggregated and represented. ***')
-	return Z, AgglomerativeClustering( n_clusters=n_views, linkage="average", metric="precomputed", compute_distances=True ).fit(A)
+	return L, M
 	
 # ====================================================================== #
 
