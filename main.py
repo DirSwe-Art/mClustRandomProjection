@@ -279,25 +279,25 @@ def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=60, dis_metric
 	A      = affinity(P, affinity_metric=dis_metric)
 	print('*** Clusterings dissimilarity matrix is generated. ***')
 	
-	Mdl    = AgglomerativeClustering( n_clusters=n_views, linkage="average", metric="precomputed", compute_distances=True ).fit(A)
+	M    = AgglomerativeClustering( n_clusters=n_views, linkage="average", metric="precomputed", compute_distances=True ).fit(A)
 	print('*** Clusterings are groupped with an agglomeartive model. ***') 
 
-	L      = []
-	G      = Mdl.labels_
+	R      = []
+	G      = M.labels_
 	for l in set(G):
 		C  = P[G==l]
 		
 		if len(C) == 1:
-			L.append(C[0].tolist())
+			R.append(C[0].tolist())
 		elif clusterings_rep == 'central': 
-			L.append(central(C))
+			R.append(central(C))
 		elif clusterings_rep == 'ensembeled': 
-			L.append(ensembeled(C))
+			R.append(ensembeled(C))
 		elif clusterings_rep == 'aggregated': 
-			L.append(aggregated(C))
+			R.append(aggregated(C))
 	
 	print('*** Groups of similar clusterings are aggregated and represented. ***')
-	return L, Mdl
+	return R, M
 	
 # ====================================================================== #
 
@@ -411,7 +411,7 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 (DATA, n_clusters, 
  n_views, datatype,   
- imRow, imCol, imDim)= generate_data(data= 'image2.bmp')	# 'image1.bmp', 'image2.bmp', 'image3.bmp', 'image4.bmp'
+ imRow, imCol, imDim)= generate_data(data= 'image3.bmp')	# 'image1.bmp', 'image2.bmp', 'image3.bmp', 'image4.bmp'
 # 					 )= generate_data(data= '223random')	# '432random', '223random'
 
 n_projections 		 = 120
