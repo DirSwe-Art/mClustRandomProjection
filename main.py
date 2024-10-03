@@ -70,7 +70,7 @@ def approximate_dist_clusterings(Ya, Yb, th=300):
 	if len(Ya) < th: return dist_clusterings(Ya, Yb)
 	
 	ds_rand_Ys    = []
-	for i in range(8):
+	for i in range(5):
 		rand_ids = np.random.choice(range(len(Ya)), th, replace=False) # replace=False a value a is selected once.
 		ds_rand_Ys.append( dist_clusterings([Ya[id] for id in rand_ids], [Yb[id] for id in rand_ids]) )
 	return np.mean(ds_rand_Ys)
@@ -411,7 +411,7 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 (DATA, n_clusters, 
  n_views, datatype,   
- imRow, imCol, imDim)= generate_data(data= 'image4.bmp')	# 'image1.bmp', 'image2.bmp', 'image3.bmp', 'image4.bmp'
+ imRow, imCol, imDim)= generate_data(data= 'image2.bmp')	# 'image1.bmp', 'image2.bmp', 'image3.bmp', 'image4.bmp'
 # 					 )= generate_data(data= '223random')	# '432random', '223random'
 
 n_projections 		 = 120
