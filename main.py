@@ -21,15 +21,11 @@ from scipy.sparse import lil_matrix
 def constructProjectionMatrix(d):
 	# Returns a random projection transformation matrix spanned by a linearly independent (orthogonal) unit vectors. #
 	
-	#bit_generator = np.random.PCG64DXSM()		# Create a 128-bit bit generator (PCG64DXSM)
-	#rng  = np.random.Generator(bit_generator)	# Create a Generator instance using the 128-bit bit generator
-	#A    = rng.normal(0, 1/math.sqrt(d), size=(d,d))		# Generator's normal method to generate the matrix A
-	A    = np.random.normal(0, 1/d, size=(d,d)) # A random d x d matrix with entries from N(0, 1/d)
-	#Q, R = np.linalg.qr(A) 	# QR decomposition to A. (Q: orthogonal matrix, R: upper triangular matrix)
-	#M    = Q @ Q.T				             	# Prjection matrix (projects data onto a space spanned by the unit vectors in Q).#
-	#M    = A @ np.linalg.inv(A.T @ A) @ A.T
-	#M    = A  @ A.T
-	#M    = Q @ np.linalg.inv(Q.T @ Q) @ Q.T		# General Prjection matrix Q (Q.T Q)^-1 Q.T
+	bit_generator = np.random.PCG64DXSM()		# Create a 128-bit bit generator (PCG64DXSM)
+	rng  = np.random.Generator(bit_generator)	# Create a Generator instance using the 128-bit bit generator
+	A    = rng.normal(0, 1/math.sqrt(d), size=(d,d))		# Generator's normal method to generate the matrix A
+	M    = A @ np.linalg.inv(A.T @ A) @ A.T		# Prjection matrix (projects data onto a space spanned by the unit vectors in A).#
+
 	return A
 
 # enhanced function
@@ -74,7 +70,7 @@ def approximate_dist_clusterings(Ya, Yb, th=300):
 	if len(Ya) < th: return dist_clusterings(Ya, Yb)
 	
 	ds_rand_Ys    = []
-	for i in range(5):
+	for i in range(8):
 		rand_ids = np.random.choice(range(len(Ya)), th, replace=False) # replace=False a value a is selected once.
 		ds_rand_Ys.append( dist_clusterings([Ya[id] for id in rand_ids], [Yb[id] for id in rand_ids]) )
 	return np.mean(ds_rand_Ys)
@@ -415,10 +411,10 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 (DATA, n_clusters, 
  n_views, datatype,   
- imRow, imCol, imDim)= generate_data(data= 'image1.bmp')	# 'image1.bmp', 'image2.bmp', 'image3.bmp', 'image4.bmp'
+ imRow, imCol, imDim)= generate_data(data= 'image4.bmp')	# 'image1.bmp', 'image2.bmp', 'image3.bmp', 'image4.bmp'
 # 					 )= generate_data(data= '223random')	# '432random', '223random'
 
-n_projections 		 = 30
+n_projections 		 = 120
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
 clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
 
