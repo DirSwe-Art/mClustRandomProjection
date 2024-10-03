@@ -367,7 +367,7 @@ def dataimg(file):
 		for c in range(imCol):
 			X.append( IMG[r][c] )
 	
-	print('The shape now is %d rows, %d columns, %d dimensions ***'%(imRow, imCol, imDim))
+	print('The shape is %d rows, %d columns, %d dimensions ***'%(imRow, imCol, imDim))
 	return np.array(X, dtype='uint8'), imRow, imCol, imDim
 
 def plot_clusters(DATA, colors, t, resultsPath):
@@ -396,23 +396,13 @@ def random_clusters(DATA, colors, t, resultsPath):
 	plt.close('all')	
 
 def image_clusters(DATA, colors, t, resultsPath):
-	#IMG_DATA = copy.deepcopy(DATA).reshape(imRow, imCol, imDim)
+	IMG_DATA = copy.deepcopy(DATA).reshape(imRow, imCol, imDim)
 
-	# Reshape DATA to the original image dimensions (imRow, imCol, imDim)
-	if DATA.shape[0] == imRow * imCol * imDim:  # Ensure compatibility with reshaping
-		IMG_DATA = copy.deepcopy(DATA).reshape(imRow, imCol, imDim)
-	else:
-		raise ValueError("DATA shape does not match the original image dimensions.")
+	# If the input colors array has 4 channels (RGBA), convert it to RGB
+	if np.array(colors).shape[-1] == 4:
+		colors = np.array(colors)[..., :3]  # Drop the alpha channel if present
+	reshaped_colors = np.array(colors, dtype='uint8').reshape(imRow, imCol, imDim)
 
-	# Handle the colors array: ensure it's reshaped correctly to match the original dimensions
-	if colors.shape[0] == imRow * imCol * imDim:
-		# If the input colors array has 4 channels (RGBA), convert it to RGB
-		if colors.shape[-1] == 4:
-			colors = colors[..., :3]  # Drop the alpha channel if present
-		reshaped_colors = np.array(colors, dtype='uint8').reshape(imRow, imCol, imDim)
-	else:
-		raise ValueError("Colors shape does not match the original image dimensions.")
-	
 	# Plotting the original and clustered image
 	f, (ax1, ax3) = plt.subplots(1, 2, sharex=False, sharey=False, figsize=(12, 5))
 	
@@ -438,7 +428,7 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 (DATA, n_clusters, 
  n_views, datatype,   
- imRow, imCol, imDim)= generate_data(data= 'image1.png')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png'
+ imRow, imCol, imDim)= generate_data(data= 'image1.bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png'
 # 					 )= generate_data(data= '223random')	# '432random', '223random'
 
 n_projections 		 = 120
