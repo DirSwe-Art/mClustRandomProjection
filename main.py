@@ -353,14 +353,21 @@ def data432():								# 4 features, 3 clusters, 2 views
 	return X
 
 def dataimg(file):
+	print('*** Reading image data ... ', end='')
+	
 	IMG = plt.imread(file)					# uint8 data type
+	if IMG.shape[-1] == 4:
+		print('the image has 4 dimesions. Dropping the alpha channel ... ', end='')
+		IMG = IMG[..., :3]  				# Converting RGBA to RGB. Drop the alpha channel
+	
 	imRow, imCol, imDim = IMG.shape
 	X = []
 	
 	for r in range(imRow):
 		for c in range(imCol):
 			X.append( IMG[r][c] )
-			
+	
+	print('The shape now is %d rows, %d columns, %d dimensions ***'%(imRow, imCol, imDim))
 	return np.array(X, dtype='uint8'), imRow, imCol, imDim
 
 def plot_clusters(DATA, colors, t, resultsPath):
@@ -389,15 +396,35 @@ def random_clusters(DATA, colors, t, resultsPath):
 	plt.close('all')	
 
 def image_clusters(DATA, colors, t, resultsPath):
-	IMG_DATA = copy.deepcopy(DATA).reshape(imRow, imCol, imDim)
+	#IMG_DATA = copy.deepcopy(DATA).reshape(imRow, imCol, imDim)
+
+	# Reshape DATA to the original image dimensions (imRow, imCol, imDim)
+	if DATA.shape[0] == imRow * imCol * imDim:  # Ensure compatibility with reshaping
+		IMG_DATA = copy.deepcopy(DATA).reshape(imRow, imCol, imDim)
+	else:
+		raise ValueError("DATA shape does not match the original image dimensions.")
+
+	# Handle the colors array: ensure it's reshaped correctly to match the original dimensions
+	if colors.shape[0] == imRow * imCol * imDim:
+		# If the input colors array has 4 channels (RGBA), convert it to RGB
+		if colors.shape[-1] == 4:
+			colors = colors[..., :3]  # Drop the alpha channel if present
+		reshaped_colors = np.array(colors, dtype='uint8').reshape(imRow, imCol, imDim)
+	else:
+		raise ValueError("Colors shape does not match the original image dimensions.")
 	
+	# Plotting the original and clustered image
 	f, (ax1, ax3) = plt.subplots(1, 2, sharex=False, sharey=False, figsize=(12, 5))
-	ax1.imshow(IMG_DATA)
-	ax1.set_title('Source image')								# view the original space
 	
-	ax3.imshow(np.array(colors, dtype='uint8').reshape(imRow, imCol, imDim)) 	# view the segmented space (center colors)
+	# Display the original image
+	ax1.imshow(IMG_DATA)
+	ax1.set_title('Source image')
+	
+	# Display the clustered image
+	ax3.imshow(reshaped_colors)
 	ax3.set_title('Clustering Solution')
 	
+	# Display the clustered image
 	plt.savefig(resultsPath+datatype[0:6]+'_'+str(t)+'.png')
 	plt.close('all')	
 	
