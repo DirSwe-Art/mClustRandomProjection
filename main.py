@@ -428,7 +428,7 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 (DATA, n_clusters, 
  n_views, datatype,   
- imRow, imCol, imDim)= generate_data(data= 'image_map.bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png'
+ imRow, imCol, imDim)= generate_data(data= 'image_map2.bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png'
 # 					 )= generate_data(data= '223random')	# '432random', '223random'
 
 n_projections 		 = 120
@@ -438,7 +438,7 @@ clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
 
 clust_arr, clust_mdl = randProjClusterings(
 						DATA, 
-						n_clusters 	    = n_clusters, 
+						n_clusters 	    = 3, 
 						n_views 	    = n_views,
 						n_projections   = n_projections, 
 						dis_metric 	    = dis_metric, 
@@ -451,13 +451,13 @@ plotDendrogram(clust_mdl, clust_mdl.labels_, resultsPath)
 for clust_id, labels in enumerate(clust_arr):
 	if datatype[0:5] == 'image':
 		# Coloring RGB pixels with thier cluster correspondiing color (2 colors, 1 for each cluster)
-		clr = [ [0, 0, 0], [255, 255, 255] ] 	 
+		#clr = [ [0, 0, 0], [255, 255, 255] ] 	 
 		
 		# coloring RGB pixels with their cluster means
-		#clr = [ [np.mean(col) for col in zip(*DATA[labels==cl])] for cl in set(labels) ] 
+		clr = [ [np.mean(col) for col in zip(*DATA[labels==cl])] for cl in set(labels) ] 
 	else:
 		# Coloring data points with thier cluster correspondiing color
 		clr = ['brown', 'green', 'black' ,'cornflowerblue', 'yellow', 'orange']
 	
-	plot_clusters( DATA, [ clr[i] for i in labels ], clust_id, resultsPath )
+	plot_clusters( DATA, [ clr[i] for i in labels ], clust_id, resultsPath+str('1_') )
 	
