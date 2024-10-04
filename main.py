@@ -261,7 +261,7 @@ def plotDendrogram(model, Y, resultsPath):
 	plt.savefig(resultsPath+'dendrogram_'+data_name[0:6]+str(n_clusters)+'.jpg')
 	#plt.show()
 	
-def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=60, dis_metric='dist_clusterings', clusterings_rep='aggregated' ):
+def mClustRandomProjection(X, n_clusters=2, n_views=3, n_projections=60, dis_metric='dist_clusterings', clusterings_rep='aggregated' ):
 	print('\n*** Program is started with the following parameters values: ***\n*** %d projections, %d views, each with %d clusters. ***\n'%(n_projections, n_views, n_clusters))
 	
 	P = []
@@ -434,7 +434,7 @@ dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approxima
 clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
 
 
-representatives, M_mdl = randProjClusterings(
+representatives, M_mdl = mClustRandomProjection(
 						DATA, 
 						n_clusters 	    = 3, 
 						n_views 	    = 9,
