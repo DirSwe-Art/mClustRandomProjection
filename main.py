@@ -289,7 +289,7 @@ def mClustRandomProjection(X, n_clusters=2, n_views=3, n_projections=60, dis_met
 		
 		if len(C) == 1:
 			R.append(C[0].tolist())
-			print('group:',l, R)
+			print('group:',l, np.array(copy.deepcopy(R)))
 		elif clusterings_rep == 'central': 
 			R.append(central(C))
 		elif clusterings_rep == 'ensembeled': 
