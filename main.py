@@ -353,7 +353,7 @@ def data432():								# 4 features, 3 clusters, 2 views
 	return X
 
 def dataimg(file):
-	print('*** Reading image data ... ', end='')
+	print('*** Reading (',file,') image data ... ', end='')
 	
 	IMG = plt.imread(file)					# uint8 data type
 	if IMG.shape[-1] == 4:
