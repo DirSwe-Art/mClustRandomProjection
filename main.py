@@ -289,6 +289,7 @@ def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=60, dis_metric
 		
 		if len(C) == 1:
 			R.append(C[0].tolist())
+			print('group:',l, R)
 		elif clusterings_rep == 'central': 
 			R.append(central(C))
 		elif clusterings_rep == 'ensembeled': 
@@ -433,19 +434,19 @@ dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approxima
 clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
 
 
-clust_arr, clust_mdl = randProjClusterings(
+representatives, M_mdl = randProjClusterings(
 						DATA, 
 						n_clusters 	    = 3, 
-						n_views 	    = n_views,
+						n_views 	    = 9,
 						n_projections   = n_projections, 
 						dis_metric 	    = dis_metric, 
 						clusterings_rep = clusterings_rep ) 
 
 
-plotDendrogram(clust_mdl, clust_mdl.labels_, resultsPath)
+plotDendrogram(M_mdl, M_mdl.labels_, resultsPath)
 
 
-for clust_id, labels in enumerate(clust_arr):
+for representative_id, labels in enumerate(representatives):
 	if data_name[0:5] == 'image':
 		# Coloring RGB pixels with thier cluster correspondiing color (2 colors, 1 for each cluster)
 		#clr = [ [0, 0, 0], [255, 255, 255] ] 	 
@@ -456,6 +457,6 @@ for clust_id, labels in enumerate(clust_arr):
 		# Coloring data points with thier cluster correspondiing color
 		clr = ['brown', 'green', 'black' ,'cornflowerblue', 'yellow', 'orange']
 	
-	plot_clusters( DATA, [ clr[i] for i in labels ], clust_id, resultsPath )
+	plot_clusters( DATA, [ clr[i] for i in labels ], representative_id, resultsPath )
 	
 print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
