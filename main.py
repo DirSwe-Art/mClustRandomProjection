@@ -12,7 +12,7 @@ from itertools import combinations
 from scipy.cluster.hierarchy import dendrogram
 import numpy as np
 import matplotlib.pyplot as plt
-import random, copy, sys, os, math
+import random, copy, math, time, datetime, os, sys
 from scipy.sparse import lil_matrix
 #import dask
 
@@ -258,7 +258,7 @@ def plotDendrogram(model, Y, resultsPath):
 	plt.title('Dendrogram with Cluster-based Link and Leaf Colors')
 	plt.xlabel('Sample index')
 	plt.ylabel('Normalized Distance')
-	plt.savefig(resultsPath+'dendrogram_'+datatype[0:6]+str(n_clusters)+'.jpg')
+	plt.savefig(resultsPath+'dendrogram_'+data_name[0:6]+str(n_clusters)+'.jpg')
 	#plt.show()
 	
 def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=60, dis_metric='dist_clusterings', clusterings_rep='aggregated' ):
@@ -301,27 +301,24 @@ def randProjClusterings(X, n_clusters=2, n_views=3, n_projections=60, dis_metric
 	
 # ====================================================================== #
 
-def generate_data(data='random432'):
-	if data == 'random432':
+def generate_data(data_name='random432'):
+	if data_name == 'random432':
 		DATA = data432()
 		k = 3
 		n_views = 2
-		datatype = data
-		return DATA, k, n_views, datatype
+		return DATA, k, n_views, data_name
 		
-	elif data == 'random223':
+	elif data_name == 'random223':
 		DATA = data223()
 		k = 2
 		n_views = 2
-		datatype = data
-		return DATA, k, n_views, datatype
+		return DATA, k, n_views, data_name
 		
-	elif data[0:5] == 'image':
-		DATA, imRow, imCol, imDim = dataimg('source_images/'+data)
+	elif data_name[0:5] == 'image':
+		DATA, imRow, imCol, imDim = dataimg('source_images/'+data_name)
 		k = 2
 		n_views = 9
-		datatype = data
-		return DATA, k, n_views, datatype, imRow, imCol, imDim
+		return DATA, k, n_views, data_name, imRow, imCol, imDim
 
 def data223():								# 2 features, 2 clusters, 3 views
 	X = []
@@ -371,8 +368,8 @@ def dataimg(file):
 	return np.array(X, dtype='uint8'), imRow, imCol, imDim
 
 def plot_clusters(DATA, colors, t, resultsPath):
-	if datatype      =='random223' or datatype=='random432': return random_clusters(DATA, colors, t, resultsPath)
-	if datatype[0:5] == 'image': return image_clusters(DATA, colors, t, resultsPath) 
+	if data_name      =='random223' or data_name=='random432': return random_clusters(DATA, colors, t, resultsPath)
+	if data_name[0:5] == 'image': return image_clusters(DATA, colors, t, resultsPath) 
 	
 def random_clusters(DATA, colors, t, resultsPath):
 	fig, (ax1a, ax2a) = plt.subplots(1, 2, figsize=(12, 5), sharex=False, sharey=False)
@@ -415,21 +412,21 @@ def image_clusters(DATA, colors, t, resultsPath):
 	ax3.set_title('Clustering Solution')
 	
 	# Display the clustered image
-	plt.savefig(resultsPath+datatype[0:6]+'_'+str(t)+'.png')
+	plt.savefig(resultsPath+data_name+'_'+str(t)+'.png')
 	plt.close('all')	
 	
 # ====================================================================== #
 
-
+starting_time   = time.time()
 resultsPath     = r'C:/ExperimentalResults/Results/results_MultipleClusteringsViaRandomProjection/'
 if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 
 
 (DATA, n_clusters, 
- n_views, datatype,   
- imRow, imCol, imDim)= generate_data(data= 'image_map2.bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png'
-# 					 )= generate_data(data= '223random')	# '432random', '223random'
+ n_views, data_name,   
+ imRow, imCol, imDim)= generate_data(data_name= 'image_map2.bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png'
+# 					 )= generate_data(data_name= '223random')	# '432random', '223random'
 
 n_projections 		 = 120
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
@@ -449,7 +446,7 @@ plotDendrogram(clust_mdl, clust_mdl.labels_, resultsPath)
 
 
 for clust_id, labels in enumerate(clust_arr):
-	if datatype[0:5] == 'image':
+	if data_name[0:5] == 'image':
 		# Coloring RGB pixels with thier cluster correspondiing color (2 colors, 1 for each cluster)
 		#clr = [ [0, 0, 0], [255, 255, 255] ] 	 
 		
@@ -459,5 +456,6 @@ for clust_id, labels in enumerate(clust_arr):
 		# Coloring data points with thier cluster correspondiing color
 		clr = ['brown', 'green', 'black' ,'cornflowerblue', 'yellow', 'orange']
 	
-	plot_clusters( DATA, [ clr[i] for i in labels ], clust_id, resultsPath+str('1_') )
+	plot_clusters( DATA, [ clr[i] for i in labels ], clust_id, resultsPath )
 	
+print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
