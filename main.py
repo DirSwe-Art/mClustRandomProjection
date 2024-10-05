@@ -429,15 +429,15 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
  imRow, imCol, imDim)= generate_data(data_name= 'image_map2.bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png'
 # 					 )= generate_data(data_name= '223random')	# '432random', '223random'
 
-n_projections 		 = 120
+n_projections 		 = 30
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
 clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
 
 
 representatives, M_mdl = mClustRandomProjection(
 						DATA, 
-						n_clusters 	    = 3, 
-						n_views 	    = 9,
+						n_clusters 	    = 2, 
+						n_views 	    = 3,
 						n_projections   = n_projections, 
 						dis_metric 	    = dis_metric, 
 						clusterings_rep = clusterings_rep ) 
@@ -452,6 +452,10 @@ for representative_id, labels in enumerate(representatives):
 		#clr = [ [0, 0, 0], [255, 255, 255] ] 	 
 		
 		# coloring RGB pixels with their cluster means
+		print('representative_id:', representative_id)
+		print('set(labels):', set(labels))
+		print('labels',labels )
+
 		clr = [ [np.mean(col) for col in zip(*DATA[labels==cl])] for cl in set(labels) ] 
 	else:
 		# Coloring data points with thier cluster correspondiing color
