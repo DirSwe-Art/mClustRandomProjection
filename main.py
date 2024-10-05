@@ -65,7 +65,7 @@ def dist_clusterings(Ya, Yb):
                 d += 1
     return d
 '''	
-def approximate_dist_clusterings(Ya, Yb, th=300):
+def approximate_dist_clusterings(Ya, Yb, th=1200):
 	# Returns an approximate distance between two clustering solutions if the data size is larger than 100 points
 	if len(Ya) < th: return dist_clusterings(Ya, Yb)
 	
@@ -231,7 +231,7 @@ def plotDendrogram(model, Y, resultsPath):
 	plt.figure(figsize=(10,6))
 	
 	Z2           = np.array(copy.deepcopy(Z))
-	Z2[:, 2]     = [ float(i)/max(Z2[:, 2]) for i in Z2[:, 2] ]
+	#Z2[:, 2]     = [ float(i)/max(Z2[:, 2]) for i in Z2[:, 2] ]
 
 	denZ = dendrogram( Z2,
 				   leaf_rotation         = 0,
@@ -266,7 +266,7 @@ def plotDendrogram(model, Y, resultsPath):
 	#plt.show()
 	
 def mClustRandomProjection(X, n_projections=60, n_clusters=2, dis_metric='dist_clusterings'):
-	print('\n*** Program is started with the following parameters values: ***\n*** %d projections, %d views, each with %d clusters. ***\n'%(n_projections, n_views, n_clusters))
+	print('\n*** Program is started with the following parameters values: ***\n*** %d projections, each with %d clusters. ***\n'%(n_projections, n_clusters))
 	
 	P = []
 	for p in range(n_projections):
@@ -294,9 +294,7 @@ def representative_solutions(model, clusterings, n_views=3, clusterings_rep='agg
 	G      = np.array(cut_tree(Z, n_clusters=n_views).flatten())
 	
 	plotDendrogram(model, G, resultsPath)
-	print('clusterings', clusterings)
-	print('G',G)
-
+	
 	for l in set(G):
 		C  = clusterings[G==l]
 		
@@ -308,8 +306,6 @@ def representative_solutions(model, clusterings, n_views=3, clusterings_rep='agg
 			R.append(ensembeled(C))
 		elif clusterings_rep == 'aggregated': 
 			R.append(aggregated(C))
-	
-	print('len_R',len(R))
 	
 	print('*** Groups of similar clusterings are aggregated and represented. ***')
 	return np.array(R)
@@ -437,11 +433,11 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 (DATA, n_clusters, 
  data_name,   
- imRow, imCol, imDim)= generate_data(data_name= 'image3.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png'
+ imRow, imCol, imDim)= generate_data(data_name= 'image_x-ray.jpg', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png'
 # 					 )= generate_data(data_name= '223random')	# '432random', '223random'
 
 
-n_projections 		 = 20
+n_projections 		 = 10
 n_clusters           = 2
 n_views              = 3
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
