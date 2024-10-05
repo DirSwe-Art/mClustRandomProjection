@@ -426,7 +426,7 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 (DATA, n_clusters, 
  n_views, data_name,   
- imRow, imCol, imDim)= generate_data(data_name= 'image2.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png'
+ imRow, imCol, imDim)= generate_data(data_name= 'image3.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png'
 # 					 )= generate_data(data_name= '223random')	# '432random', '223random'
 
 n_projections 		 = 10
