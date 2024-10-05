@@ -9,7 +9,7 @@ from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics.pairwise import pairwise_distances
 from collections import Counter
 from itertools import combinations
-from scipy.cluster.hierarchy import dendrogram
+from scipy.cluster.hierarchy import dendrogram, cut_tree
 import numpy as np
 import matplotlib.pyplot as plt
 import random, copy, math, time, datetime, os, sys
@@ -177,6 +177,21 @@ def selectGroupsOfClusterings(Y, clusterings):
 	print("Order of selected clusters:", selected_clusters)
 	return selected_clusters
 
+def computeLinkageFromModel(model):
+	counts = np.zeros(model.children_.shape[0])
+	n_samples = len(model.labels_)
+	for i, merge in enumerate(model.children_):
+		current_count = 0
+		for child_idx in merge:
+			if child_idx < n_samples:
+				current_count += 1  # leaf node
+			else:
+				current_count += counts[child_idx - n_samples]
+		counts[i] = current_count
+
+	Z = np.column_stack( [model.children_, model.distances_, counts] ).astype(float)
+	return Z
+
 def plotDendrogram(model, Y, resultsPath):
 	# plots the dendrogram with various options concerning coloring labels and links. #
 	def linkColorFunction(link_id):
@@ -210,18 +225,7 @@ def plotDendrogram(model, Y, resultsPath):
 				link_colors[i + n_leaves] = 'grey'
 		return link_colors.get(link_id, 'grey')
 	
-	counts = np.zeros(model.children_.shape[0])
-	n_samples = len(model.labels_)
-	for i, merge in enumerate(model.children_):
-		current_count = 0
-		for child_idx in merge:
-			if child_idx < n_samples:
-				current_count += 1  # leaf node
-			else:
-				current_count += counts[child_idx - n_samples]
-		counts[i] = current_count
-
-	Z = np.column_stack( [model.children_, model.distances_, counts] ).astype(float)
+	Z = computeLinkageFromModel(model)
 	
 	plt.close('all')
 	plt.figure(figsize=(10,6))
@@ -286,7 +290,16 @@ def mClustRandomProjection(X, n_projections=60, n_clusters=2, dis_metric='dist_c
 
 def representative_solutions(model, clusterings, n_views=3, clusterings_rep='aggregated'):
 	R      = []
-	G      = AgglomerativeClustering(n_clusters=n_views, linkage=model.linkage).fit_predict(model.children_)
+	Z      = computeLinkageFromModel(model)
+	G      = cut_tree(Z, n_clusters=n_views).flatten()
+	#G0     = AgglomerativeClustering(n_clusters=n_views, linkage=model.linkage).fit_predict(model.children_)
+	
+
+	
+	plotDendrogram(model, G, resultsPath)
+	
+	
+
 	for l in set(G):
 		C  = clusterings[G==l]
 		
@@ -439,32 +452,53 @@ M_mdl, P 	   		 = mClustRandomProjection(
 						DATA, 
 						n_projections   = n_projections, 
 						n_clusters 	    = 2, 
-						dis_metric 	    = dis_metric, 
-						clusterings_rep = clusterings_rep )
+						dis_metric 	    = dis_metric )
 
 plotDendrogram(M_mdl, M_mdl.labels_, resultsPath)
-
-representatives 	 = representative_solutions(
-						model           = M_mdl,
-						clusterings     = P,
-						n_views 	    = n_views, 
-						clusterings_rep = clusterings_rep ) 
-
-	
-
-
-
-for S_id, S in enumerate(representatives):
-	if data_name[0:5] == 'image':
-		# Coloring RGB pixels with thier cluster correspondiing color (2 colors, 1 for each cluster)
-		#clr = [ [0, 0, 0], [255, 255, 255] ] 	 
-		
-		# coloring RGB pixels with their cluster means
-		clr = [ [np.mean(col) for col in zip(*DATA[S==cl])] for cl in set(S) ] 
-	else:
-		# Coloring data points with thier cluster correspondiing color
-		clr = ['brown', 'green', 'black' ,'cornflowerblue', 'yellow', 'orange']
-	
-	plot_clusters( DATA, [ clr[i] for i in S ], S_id, resultsPath )
-	
 print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
+
+
+while True:
+	try:
+		### important ###
+		# set whether labels  are used with the corresponding link coloring. 
+		n_views   = int(input('    Enter the number of number of views of clustering solutions: '))
+		
+		representatives 	 = representative_solutions(
+								model           = M_mdl,
+								clusterings     = P,
+								n_views 	    = n_views, 
+								clusterings_rep = clusterings_rep ) 
+		
+		
+		
+		for S_id, S in enumerate(representatives):
+			if data_name[0:5] == 'image':
+				# Coloring RGB pixels with thier cluster correspondiing color (2 colors, 1 for each cluster)
+				#clr = [ [0, 0, 0], [255, 255, 255] ] 	 
+				
+				# coloring RGB pixels with their cluster means
+				clr = [ [np.mean(col) for col in zip(*DATA[S==cl])] for cl in set(S) ] 
+			else:
+				# Coloring data points with thier cluster correspondiing color
+				clr = ['brown', 'green', 'black' ,'cornflowerblue', 'yellow', 'orange']
+			
+		plot_clusters( DATA, [ clr[i] for i in S ], S_id, resultsPath )
+			
+
+	except ValueError:
+		if n_views == 'q': print("\nProgram is ended"); break
+		print("Invalid number of clusters")
+
+
+
+
+
+
+
+
+
+	
+
+
+
