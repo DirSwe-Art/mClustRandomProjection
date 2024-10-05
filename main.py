@@ -298,7 +298,7 @@ def mClustRandomProjection(X, n_clusters=2, n_views=3, n_projections=60, dis_met
 			R.append(aggregated(C))
 	
 	print('*** Groups of similar clusterings are aggregated and represented. ***')
-	return np.array(R), M
+	return np.array(R), M, P
 	
 # ====================================================================== #
 
@@ -429,7 +429,7 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
  imRow, imCol, imDim)= generate_data(data_name= 'image3.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png'
 # 					 )= generate_data(data_name= '223random')	# '432random', '223random'
 
-n_projections 		 = 10
+n_projections 		 = 20
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
 clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
 
@@ -437,7 +437,7 @@ clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
 representatives, M_mdl = mClustRandomProjection(
 						DATA, 
 						n_clusters 	    = 2, 
-						n_views 	    = 3,
+						n_views 	    = 2,
 						n_projections   = n_projections, 
 						dis_metric 	    = dis_metric, 
 						clusterings_rep = clusterings_rep ) 
