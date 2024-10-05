@@ -261,7 +261,7 @@ def plotDendrogram(model, Y, resultsPath):
 	plt.savefig(resultsPath+'dendrogram_'+data_name[0:6]+str(n_clusters)+'.jpg')
 	#plt.show()
 	
-def mClustRandomProjection(X, n_clusters=2, n_views=3, n_projections=60, dis_metric='dist_clusterings', clusterings_rep='aggregated' ):
+def mClustRandomProjection(X, n_projections=60, n_clusters=2, dis_metric='dist_clusterings'):
 	print('\n*** Program is started with the following parameters values: ***\n*** %d projections, %d views, each with %d clusters. ***\n'%(n_projections, n_views, n_clusters))
 	
 	P = []
@@ -279,17 +279,19 @@ def mClustRandomProjection(X, n_clusters=2, n_views=3, n_projections=60, dis_met
 	A      = affinity(P, affinity_metric=dis_metric)
 	print('*** Clusterings dissimilarity matrix is generated. ***')
 	
-	M    = AgglomerativeClustering( n_clusters=n_views, linkage="average", metric="precomputed", compute_distances=True ).fit(A)
+	M    = AgglomerativeClustering( linkage="average", metric="precomputed", compute_distances=True ).fit(A)
 	print('*** Clusterings are groupped with an agglomeartive model. ***') 
 
+	return M, P
+
+def representative_solutions(model, clusterings, n_views=3, clusterings_rep='aggregated'):
 	R      = []
-	G      = M.labels_
+	G      = AgglomerativeClustering(n_clusters=n_views, linkage=model.linkage).fit_predict(model.children_)
 	for l in set(G):
-		C  = P[G==l]
+		C  = clusterings[G==l]
 		
 		if len(C) == 1:
 			R.append(C[0].tolist())
-			#print('group:',l, np.array(copy.deepcopy(R)))
 		elif clusterings_rep == 'central': 
 			R.append(central(C))
 		elif clusterings_rep == 'ensembeled': 
@@ -298,7 +300,7 @@ def mClustRandomProjection(X, n_clusters=2, n_views=3, n_projections=60, dis_met
 			R.append(aggregated(C))
 	
 	print('*** Groups of similar clusterings are aggregated and represented. ***')
-	return np.array(R), M, P
+	return np.array(R)
 	
 # ====================================================================== #
 
@@ -433,17 +435,23 @@ n_projections 		 = 20
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
 clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
 
-
-representatives, M_mdl = mClustRandomProjection(
+M_mdl, P 	   		 = mClustRandomProjection(
 						DATA, 
-						n_clusters 	    = 2, 
-						n_views 	    = 2,
 						n_projections   = n_projections, 
+						n_clusters 	    = 2, 
 						dis_metric 	    = dis_metric, 
-						clusterings_rep = clusterings_rep ) 
-
+						clusterings_rep = clusterings_rep )
 
 plotDendrogram(M_mdl, M_mdl.labels_, resultsPath)
+
+representatives 	 = representative_solutions(
+						model           = M_mdl,
+						clusterings     = P,
+						n_views 	    = n_views, 
+						clusterings_rep = clusterings_rep ) 
+
+	
+
 
 
 for S_id, S in enumerate(representatives):
