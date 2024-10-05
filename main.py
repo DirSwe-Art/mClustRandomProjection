@@ -289,7 +289,7 @@ def mClustRandomProjection(X, n_clusters=2, n_views=3, n_projections=60, dis_met
 		
 		if len(C) == 1:
 			R.append(C[0].tolist())
-			print('group:',l, np.array(copy.deepcopy(R)))
+			#print('group:',l, np.array(copy.deepcopy(R)))
 		elif clusterings_rep == 'central': 
 			R.append(central(C))
 		elif clusterings_rep == 'ensembeled': 
@@ -298,11 +298,11 @@ def mClustRandomProjection(X, n_clusters=2, n_views=3, n_projections=60, dis_met
 			R.append(aggregated(C))
 	
 	print('*** Groups of similar clusterings are aggregated and represented. ***')
-	return R, M
+	return np.array(R), M
 	
 # ====================================================================== #
 
-def generate_data(data_name='random432'):
+def generate_data(data_name='random432', format='text'):
 	if data_name == 'random432':
 		DATA = data432()
 		k = 3
@@ -316,7 +316,7 @@ def generate_data(data_name='random432'):
 		return DATA, k, n_views, data_name
 		
 	elif data_name[0:5] == 'image':
-		DATA, imRow, imCol, imDim = dataimg('source_images/'+data_name)
+		DATA, imRow, imCol, imDim = dataimg('source_images/'+data_name, format=format)
 		k = 2
 		n_views = 9
 		return DATA, k, n_views, data_name, imRow, imCol, imDim
@@ -350,10 +350,10 @@ def data432():								# 4 features, 3 clusters, 2 views
 	X  = X - X.mean(axis=0)					# Center the data (shift the data points toward the origine)
 	return X
 
-def dataimg(file):
+def dataimg(file, format='bmp'):
 	print('*** Reading (',file,') image data ... ', end='')
 	
-	IMG = plt.imread(file)					# uint8 data type
+	IMG = plt.imread(file, format=format)					# uint8 data type
 	if IMG.shape[-1] == 4:
 		print('the image has 4 dimesions. Dropping the alpha channel ... ', end='')
 		IMG = IMG[..., :3]  				# Converting RGBA to RGB. Drop the alpha channel
@@ -426,10 +426,10 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 (DATA, n_clusters, 
  n_views, data_name,   
- imRow, imCol, imDim)= generate_data(data_name= 'image_map2.bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png'
+ imRow, imCol, imDim)= generate_data(data_name= 'image2.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png'
 # 					 )= generate_data(data_name= '223random')	# '432random', '223random'
 
-n_projections 		 = 30
+n_projections 		 = 10
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
 clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
 
@@ -446,21 +446,17 @@ representatives, M_mdl = mClustRandomProjection(
 plotDendrogram(M_mdl, M_mdl.labels_, resultsPath)
 
 
-for representative_id, labels in enumerate(representatives):
+for S_id, S in enumerate(representatives):
 	if data_name[0:5] == 'image':
 		# Coloring RGB pixels with thier cluster correspondiing color (2 colors, 1 for each cluster)
 		#clr = [ [0, 0, 0], [255, 255, 255] ] 	 
 		
 		# coloring RGB pixels with their cluster means
-		print('representative_id:', representative_id)
-		print('set(labels):', set(labels))
-		print('labels',labels )
-
-		clr = [ [np.mean(col) for col in zip(*DATA[labels==cl])] for cl in set(labels) ] 
+		clr = [ [np.mean(col) for col in zip(*DATA[S==cl])] for cl in set(S) ] 
 	else:
 		# Coloring data points with thier cluster correspondiing color
 		clr = ['brown', 'green', 'black' ,'cornflowerblue', 'yellow', 'orange']
 	
-	plot_clusters( DATA, [ clr[i] for i in labels ], representative_id, resultsPath )
+	plot_clusters( DATA, [ clr[i] for i in S ], S_id, resultsPath )
 	
 print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
