@@ -291,17 +291,14 @@ def mClustRandomProjection(X, n_projections=60, n_clusters=2, dis_metric='dist_c
 def representative_solutions(model, clusterings, n_views=3, clusterings_rep='aggregated'):
 	R      = []
 	Z      = computeLinkageFromModel(model)
-	G      = cut_tree(Z, n_clusters=n_views).flatten()
-	#G0     = AgglomerativeClustering(n_clusters=n_views, linkage=model.linkage).fit_predict(model.children_)
-	
-
+	G      = np.array(cut_tree(Z, n_clusters=n_views).flatten())
 	
 	plotDendrogram(model, G, resultsPath)
-	
-	
+	print('clusterings', clusterings)
+	print('G',G)
 
 	for l in set(G):
-		C  = clusterings[G==l]
+		C  = [G==l]
 		
 		if len(C) == 1:
 			R.append(C[0].tolist())
@@ -312,6 +309,8 @@ def representative_solutions(model, clusterings, n_views=3, clusterings_rep='agg
 		elif clusterings_rep == 'aggregated': 
 			R.append(aggregated(C))
 	
+	print('len_R',len(R))
+	
 	print('*** Groups of similar clusterings are aggregated and represented. ***')
 	return np.array(R)
 	
@@ -321,20 +320,17 @@ def generate_data(data_name='random432', format='text'):
 	if data_name == 'random432':
 		DATA = data432()
 		k = 3
-		n_views = 2
-		return DATA, k, n_views, data_name
+		return DATA, k, data_name
 		
 	elif data_name == 'random223':
 		DATA = data223()
 		k = 2
-		n_views = 2
-		return DATA, k, n_views, data_name
+		return DATA, k, data_name
 		
 	elif data_name[0:5] == 'image':
 		DATA, imRow, imCol, imDim = dataimg('source_images/'+data_name, format=format)
 		k = 2
-		n_views = 9
-		return DATA, k, n_views, data_name, imRow, imCol, imDim
+		return DATA, k, data_name, imRow, imCol, imDim
 
 def data223():								# 2 features, 2 clusters, 3 views
 	X = []
@@ -440,18 +436,21 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 
 (DATA, n_clusters, 
- n_views, data_name,   
+ data_name,   
  imRow, imCol, imDim)= generate_data(data_name= 'image3.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png'
 # 					 )= generate_data(data_name= '223random')	# '432random', '223random'
 
+
 n_projections 		 = 20
+n_clusters           = 2
+n_views              = 3
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
 clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
 
 M_mdl, P 	   		 = mClustRandomProjection(
 						DATA, 
 						n_projections   = n_projections, 
-						n_clusters 	    = 2, 
+						n_clusters 	    = n_clusters, 
 						dis_metric 	    = dis_metric )
 
 plotDendrogram(M_mdl, M_mdl.labels_, resultsPath)
@@ -483,11 +482,11 @@ while True:
 				# Coloring data points with thier cluster correspondiing color
 				clr = ['brown', 'green', 'black' ,'cornflowerblue', 'yellow', 'orange']
 			
-		plot_clusters( DATA, [ clr[i] for i in S ], S_id, resultsPath )
+			plot_clusters( DATA, [ clr[i] for i in S ], S_id, resultsPath )
 			
 
 	except ValueError:
-		if n_views == 'q': print("\nProgram is ended"); break
+		if n_views == int('q'): print("\nProgram is ended"); break
 		print("Invalid number of clusters")
 
 
