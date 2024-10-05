@@ -429,16 +429,16 @@ starting_time   = time.time()
 resultsPath     = r'C:/ExperimentalResults/Results/results_MultipleClusteringsViaRandomProjection/'
 if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
-
-
+## Generate Data
 (DATA, n_clusters, 
  data_name,   
- imRow, imCol, imDim)= generate_data(data_name= 'image_x-ray.jpg', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png'
+ imRow, imCol, imDim)= generate_data(data_name= 'image_x-ray.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png'
 # 					 )= generate_data(data_name= '223random')	# '432random', '223random'
 
 
-n_projections 		 = 10
-n_clusters           = 2
+## Settings
+n_projections 		 = 60
+n_clusters           = 3
 n_views              = 3
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
 clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
@@ -469,12 +469,14 @@ while True:
 			if data_name[0:5] == 'image':
 				# Coloring RGB pixels with thier cluster correspondiing color (2 colors, 1 for each cluster)
 				#clr = [ [0, 0, 0], [255, 255, 255] ] 	 
+				clr = [[165,42,42], [0,128,0], [0,0,0], [255,255,255], [65,105,225], [255,215,0], [255,140,0]]
+				
 				
 				# coloring RGB pixels with their cluster means
-				clr = [ [np.mean(col) for col in zip(*DATA[S==cl])] for cl in set(S) ] 
+				#clr = [ [np.mean(col) for col in zip(*DATA[S==cl])] for cl in set(S) ] 
 			else:
 				# Coloring data points with thier cluster correspondiing color
-				clr = ['brown', 'green', 'black' ,'cornflowerblue', 'yellow', 'orange']
+				clr = ['brown', 'green', 'black', 'white', 'cornflowerblue', 'yellow', 'orange']
 			
 			plot_clusters( DATA, [ clr[i] for i in S ], S_id, resultsPath )
 			
