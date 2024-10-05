@@ -298,7 +298,7 @@ def representative_solutions(model, clusterings, n_views=3, clusterings_rep='agg
 	print('G',G)
 
 	for l in set(G):
-		C  = [G==l]
+		C  = clusterings[G==l]
 		
 		if len(C) == 1:
 			R.append(C[0].tolist())
@@ -461,15 +461,13 @@ while True:
 	try:
 		### important ###
 		# set whether labels  are used with the corresponding link coloring. 
-		n_views   = int(input('    Enter the number of number of views of clustering solutions: '))
+		n_views   = str(input('    Enter the number of number of views of clustering solutions: '))
 		
 		representatives 	 = representative_solutions(
 								model           = M_mdl,
 								clusterings     = P,
-								n_views 	    = n_views, 
+								n_views 	    = int(n_views), 
 								clusterings_rep = clusterings_rep ) 
-		
-		
 		
 		for S_id, S in enumerate(representatives):
 			if data_name[0:5] == 'image':
@@ -486,7 +484,7 @@ while True:
 			
 
 	except ValueError:
-		if n_views == int('q'): print("\nProgram is ended"); break
+		if n_views == 'q': print("\nProgram is ended"); break
 		print("Invalid number of clusters")
 
 
