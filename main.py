@@ -195,7 +195,7 @@ def computeLinkageFromModel(model):
 def plotDendrogram(model, Y, resultsPath):
 	# plots the dendrogram with various options concerning coloring labels and links. #
 	def linkColorFunction(link_id):
-		colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']
+		colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10', 'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19' ]
 		n_leaves    = len(Y)
 		link_colors = {}
 		
@@ -244,7 +244,7 @@ def plotDendrogram(model, Y, resultsPath):
 
 				   )
 	# customized label color based on the given labels
-	colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']
+	colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10', 'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19' ]
 	leaf_colors = {i: colors[lebel] for i, lebel in enumerate(Y)}
 	ax          = plt.gca()
 	x_labels    = ax.get_xmajorticklabels()
