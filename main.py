@@ -264,6 +264,22 @@ def plotDendrogram(model, Y, resultsPath):
 	plt.ylabel('Normalized Distance')
 	plt.savefig(resultsPath+'dendrogram_'+data_name[0:6]+str(n_clusters)+'.jpg')
 	#plt.show()
+
+def large_labels_first(DATA, Y):
+	DATA         = np.array(copy.deepcopy(DATA))
+	
+	# The size of each label
+	label_sizes  = [ len(DATA[Y==y]) for y in set(Y) ]
+	
+	# Sort label indices large to small
+	label_sorted = np.flip(np.argsort(label_sizes))
+
+	# assign new labels
+	new_labels   = np.zeros(Y.shape, dtype=int)
+	for new_lable, old_label in enumerate(label_sorted):
+		new_labels[Y==old_label] = new_lable
+	
+	return new_labels
 	
 def mClustRandomProjection(X, n_projections=60, n_clusters=2, dis_metric='dist_clusterings'):
 	print('\n*** Program is started with the following parameters values: ***\n*** %d projections, each with %d clusters. ***\n'%(n_projections, n_clusters))
@@ -478,7 +494,8 @@ while True:
 				# Coloring data points with thier cluster correspondiing color
 				clr = ['brown', 'green', 'black', 'white', 'cornflowerblue', 'yellow', 'orange']
 			
-			plot_clusters( DATA, [ clr[i] for i in S ], S_id, resultsPath )
+			sorted_labels = large_labels_first(DATA, S) 
+			plot_clusters( DATA, [ clr[i] for i in sorted_labels ], S_id, resultsPath )
 			
 
 	except ValueError:
