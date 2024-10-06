@@ -65,12 +65,12 @@ def dist_clusterings(Ya, Yb):
                 d += 1
     return d
 '''	
-def approximate_dist_clusterings(Ya, Yb, th=1200):
+def approximate_dist_clusterings(Ya, Yb, th=2200):
 	# Returns an approximate distance between two clustering solutions if the data size is larger than 100 points
 	if len(Ya) < th: return dist_clusterings(Ya, Yb)
 	
 	ds_rand_Ys    = []
-	for i in range(5):
+	for i in range(10):
 		rand_ids = np.random.choice(range(len(Ya)), th, replace=False) # replace=False a value a is selected once.
 		ds_rand_Ys.append( dist_clusterings([Ya[id] for id in rand_ids], [Yb[id] for id in rand_ids]) )
 	return np.mean(ds_rand_Ys)
@@ -267,6 +267,7 @@ def plotDendrogram(model, Y, resultsPath):
 
 def large_labels_first(DATA, Y):
 	DATA         = np.array(copy.deepcopy(DATA))
+	Y            = np.array(Y)
 	
 	# The size of each label
 	label_sizes  = [ len(DATA[Y==y]) for y in set(Y) ]
@@ -323,7 +324,7 @@ def representative_solutions(model, clusterings, n_views=3, clusterings_rep='agg
 		elif clusterings_rep == 'aggregated': 
 			R.append(aggregated(C))
 	
-	print('*** Groups of similar clusterings are aggregated and represented. ***')
+	print('*** Groups of similar clusterings are aggregated. ***')
 	return np.array(R)
 	
 # ====================================================================== #
@@ -453,8 +454,8 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 
 ## Settings
-n_projections 		 = 60
-n_clusters           = 3
+n_projections 		 = 120
+n_clusters           = 7
 n_views              = 3
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
 clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
@@ -485,17 +486,19 @@ while True:
 			if data_name[0:5] == 'image':
 				# Coloring RGB pixels with thier cluster correspondiing color (2 colors, 1 for each cluster)
 				#clr = [ [0, 0, 0], [255, 255, 255] ] 	 
-				clr = [[165,42,42], [0,128,0], [0,0,0], [255,255,255], [65,105,225], [255,215,0], [255,140,0]]
+				clr = [[0,0,0], [0,128,0], [255,140,0], [165,42,42], [255,255,255], [65,105,225], [255,215,0] ]
 				
 				
 				# coloring RGB pixels with their cluster means
 				#clr = [ [np.mean(col) for col in zip(*DATA[S==cl])] for cl in set(S) ] 
 			else:
 				# Coloring data points with thier cluster correspondiing color
-				clr = ['brown', 'green', 'black', 'white', 'cornflowerblue', 'yellow', 'orange']
+				clr = ['black', 'green', 'orange', 'brown', 'white', 'cornflowerblue', 'yellow', ]
 			
 			sorted_labels = large_labels_first(DATA, S) 
 			plot_clusters( DATA, [ clr[i] for i in sorted_labels ], S_id, resultsPath )
+		
+		print('*** Final solutions are presented. ***')
 			
 
 	except ValueError:
