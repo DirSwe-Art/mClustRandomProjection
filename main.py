@@ -100,25 +100,6 @@ def ensembeled(clusterings):
 	
 	return labels_majority
 
-def aggregated(G):
-	# dictionary for sample pairwise equality comparisons in each clustering
-	dict_ = {}
-	for s_id, S in enumerate(G):
-		dict_[s_id]= np.equal.outer(S,S)
-
-	xS = [] # xi and each xj are together (m-element row for each solution)
-	xC = [] # xi representation (the sum of xj-column over all solutions where xi,xj are together
-
-	for x_id in range(len(G[0])):
-		for s_id, S in enumerate(G):
-			xS.append(dict_[s_id][x_id])
-		sums  = np.sum(np.array(xS), axis=0)
-		xC.append(sums)
-		xS    = []
-		
-	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
-	
-'''
 def aggregated(clusterings):
 	# returns a clustering where the label of each data point is estimated from NxN matrix that containes 
 	# the number of clusterings of each pairwise points where they belong to the same cluster. #
@@ -136,8 +117,27 @@ def aggregated(clusterings):
 
     nS = nS.tocsr()
     return GaussianMixture(n_components=len(set(clusterings[0]))).fit_predict(nS.toarray()).tolist()
-'''
 
+'''
+# better performance with enough memory
+def aggregated(G):
+	# dictionary for sample pairwise equality comparisons in each clustering
+	dict_ = {}
+	for s_id, S in enumerate(G):
+		dict_[s_id]= np.equal.outer(S,S)
+
+	xS = [] # xi and each xj are together (m-element row for each solution)
+	xC = [] # xi representation (the sum of xj-column over all solutions where xi,xj are together
+
+	for x_id in range(len(G[0])):
+		for s_id, S in enumerate(G):
+			xS.append(dict_[s_id][x_id])
+		sums  = np.sum(np.array(xS), axis=0)
+		xC.append(sums)
+		xS    = []
+		
+	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
+'''
 
 def selectGroupsOfClusterings(Y, clusterings):
 	# Returns the indices of clusterings that alternates groups with large sizes and large dissimilarities
@@ -279,10 +279,10 @@ def plotDendrogram(model, Y, resultsPath):
 		lbl.set_color(denZ['leaves_color_list'][i])
 	'''
 	
-	plt.title('Dendrogram with Cluster-based Link and Leaf Colors')
+	plt.title('Dendrogram with Cluster-based Link and Leaf Colors - '+str(data_name[6:]))
 	plt.xlabel('Sample index')
-	plt.ylabel('Normalized Distance')
-	plt.savefig(resultsPath+'dendrogram_'+data_name+str(n_clusters)+'.jpg')
+	plt.ylabel('Distance')
+	plt.savefig(resultsPath+'dendrogram_'+data_name[6:]+'_k_'+str(n_clusters)+'.jpg')
 	#plt.show()
 
 def large_labels_first(DATA, Y):
@@ -320,31 +320,37 @@ def mClustRandomProjection(X, n_projections=60, n_clusters=2, dis_metric='dist_c
 	A      = affinity(P, affinity_metric=dis_metric)
 	print('*** Clusterings dissimilarity matrix is generated. ***')
 	
-	M    = AgglomerativeClustering( linkage="average", metric="precomputed", compute_distances=True ).fit(A)
-	print('*** Clusterings are groupped with an agglomeartive model. ***') 
+	M      = AgglomerativeClustering( linkage="average", metric="precomputed", compute_distances=True ).fit(A)
+	print('*** Clusterings hierarchy is generated with an agglomeartive model. ***') 
 
 	return M, P
 
 def representative_solutions(model, clusterings, n_views=3, clusterings_rep='aggregated'):
+	print('*** Grouping similar clusterings is started. ***')
 	R      = []
 	Z      = computeLinkageFromModel(model)
 	G      = np.array(cut_tree(Z, n_clusters=n_views).flatten())
 	
 	plotDendrogram(model, G, resultsPath)
 	
-	for l in set(G):
-		C  = clusterings[G==l]
+	print('*** Aggregating groups of clusterings is started. ***')
+	for group_id, label in set(G):
+		C  = clusterings[G==label]
 		
 		if len(C) == 1:
+			print('*** Group (%d) has one clustering solution. No aggregation is needed. ***'%group_id)
 			R.append(C[0].tolist())
 		elif clusterings_rep == 'central': 
+			print('*** Finding the central solution of group (%d). ***'%group_id)
 			R.append(central(C))
 		elif clusterings_rep == 'ensembeled': 
+			print('*** Computing the ensemble solution of group (%d). ***'%group_id)
 			R.append(ensembeled(C))
 		elif clusterings_rep == 'aggregated': 
+			print('*** Aggregating clusterings of group (%d). ***'%group_id)
 			R.append(aggregated(C))
 	
-	print('*** Groups of similar clusterings are aggregated. ***')
+	print('*** Groups of clusterings are aggregated to representative clusterings. ***')
 	return np.array(R)
 	
 # ====================================================================== #
