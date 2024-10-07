@@ -1,1 +1,14 @@
-
+cff-version: 1.2.0
+message: If you use this software, please cite it using these metadata.
+authors:
+  - given-names: Dirar
+    family-names: Sweidan
+    email: dirar.sweidan.research@gmail.com
+    orcid: 'https://orcid.org/0000-0001-5378-0862'
+title: Multiple Clusterings via Random Projection
+type: software
+keywords:
+  - "multiple clusterings, random projection, clusterings dissimilarity, clusterings aggregation"
+  - research
+repository-code: "https://github.com/DirSwe-Art/mClustRandomProjection"
+license: BSD-3-Clause
