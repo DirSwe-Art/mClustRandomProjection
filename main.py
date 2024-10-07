@@ -76,7 +76,7 @@ def approximate_dist_clusterings(Ya, Yb, th=2200):
 	return np.mean(ds_rand_Ys)
 
 def affinity(data, affinity_metric='dist_clusterings'):
-	if   affinity_metric == 'dist_clusterings':              return pairwise_distances(data, metric=dist_clusterings)
+	if   affinity_metric == 'dist_clusterings':             return pairwise_distances(data, metric=dist_clusterings)
 	elif affinity_metric == 'approximate_dist_clusterings': return pairwise_distances(data, metric=approximate_dist_clusterings)
 	# elif affinity_metric == 'hamming_dist': return ...  we can add more metrics #
 
@@ -100,7 +100,25 @@ def ensembeled(clusterings):
 	
 	return labels_majority
 
+def aggregated(G):
+	# dictionary for sample pairwise equality comparisons in each clustering
+	dict_ = {}
+	for s_id, S in enumerate(G):
+		dict_[s_id]= np.equal.outer(S,S)
 
+	xS = [] # xi and each xj are together (m-element row for each solution)
+	xC = [] # xi representation (the sum of xj-column over all solutions where xi,xj are together
+
+	for x_id in range(len(G[0])):
+		for s_id, S in enumerate(G):
+			xS.append(dict_[s_id][x_id])
+		sums  = np.sum(np.array(xS), axis=0)
+		xC.append(sums)
+		xS    = []
+		
+	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
+	
+'''
 def aggregated(clusterings):
 	# returns a clustering where the label of each data point is estimated from NxN matrix that containes 
 	# the number of clusterings of each pairwise points where they belong to the same cluster. #
@@ -118,6 +136,8 @@ def aggregated(clusterings):
 
     nS = nS.tocsr()
     return GaussianMixture(n_components=len(set(clusterings[0]))).fit_predict(nS.toarray()).tolist()
+'''
+
 
 def selectGroupsOfClusterings(Y, clusterings):
 	# Returns the indices of clusterings that alternates groups with large sizes and large dissimilarities
@@ -262,7 +282,7 @@ def plotDendrogram(model, Y, resultsPath):
 	plt.title('Dendrogram with Cluster-based Link and Leaf Colors')
 	plt.xlabel('Sample index')
 	plt.ylabel('Normalized Distance')
-	plt.savefig(resultsPath+'dendrogram_'+data_name[0:6]+str(n_clusters)+'.jpg')
+	plt.savefig(resultsPath+'dendrogram_'+data_name+str(n_clusters)+'.jpg')
 	#plt.show()
 
 def large_labels_first(DATA, Y):
@@ -283,7 +303,7 @@ def large_labels_first(DATA, Y):
 	return new_labels
 	
 def mClustRandomProjection(X, n_projections=60, n_clusters=2, dis_metric='dist_clusterings'):
-	print('\n*** Program is started with the following parameters values: ***\n*** %d projections, each with %d clusters. ***\n'%(n_projections, n_clusters))
+	print('\n*** The algorithm is started with the following parameter values: \n    %d projections, each with %d clusters.\n'%(n_projections, n_clusters))
 	
 	P = []
 	for p in range(n_projections):
@@ -449,16 +469,16 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 ## Generate Data
 (DATA, n_clusters, 
  data_name,   
- imRow, imCol, imDim)= generate_data(data_name= 'image_map.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image_x-ray.bmp'
+ imRow, imCol, imDim)= generate_data(data_name= 'image_x-ray.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image_x-ray.bmp'
 # 					 )= generate_data(data_name= '223random')	# '432random', '223random'
 
 
 ## Settings
-n_projections 		 = 120
+n_projections 		 = 30
 n_clusters           = 7
 n_views              = 3
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
-clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
+clusterings_rep 	 = 'aggregated'							# 'centeral', 'ensembeled', 'aggregated'
 
 M_mdl, P 	   		 = mClustRandomProjection(
 						DATA, 
