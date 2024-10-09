@@ -10,5 +10,5 @@ type: software
 keywords:
   - "multiple clusterings, random projection, clusterings dissimilarity, clusterings aggregation"
   - research
-repository-code: "https://github.com/DirSwe-Art/mClustRandomProjection"
+repository-code: "https://github.com/DirSwe-Art/mClustRandomProjection.git"
 license: BSD-3-Clause
