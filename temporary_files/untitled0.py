@@ -89,6 +89,7 @@ def aggregated(G):
 
 	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
 '''
+
 '''
 
 # better performance, map large arrays to external files, better for memory

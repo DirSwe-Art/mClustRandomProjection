@@ -191,41 +191,46 @@ def aggregated(G):
 '''
 
 def aggregated(G):
-	def equalOuter(matrix1, matrix2):
-		return np.equal.outer(matrix1,matrix2)
+	def pairwiseOccurance(M1, M2):
+		# Returns an (m,m) matrix for (M1,M2) pairwise equaliity comparisons. 
+		return np.equal.outer(M1,M2)
 
-	def occuranceseDict(G):
-		# dictionary for sample pairwise equality comparisons in each clustering len(g) keys each have m times m values
+	def allPairwiseOccurance(G):
+		# Returns one dictionary for all solutions in G. Each key is for 
+		# one solution's elements pairwise equality comparison.
 		dict_ = {}
 		for s_id, S in enumerate(G):
-			dict_[s_id]= equalOuter(S,S);print(s_id,'EqualOuter')
+			dict_[s_id]= pairwiseOccurance(S,S)
+			print(s_id,'EqualOuter')
 		return dict_
 	
 	def occuranceFreq(x_id, G, dict_):
-		xS = pd.DataFrame( {}, columns=range(len(G))    , dtype=np.int8) # One point occurance with each point in each S in G
+		# Returns a vector representation of one data point x where frequencies  
+		# of which it occures together with other points across solutions in G.  
+		xS = pd.DataFrame( {}, columns=range(len(G)), dtype=np.int8)
 		for s_id, S in enumerate(G):
 			xS[s_id] = dict_[s_id][x_id]
 		return xS.sum(axis=1)
 	
 	
-	dict_ = occuranceseDict(G)
+	dict_ = allPairwiseOccurance(G)
 	#xC    = lil_array( (len(G[0]), len(G[0])) , dtype=np.int8) 
 	#xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) # Matrix representation for all points according to G
-	xS = np.memmap('matrix.dat', dtype=np.int8, mode='w+', shape=(len(G[0]),len(G[0])))
+	xC     = np.memmap('matrix.dat', dtype=np.int8, mode='w+', shape=(len(G[0]),len(G[0])))
 	
 	print('len G0',len(G[0]))
 	for x_id in range(len(G[0])):
-		sums         = occuranceFreq(x_id, G, dict_)
-		#xC[x_id] = sums
-		xS[x_id, :]  = sums
+		freq 		= occuranceFreq(x_id, G, dict_)
+		#xC[x_id]	= freq
+		xC[x_id, :]	= freq
 		if x_id % 100 == 0: print('x', x_id)
-	xS.flush()
-	del xS
+	xC.flush()
+	del xC
 	del dict_
 	
-	print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' *** wait 10 seconds for emptying the memory ...')
+	print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' *** wait 15 seconds for emptying the memory ...')
 	
-	time.sleep(20)
+	time.sleep(15)
 	xC_memory = np.memmap('matrix.dat', dtype=np.int8, mode='r', shape=(len(G[0]),len(G[0])))
 	
 	print('G:\n', G)

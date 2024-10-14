@@ -335,20 +335,20 @@ def representative_solutions(model, clusterings, n_views=3, clusterings_rep='agg
 	plotDendrogram(model, G, resultsPath)
 	
 	print('*** Aggregating groups of clusterings is started. ***')
-	for group_id, label in set(G):
+	for label in set(G):
 		C  = clusterings[G==label]
 		
 		if len(C) == 1:
-			print('*** Group (%d) has one clustering solution. No aggregation is needed. ***'%group_id)
+			print('*** Group (%d) has one clustering solution. No aggregation is needed. ***'%label)
 			R.append(C[0].tolist())
 		elif clusterings_rep == 'central': 
-			print('*** Finding the central solution of group (%d). ***'%group_id)
+			print('*** Finding the central solution of group (%d). ***'%label)
 			R.append(central(C))
 		elif clusterings_rep == 'ensembeled': 
-			print('*** Computing the ensemble solution of group (%d). ***'%group_id)
+			print('*** Computing the ensemble solution of group (%d). ***'%label)
 			R.append(ensembeled(C))
 		elif clusterings_rep == 'aggregated': 
-			print('*** Aggregating clusterings of group (%d). ***'%group_id)
+			print('*** Aggregating clusterings of group (%d). ***'%label)
 			R.append(aggregated(C))
 	
 	print('*** Groups of clusterings are aggregated to representative clusterings. ***')
