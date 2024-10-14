@@ -191,26 +191,32 @@ def aggregated(G):
 '''
 
 def aggregated(G):
-	# dictionary for sample pairwise equality comparisons in each clustering
-	dict_ = {}
-	for s_id, S in enumerate(G):
-		dict_[s_id]= np.equal.outer(S,S);print(s_id,'EqualOuter')
+	def equalOuter(matrix1, matrix2):
+		return np.equal.outer(matrix1,matrix2)
+
+	def occuranceseDict(G):
+		# dictionary for sample pairwise equality comparisons in each clustering
+		dict_ = {}
+		for s_id, S in enumerate(G):
+			dict_[s_id]= equalOuter(S,S);print(s_id,'EqualOuter')
+		return dict_
 	
-	xS = pd.DataFrame( {}, columns=range(len(G))    , dtype=np.int8)
-	xC = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8)
-	
-	print('xS dict:\n',xS)
-	print('xC dict:\n',xC)
-	
-	    
-	print('len G0',len(G[0]))
-	for x_id in range(len(G[0])):
+	def occuranceFreq(x_id, G, dict_):
+		xS = pd.DataFrame( {}, columns=range(len(G))    , dtype=np.int8) # One point occurance with each point in each S in G
 		for s_id, S in enumerate(G):
 			xS[s_id] = dict_[s_id][x_id]
-		sums         = xS.sum(axis=1)
+		return xS.sum(axis=1)
+	
+	
+	dict_ = occuranceseDict(G)
+	xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) # Matrix representation for all points according to G
+
+	print('len G0',len(G[0]))
+	for x_id in range(len(G[0])):
+		sums         = occuranceFreq(x_id, G, dict_)
 		xC[x_id] = sums
-		xS = pd.DataFrame( {}, columns=range(len(G)), dtype=np.int8  )
 		if x_id % 100 == 0: print('x', x_id)
+	
 	print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
 	
 	print('G:\n', G)
