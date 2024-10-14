@@ -213,7 +213,7 @@ def aggregated(G):
 		if x_id % 100 == 0: print('x', x_id)
 	print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
 	
-	print(G)
+	print('G:\n', G)
 	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
 
 
