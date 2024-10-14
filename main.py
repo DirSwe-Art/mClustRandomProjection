@@ -65,6 +65,7 @@ def dist_clusterings(Ya, Yb):
                 d += 1
     return d
 '''	
+
 def approximate_dist_clusterings(Ya, Yb, th=2200):
 	# Returns an approximate distance between two clustering solutions if the data size is larger than 100 points
 	if len(Ya) < th: return dist_clusterings(Ya, Yb)
