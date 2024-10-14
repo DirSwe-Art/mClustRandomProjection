@@ -210,21 +210,27 @@ def aggregated(G):
 	
 	dict_ = occuranceseDict(G)
 	#xC    = lil_array( (len(G[0]), len(G[0])) , dtype=np.int8) 
-	xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) # Matrix representation for all points according to G
-
+	#xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) # Matrix representation for all points according to G
+	xS = np.memmap('matrix.dat', dtype=np.int8, mode='w+', shape=(len(G[0]),len(G[0])))
+	
 	print('len G0',len(G[0]))
 	for x_id in range(len(G[0])):
 		sums         = occuranceFreq(x_id, G, dict_)
-		xC[x_id] = sums
+		#xC[x_id] = sums
+		xS[x_id, :]  = sums
 		if x_id % 100 == 0: print('x', x_id)
-	
+	xS.flush()
+	del xS
 	dict_ = {}
 	
-	print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
+	print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' *** wait 10 seconds for emptying the memory ...')
+	
+	time.sleep(10)
+	
 	
 	print('G:\n', G)
-	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
-
+	#return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
+	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(np.memmap('matrix.dat', dtype=np.int8, mode='r', shape=(len(G[0]),len(G[0])))).tolist()
 
 def selectGroupsOfClusterings(Y, clusterings):
 	# Returns the indices of clusterings that alternates groups with large sizes and large dissimilarities
