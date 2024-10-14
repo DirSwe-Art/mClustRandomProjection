@@ -196,8 +196,8 @@ def aggregated(G):
 	for s_id, S in enumerate(G):
 		dict_[s_id]= np.equal.outer(S,S);print(s_id,'EqualOuter')
 	
-	xS = pd.DataFrame( {}, columns=range(len(G))    )
-	xC = pd.DataFrame( {}, columns=range(len(G[0])) )
+	xS = pd.DataFrame( {}, columns=range(len(G))    , dtype=np.int8)
+	xC = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8)
 	
 	print('xS dict:\n',xS)
 	print('xC dict:\n',xC)
@@ -209,8 +209,8 @@ def aggregated(G):
 			xS[s_id] = dict_[s_id][x_id]
 		sums         = xS.sum(axis=1)
 		xC[x_id] = sums
-		xS = pd.DataFrame( {}, columns=range(len(G))  )
-		print('x', x_id)
+		xS = pd.DataFrame( {}, columns=range(len(G)), dtype=np.int8  )
+		if x_id % 100 == 0: print('x', x_id)
 	print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
 	
 	print(G)
@@ -553,7 +553,7 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 ## Generate Data
 (DATA, n_clusters, 
  data_name,   
- imRow, imCol, imDim)= generate_data(data_name= 'x_ray_cheast_small.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image_x-ray.bmp'
+ imRow, imCol, imDim)= generate_data(data_name= 'image_x_ray_cheast_small.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image_x-ray.bmp'
 # 					 )= generate_data(data_name= '223random')	# '432random', '223random'
 
 
