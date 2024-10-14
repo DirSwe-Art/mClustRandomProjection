@@ -13,7 +13,7 @@ from scipy.cluster.hierarchy import dendrogram, cut_tree
 import numpy as np
 import matplotlib.pyplot as plt
 import random, copy, math, time, datetime, os, sys
-from scipy.sparse import csc_array, lil_matrix
+from scipy.sparse import csc_array, csr_array, lil_array
 import pandas as pd
 #import dask
 
@@ -209,7 +209,7 @@ def aggregated(G):
 	
 	
 	dict_ = occuranceseDict(G)
-	xC    = lil_matrix( (len(G[0]), len(G[0])) , dtype=np.int8) 
+	xC    = lil_array( (len(G[0]), len(G[0])) , dtype=np.int8) 
 	#xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) # Matrix representation for all points according to G
 
 	print('len G0',len(G[0]))
@@ -221,7 +221,7 @@ def aggregated(G):
 	print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
 	
 	print('G:\n', G)
-	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
+	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC.toarray()).tolist()
 
 
 def selectGroupsOfClusterings(Y, clusterings):
