@@ -195,7 +195,7 @@ def aggregated(G):
 		return np.equal.outer(matrix1,matrix2)
 
 	def occuranceseDict(G):
-		# dictionary for sample pairwise equality comparisons in each clustering
+		# dictionary for sample pairwise equality comparisons in each clustering len(g) keys each have m times m values
 		dict_ = {}
 		for s_id, S in enumerate(G):
 			dict_[s_id]= equalOuter(S,S);print(s_id,'EqualOuter')
@@ -217,6 +217,8 @@ def aggregated(G):
 		sums         = occuranceFreq(x_id, G, dict_)
 		xC[x_id] = sums
 		if x_id % 100 == 0: print('x', x_id)
+	
+	dict_ = {}
 	
 	print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
 	
