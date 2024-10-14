@@ -221,16 +221,16 @@ def aggregated(G):
 		if x_id % 100 == 0: print('x', x_id)
 	xS.flush()
 	del xS
-	dict_ = {}
+	del dict_
 	
 	print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' *** wait 10 seconds for emptying the memory ...')
 	
-	time.sleep(10)
-	
+	time.sleep(20)
+	xC_memory = np.memmap('matrix.dat', dtype=np.int8, mode='r', shape=(len(G[0]),len(G[0])))
 	
 	print('G:\n', G)
 	#return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
-	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(np.memmap('matrix.dat', dtype=np.int8, mode='r', shape=(len(G[0]),len(G[0])))).tolist()
+	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC_memory).tolist()
 
 def selectGroupsOfClusterings(Y, clusterings):
 	# Returns the indices of clusterings that alternates groups with large sizes and large dissimilarities
