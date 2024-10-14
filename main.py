@@ -120,7 +120,7 @@ def aggregated(clusterings):
     return GaussianMixture(n_components=len(set(clusterings[0]))).fit_predict(nS.toarray()).tolist()
 
 '''
-# better performance with enough memory
+# better performance with a large RAM
 def aggregated(G):
 	# dictionary for sample pairwise equality comparisons in each clustering
 	dict_ = {}
@@ -476,16 +476,16 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 ## Generate Data
 (DATA, n_clusters, 
  data_name,   
- imRow, imCol, imDim)= generate_data(data_name= 'image_x-ray.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image_x-ray.bmp'
+ imRow, imCol, imDim)= generate_data(data_name= 'image_x-ray-chest.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image-x-ray-chest.bmp'
 # 					 )= generate_data(data_name= '223random')	# '432random', '223random'
 
 
 ## Settings
-n_projections 		 = 30
+n_projections 		 = 120
 n_clusters           = 7
 n_views              = 3
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
-clusterings_rep 	 = 'aggregated'							# 'centeral', 'ensembeled', 'aggregated'
+clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
 
 M_mdl, P 	   		 = mClustRandomProjection(
 						DATA, 
