@@ -209,8 +209,8 @@ def aggregated(G):
 	
 	
 	dict_ = occuranceseDict(G)
-	xC    = lil_array( (len(G[0]), len(G[0])) , dtype=np.int8) 
-	#xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) # Matrix representation for all points according to G
+	#xC    = lil_array( (len(G[0]), len(G[0])) , dtype=np.int8) 
+	xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) # Matrix representation for all points according to G
 
 	print('len G0',len(G[0]))
 	for x_id in range(len(G[0])):
@@ -223,7 +223,7 @@ def aggregated(G):
 	print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
 	
 	print('G:\n', G)
-	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC.toarray()).tolist()
+	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
 
 
 def selectGroupsOfClusterings(Y, clusterings):
