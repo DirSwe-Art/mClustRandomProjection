@@ -12,7 +12,7 @@ from itertools import combinations
 from scipy.cluster.hierarchy import dendrogram, cut_tree
 import numpy as np
 import matplotlib.pyplot as plt
-import random, copy, math, time, datetime, os, sys, gc
+import random, copy, math, time, datetime, os, sys, gc, h5py
 from scipy.sparse import csc_array, csr_array, lil_array
 import pandas as pd
 #import dask
@@ -304,13 +304,28 @@ def aggregate(G, label):
 	'''
 
 	def allPairwiseOccurance(G):
-		# Returns one dictionary for all solutions in G. Each key is for 
-		# one solution's elements pairwise equality comparison.
-		dict_ = {}
-		for s_id, S in enumerate(G):
-			dict_[s_id]= pairwiseOccurance(S,S)
-			print('\t -> Pairwise occurancies in solution %d'%s_id)
-		return dict_
+		# Returns one dictionary saved externally for all solutions in G.  
+		# Each key is for one solution's elements pairwise equality comparison.
+		with h5py.File('dict_.h5', 'w') as hf:
+			for s_id, S in enumerate(G):
+				np.memmap('S1.dat', dtype=np.bool_, mode='w+', shape=S.shape)[:] = S[:]
+				np.memmap('S2.dat', dtype=np.bool_, mode='w+', shape=S.shape)[:] = S[:]
+				pairwiseOccurance('S1.dat', 'S2.dat', 'result.dat', S.shape, chunk_size=10000)
+				
+				dset = hf.create_dataset('result.dat', shape=(len(S), len(S)), dtype=np.bool_)
+
+				# Open the memmap file in read mode
+				result_data = np.memmap('result.dat', dtype=np.bool_, mode='r', shape=(len(S), len(S)))
+
+				# Process the data in chunks and write to the HDF5 file incrementally
+				for i in range(0, shape[0], 10000):
+					chunk_end = min(i + 10000, shape[0])
+					dset[i:chunk_end] = result_data[i:chunk_end]  # Write chunk directly to the HDF5 dataset
+				
+				# After this loop, the entire memmap data will be written to the HDF5 file
+			
+				print('\t -> Pairwise occurancies in solution %d'%s_id)
+
 	
 	def occuranceFreq(x_id, G, dict_):
 		# Returns a vector representation of one data point x where frequencies  
@@ -319,14 +334,7 @@ def aggregate(G, label):
 		for s_id, S in enumerate(G):
 			xS[s_id] = dict_[s_id][x_id]
 		return xS.sum(axis=1)
-
-	def batch_fit_gmm(gmm_model, X, batch_size=10000, n_iterations=10):
-		n_samples = X.shape[0]
-		for iteration in range(n_iterations):
-			for i in range(0, n_samples, batch_size):
-				X_batch = X[i:i+batch_size]
-				gmm_model.fit(X_batch)  # Incrementally fit on each batch
-		return gmm_model		
+	
 	
 	dict_ = allPairwiseOccurance(G)
 	
