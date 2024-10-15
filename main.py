@@ -89,7 +89,7 @@ def central(clusterings):
 	
 	return clusterings[id_min]
 
-def ensembeled(clusterings):
+def ensemble(clusterings):
 	# returns a clustering where the label of each data point is the majority voting of its labels among all clusterings. #
 	
 	zipped_clusterings = list(zip(*clusterings))
@@ -101,7 +101,7 @@ def ensembeled(clusterings):
 	
 	return labels_majority
 
-def aggregated(clusterings):
+def aggregate(clusterings):
 	# returns a clustering where the label of each data point is estimated from NxN matrix that containes 
 	# the number of clusterings of each pairwise points where they belong to the same cluster. #
 
@@ -121,7 +121,7 @@ def aggregated(clusterings):
 
 '''
 # better performance with a large RAM
-def aggregated(G):
+def aggregate(G):
 	# dictionary for sample pairwise equality comparisons in each clustering
 	dict_ = {}
 	for s_id, S in enumerate(G):
@@ -150,7 +150,7 @@ def selectGroupsOfClusterings(Y, clusterings):
 	cluster_centroids    = {}
 	for label in np.unique(cluster_labels):
 		cluster_data     = clusterings[cluster_labels == label]
-		cluster_centroids[label] = aggregated(cluster_data)
+		cluster_centroids[label] = aggregate(cluster_data)
 	
 	# Compute pairwise dissimilarity
 	centroid_matrix      = np.array(list(cluster_centroids.values()))
@@ -326,7 +326,7 @@ def mClustRandomProjection(X, n_projections=60, n_clusters=2, dis_metric='dist_c
 
 	return M, P
 
-def representative_solutions(model, clusterings, n_views=3, clusterings_rep='aggregated'):
+def representative_solutions(model, clusterings, n_views=3, clusterings_rep='aggregate'):
 	print('*** Grouping similar clusterings is started. ***')
 	R      = []
 	Z      = computeLinkageFromModel(model)
@@ -344,12 +344,12 @@ def representative_solutions(model, clusterings, n_views=3, clusterings_rep='agg
 		elif clusterings_rep == 'central': 
 			print('*** Finding the central solution of group (%d). ***'%label)
 			R.append(central(C))
-		elif clusterings_rep == 'ensembeled': 
+		elif clusterings_rep == 'ensemble': 
 			print('*** Computing the ensemble solution of group (%d). ***'%label)
-			R.append(ensembeled(C))
-		elif clusterings_rep == 'aggregated': 
+			R.append(ensemble(C))
+		elif clusterings_rep == 'aggregate': 
 			print('*** Aggregating clusterings of group (%d). ***'%label)
-			R.append(aggregated(C))
+			R.append(aggregate(C))
 	
 	print('*** Groups of clusterings are aggregated to representative clusterings. ***')
 	return np.array(R)
@@ -485,7 +485,7 @@ n_projections 		 = 120
 n_clusters           = 7
 n_views              = 3
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
-clusterings_rep 	 = 'ensembeled'							# 'centeral', 'ensembeled', 'aggregated'
+clusterings_rep 	 = 'ensemble'							# 'centeral', 'ensemble', 'aggregate'
 
 M_mdl, P 	   		 = mClustRandomProjection(
 						DATA, 
