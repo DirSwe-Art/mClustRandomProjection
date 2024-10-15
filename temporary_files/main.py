@@ -190,6 +190,49 @@ def aggregate(G):
 	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
 '''
 
+# Function to fit a model in batches
+def batch_fit_gmm_with_min_passes(gmm_model, X, batch_size, min_passes=1, tol=1e-4, max_no_improvement=10, n_iterations=10):
+    n_samples = X.shape[0]
+    prev_log_likelihood = None
+    no_improvement = 0
+    num_passes = 0
+
+    while num_passes < min_passes or no_improvement < max_no_improvement:
+        for i in range(0, n_samples, batch_size):
+            X_batch = X[i:i+batch_size]
+            gmm_model.fit(X_batch)
+            
+            # Get log-likelihood of the model on the current batch
+            current_log_likelihood = gmm_model.score(X_batch)
+            
+            # Check for convergence
+            if prev_log_likelihood is not None:
+                change_in_likelihood = abs(prev_log_likelihood - current_log_likelihood)
+                if change_in_likelihood < tol:
+                    no_improvement += 1
+                else:
+                    no_improvement = 0
+                    
+                # Stop if no improvement for max_no_improvement batches and all passes are completed
+                if no_improvement >= max_no_improvement and num_passes >= min_passes:
+                    print(f"Converged after {num_passes} full passes and {i // batch_size} batches.")
+                    return gmm_model
+            
+            prev_log_likelihood = current_log_likelihood
+        
+        num_passes += 1
+    
+    return gmm_model
+
+# Function to predict in batches
+def batch_predict_gmm(gmm_model, X, batch_size):
+    n_samples = X.shape[0]
+    predictions = []
+    for i in range(0, n_samples, batch_size):
+        X_batch = X[i:i+batch_size]
+        predictions.append(gmm_model.predict(X_batch))  # For cluster labels
+    return np.concatenate(predictions)
+
 def aggregate(G):
 	def pairwiseOccurance(M1, M2):
 		# Returns an (m,m) matrix for (M1,M2) pairwise equaliity comparisons. 
@@ -211,7 +254,14 @@ def aggregate(G):
 		for s_id, S in enumerate(G):
 			xS[s_id] = dict_[s_id][x_id]
 		return xS.sum(axis=1)
-	
+
+	def batch_fit_gmm(gmm_model, X, batch_size=10000, n_iterations=10):
+		n_samples = X.shape[0]
+		for iteration in range(n_iterations):
+			for i in range(0, n_samples, batch_size):
+				X_batch = X[i:i+batch_size]
+				gmm_model.fit(X_batch)  # Incrementally fit on each batch
+		return gmm_model		
 	
 	dict_ = allPairwiseOccurance(G)
 	#xC    = lil_array( (len(G[0]), len(G[0])) , dtype=np.int8) 
@@ -232,10 +282,15 @@ def aggregate(G):
 	
 	time.sleep(15)
 	xC_memory = np.memmap('matrix.dat', dtype=np.int8, mode='r', shape=(len(G[0]),len(G[0])))
+
+	gmm = GaussianMixture(n_components=len(set(G[0])), covariance_type='full', warm_start=True)
+	gmm = batch_fit_gmm_with_min_passes(gmm, xC_memory, batch_size=10000, min_passes=2, tol=1e-4)
 	
-	print('G:\n', G)
+	
+	predictions = batch_predict_gmm(gmm, xC_memory, batch_size = 10000)
+	
 	#return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
-	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC_memory).tolist()
+	return predictions
 
 def selectGroupsOfClusterings(Y, clusterings):
 	# Returns the indices of clusterings that alternates groups with large sizes and large dissimilarities
