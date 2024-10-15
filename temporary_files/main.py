@@ -294,16 +294,10 @@ def aggregate(G, label):
 	    # Optionally return the result path
 		return result_path
 
-	'''
-	def pairwiseOccurance(M1, M2):
-		# Returns an (m,m) matrix for (M1,M2) pairwise equaliity comparisons. 
-		return np.equal.outer(M1,M2)
-	'''
-
-	def allPairwiseOccurance(G):
+	def allPairwiseOccurance(G, result_path):
 		# Returns one dictionary saved externally for all solutions in G.  
 		# Each key is for one solution's elements pairwise equality comparison.
-		with h5py.File('dict_.h5', 'w') as hf:
+		with h5py.File(result_path, 'w') as hf:
 			for s_id, S in enumerate(G):
 				np.memmap('S'+str(s_id)+'_1', dtype=np.bool_, mode='w+', shape=S.shape)[:] = S[:] # => 's_id S1.dat'
 				np.memmap('S'+str(s_id)+'_2', dtype=np.bool_, mode='w+', shape=S.shape)[:] = S[:] # => 's_id S2.dat'
@@ -329,30 +323,25 @@ def aggregate(G, label):
 				# After this loop, the entire memmap data will be written to the HDF5 file
 			
 				print('\t -> Pairwise occurancies in solution %d'%s_id)
+		return result_path
 
-	
-	def occuranceFreq(x_id, G):
+	def occuranceFreq(x_id, G, G_dict_path):
 		# Returns a vector representation of one data point x where frequencies  
 		# of which it occures together with other points across solutions in G.
-		with h5py.File('dict_.h5', 'r') as hf:
+		with h5py.File(G_dict_path, 'r') as hf:
 			xS = pd.DataFrame( {}, columns=range(len(G)), dtype=np.int8)
 			for s_id, S in enumerate(G):
-				xS[str(s_id)] = hf[str(s_id)][x_id]
+				xS[str(s_id)] = hf['S'+str(s_id)][x_id]
 			return xS.sum(axis=1)
 	
-	
-	allPairwiseOccurance(G) # => dict_.h5 
+	G_dict_path = allPairwiseOccurance(G, 'G_dict.h5') # => G_dict.h5 
 	
 	# DictMethod
 	#xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) 	# Matrix representation for all points according to G
 	
-	# MemMethod
-	if os.path.exists(str(label)+'_matrix.dat'): 
-		os.remove(str(label)+'_matrix.dat')
-		time.sleep(5)
 	
 	# MemMethod
-	xC     = np.memmap(str(label)+'_matrix.dat', dtype=np.int8, mode='w+', shape=(len(G[0]),len(G[0])))
+	xC     = np.memmap('G_matrix', dtype=np.int8, mode='w+', shape=(len(G[0]),len(G[0])))
 	
 	print('\n\t -> Occurance frequencies X^C (%d, %d) for all X(xi, xj) in all G(S). Save in an external file.'%(len(G[0]),len(G[0])) )
 	for x_id in range(len(G[0])):
@@ -372,14 +361,15 @@ def aggregate(G, label):
 	print('\n\t -> Emptying the RAM, reading the external X^C file')
 	
 	# MemMethod
-	xC_memory   = np.memmap(str(label)+'_matrix.dat', dtype=np.int8, mode='r', shape=(len(G[0]),len(G[0])))
+	xC_memory   = np.memmap('G_matrix', dtype=np.int8, mode='r', shape=(len(G[0]),len(G[0])))
 	kmeans      = MiniBatchKMeans(n_clusters=len(set(G[0])), batch_size=10000, max_iter=100, tol=1e-4, max_no_improvement=15, random_state=42)
 	kmeans      = batch_fit_kmeans(kmeans, xC_memory, batch_size=10000)
 	predictions = batch_predict(   kmeans, xC_memory, batch_size=10000)
 	del xC_memory; time.sleep(5)
 	
 	
-	os.remove('dict_.h5')
+	os.remove(G_dict_path)
+	os.remove('G_matrix')
 
 	#return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
 	return predictions
