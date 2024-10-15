@@ -290,6 +290,8 @@ def aggregate(G, label):
 		del mmap_M1
 		del mmap_M2
 		del mmap_result
+		os.remove(M1_path)
+		os.remove(M2_path)
 	
 	    # Force garbage collection to ensure memory is freed
 		gc.collect()
@@ -308,35 +310,39 @@ def aggregate(G, label):
 		# Each key is for one solution's elements pairwise equality comparison.
 		with h5py.File('dict_.h5', 'w') as hf:
 			for s_id, S in enumerate(G):
-				np.memmap('S1.dat', dtype=np.bool_, mode='w+', shape=S.shape)[:] = S[:]
-				np.memmap('S2.dat', dtype=np.bool_, mode='w+', shape=S.shape)[:] = S[:]
-				pairwiseOccurance('S1.dat', 'S2.dat', 'result.dat', S.shape, chunk_size=10000)
+				np.memmap('S1.dat', dtype=np.bool_, mode='w+', shape=S.shape)[:] = S[:] # => 'S1.dat'
+				np.memmap('S2.dat', dtype=np.bool_, mode='w+', shape=S.shape)[:] = S[:] # => 'S2.dat'
+				result_path = pairwiseOccurance('S1.dat', 'S2.dat', 'result.dat', S.shape, chunk_size=10000) #  # => 'result.dat'
 				
-				dset = hf.create_dataset('result.dat', shape=(len(S), len(S)), dtype=np.bool_)
+				dset = hf.create_dataset(str(s_id), shape=(len(S), len(S)), dtype=np.bool_) # => s_id (m,m) dataset
 
 				# Open the memmap file in read mode
-				result_data = np.memmap('result.dat', dtype=np.bool_, mode='r', shape=(len(S), len(S)))
+				result_data = np.memmap(result_path, dtype=np.bool_, mode='r', shape=(len(S), len(S)))
 
 				# Process the data in chunks and write to the HDF5 file incrementally
-				for i in range(0, shape[0], 10000):
-					chunk_end = min(i + 10000, shape[0])
+				for i in range(0, S.shape[0], 10000):
+					chunk_end = min(i + 10000, S.shape[0])
 					dset[i:chunk_end] = result_data[i:chunk_end]  # Write chunk directly to the HDF5 dataset
+				del result_data
+				os.remove(result_path)
+				time.sleep(5)
 				
 				# After this loop, the entire memmap data will be written to the HDF5 file
 			
 				print('\t -> Pairwise occurancies in solution %d'%s_id)
 
 	
-	def occuranceFreq(x_id, G, dict_):
+	def occuranceFreq(x_id, G):
 		# Returns a vector representation of one data point x where frequencies  
-		# of which it occures together with other points across solutions in G.  
-		xS = pd.DataFrame( {}, columns=range(len(G)), dtype=np.int8)
-		for s_id, S in enumerate(G):
-			xS[s_id] = dict_[s_id][x_id]
-		return xS.sum(axis=1)
+		# of which it occures together with other points across solutions in G.
+		with h5py.File('dict_.h5', 'r') as hf:
+			xS = pd.DataFrame( {}, columns=range(len(G)), dtype=np.int8)
+			for s_id, S in enumerate(G):
+				xS[s_id] = hf[s_id][x_id]
+			return xS.sum(axis=1)
 	
 	
-	dict_ = allPairwiseOccurance(G)
+	allPairwiseOccurance(G) # => dict_.h5 
 	
 	# DictMethod
 	#xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) 	# Matrix representation for all points according to G
@@ -351,7 +357,7 @@ def aggregate(G, label):
 	
 	print('\n\t -> Occurance frequencies X^C (%d, %d) for all X(xi, xj) in all G(S). Save in an external file.'%(len(G[0]),len(G[0])) )
 	for x_id in range(len(G[0])):
-		freq 		= occuranceFreq(x_id, G, dict_)
+		freq 		= occuranceFreq(x_id, G)
 		
 		# DictMethod
 		#xC[x_id]	= freq                                             	 	 
@@ -363,9 +369,7 @@ def aggregate(G, label):
 	
 	# MemMethod
 	xC.flush(); time.sleep(10); del xC ; time.sleep(5)
-	
-	del dict_ ; time.sleep(5)  														
-	
+														
 	print('\n\t -> Emptying the RAM, reading the external X^C file')
 	
 	# MemMethod
