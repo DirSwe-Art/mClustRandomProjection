@@ -12,7 +12,7 @@ from itertools import combinations
 from scipy.cluster.hierarchy import dendrogram, cut_tree
 import numpy as np
 import matplotlib.pyplot as plt
-import random, copy, math, time, datetime, os, sys
+import random, copy, math, time, datetime, os, sys, gc
 from scipy.sparse import csc_array, csr_array, lil_array
 import pandas as pd
 #import dask
@@ -252,9 +252,56 @@ def batch_predict(kmeans_model, X, batch_size):
     return np.concatenate(predictions)
 
 def aggregate(G, label):
+	##
+	def pairwiseOccurance(M1_path, M2_path, result_path, shape, chunk_size=10000):
+	    #Perform np.equal.outer(M1, M2) using np.memmap to handle large boolean arrays.
+	
+	    #Parameters:
+	    #- M1_path: str, path to memory-mapped file for M1
+	    #- M2_path: str, path to memory-mapped file for M2
+	    #- result_path: str, path to memory-mapped file for the result
+	    #- shape_M1: tuple, shape of M1 (must be 1D)
+	    #- shape_M2: tuple, shape of M2 (must be 1D)
+	    #- chunk_size: int, the size of chunks to process in memory
+	    
+	    #Result is stored in `result_path` as a memory-mapped file.
+
+		if os.path.exists(M1_path): os.remove(M1_path)
+		if os.path.exists(M2_path): os.remove(M2_path)
+	    
+		mmap_M1 = np.memmap(M1_path, dtype=np.bool_, mode='r', shape=shape)
+		mmap_M2 = np.memmap(M2_path, dtype=np.bool_, mode='r', shape=shape)
+	    
+	    # Prepare a memory-mapped file for the result
+		result_shape = (shape[0], shape[0])
+		mmap_result = np.memmap(result_path, dtype=np.bool_, mode='w+', shape=result_shape)
+	
+	    # Process in chunks to handle memory efficiently
+		for i in range(0, shape[0], chunk_size):
+			chunk_end = min(i + chunk_size, shape[0])
+	        
+	        # Perform the np.equal.outer operation for the current chunk
+			mmap_result[i:chunk_end, :] = np.equal.outer(mmap_M1[i:chunk_end], mmap_M2[:])
+	        
+	        # Flush changes to disk after each chunk
+			mmap_result.flush()
+	
+	    # Delete memory-mapped arrays to free up RAM
+		del mmap_M1
+		del mmap_M2
+		del mmap_result
+	
+	    # Force garbage collection to ensure memory is freed
+		gc.collect()
+	
+	    # Optionally return the result path
+		return result_path
+
+	'''
 	def pairwiseOccurance(M1, M2):
 		# Returns an (m,m) matrix for (M1,M2) pairwise equaliity comparisons. 
 		return np.equal.outer(M1,M2)
+	'''
 
 	def allPairwiseOccurance(G):
 		# Returns one dictionary for all solutions in G. Each key is for 

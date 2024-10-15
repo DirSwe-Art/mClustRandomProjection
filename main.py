@@ -4,8 +4,8 @@
 # License: DSB 3-Claus
 
 from sklearn import random_projection
-from sklearn.mixture import GaussianMixture, MiniBatchKMeans
-from sklearn.cluster import AgglomerativeClustering
+from sklearn.mixture import GaussianMixture
+from sklearn.cluster import AgglomerativeClustering, MiniBatchKMeans
 from sklearn.metrics.pairwise import pairwise_distances
 from collections import Counter
 from itertools import combinations
@@ -443,7 +443,7 @@ def representative_solutions(model, clusterings, n_views=3, clusterings_rep='agg
 			R.append(ensemble(C))
 		elif clusterings_rep == 'aggregate': 
 			print('*** Aggregating clusterings of group (%d). ***'%label)
-			R.append(aggregate(C))
+			R.append(aggregate(C, label))
 	
 	print('*** Groups of clusterings are aggregated to representative clusterings. ***')
 	return np.array(R)
@@ -570,12 +570,12 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 ## Generate Data
 (DATA, n_clusters, 
  data_name,   
- imRow, imCol, imDim)= generate_data(data_name= 'image_x-ray-chest.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image-x-ray-chest.bmp'
+ imRow, imCol, imDim)= generate_data(data_name= 'image_x-ray-chest-small.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image-x-ray-chest.bmp'
 # 					 )= generate_data(data_name= '223random')	# '432random', '223random'
 
 
 ## Settings
-n_projections 		 = 120
+n_projections 		 = 60
 n_clusters           = 7
 n_views              = 3
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
