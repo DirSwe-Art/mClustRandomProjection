@@ -4,7 +4,7 @@
 # License: DSB 3-Claus
 
 from sklearn import random_projection
-from sklearn.mixture import GaussianMixture
+from sklearn.mixture import GaussianMixture, MiniBatchKMeans
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics.pairwise import pairwise_distances
 from collections import Counter
@@ -14,6 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random, copy, math, time, datetime, os, sys
 from scipy.sparse import lil_matrix
+import pandas as pd
 #import dask
 
 
@@ -100,8 +101,9 @@ def ensemble(clusterings):
 		labels_majority.append(label)
 	
 	return labels_majority
-
+'''
 def aggregate(clusterings):
+	# This is the original function. It is a lazy function, and suffurs from the lack of memory with large-scale data
 	# returns a clustering where the label of each data point is estimated from NxN matrix that containes 
 	# the number of clusterings of each pairwise points where they belong to the same cluster. #
 
@@ -119,7 +121,7 @@ def aggregate(clusterings):
     nS = nS.tocsr()
     return GaussianMixture(n_components=len(set(clusterings[0]))).fit_predict(nS.toarray()).tolist()
 
-'''
+
 # better performance with a large RAM
 def aggregate(G):
 	# dictionary for sample pairwise equality comparisons in each clustering
@@ -139,6 +141,98 @@ def aggregate(G):
 		
 	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
 '''
+
+def aggregate(G, label):
+	# Returns an aggregated representative solution for all solutions in G.
+	# This function solves the memory lack issue with large data sets
+	def pairwiseOccurance(M1, M2):
+		# Returns an (m,m) matrix for (M1,M2) pairwise equaliity comparisons. 
+		return np.equal.outer(M1,M2)
+
+	def allPairwiseOccurance(G):
+		# Returns one dictionary for all solutions in G. Each key is for 
+		# one solution's elements pairwise equality comparison.
+		dict_ = {}
+		for s_id, S in enumerate(G):
+			dict_[s_id]= pairwiseOccurance(S,S)
+			print('\t -> Pairwise occurancies in solution %d'%s_id)
+		return dict_
+	
+	def occuranceFrequencies(x_id, G, dict_):
+		# Returns a vector representation of one data point x where frequencies  
+		# of which it occures together with other points across solutions in G.  
+		xS = pd.DataFrame( {}, columns=range(len(G)), dtype=np.int8)
+		for s_id, S in enumerate(G):
+			xS[s_id] = dict_[s_id][x_id]
+		return xS.sum(axis=1)
+
+	def batch_fit_kmeans(kmeans_model, X, batch_size):
+		# Returns a batch fitted k-means model for a large matrix
+	    n_samples = X.shape[0]; print('\n\t -> Fitting ...' )
+	    for i in range(0, n_samples, batch_size):
+	        X_batch = X[i:i+batch_size]; print('\t  - Batch:', i+batch_size )
+	        kmeans_model.partial_fit(X_batch)  # Incrementally fit the mini-batch
+	    return kmeans_model
+
+	def batch_predict(kmeans_model, X, batch_size):
+		# Returns a batch predicted cluster labels for a large matrix
+	    n_samples = X.shape[0]; print('\n\t -> Predicting ...' )
+	    predictions = []
+	    for i in range(0, n_samples, batch_size):
+	        X_batch = X[i:i+batch_size]; print('\t  - Batch:', i+batch_size )
+	        predictions.append(kmeans_model.predict(X_batch))
+	    return np.concatenate(predictions)
+	
+	dict_ = allPairwiseOccurance(G)
+	
+	# DictMethod
+	#xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) 	# Matrix representation for all points according to G
+	
+	# MemMethod
+	if os.path.exists(str(label)+'_matrix.dat'): 
+		os.remove(str(label)+'_matrix.dat')
+		time.sleep(5)
+	
+	# MemMethod
+	xC     = np.memmap(str(label)+'_matrix.dat', dtype=np.int8, mode='w+', shape=(len(G[0]),len(G[0])))
+	
+	print('\n\t -> Occurance frequencies X^C (%d, %d) for all X(xi, xj) in all G(S). Save in an external file.'%(len(G[0]),len(G[0])) )
+	for x_id in range(len(G[0])):
+		freq 		= occuranceFrequencies(x_id, G, dict_)
+		
+		# DictMethod
+		#xC[x_id]	= freq                                             	 	 
+		
+		# MemMethod
+		xC[x_id, :]	= freq
+		
+		if x_id % 10000 == 0: print('\t -> batch', x_id)
+	
+	# MemMethod
+	xC.flush(); time.sleep(10); del xC ; time.sleep(5)
+	
+	del dict_ ; time.sleep(5)  														
+	
+	print('\n\t -> Emptying the RAM, reading the external X^C file')
+	
+	# MemMethod
+	xC_memory   = np.memmap(str(label)+'_matrix.dat', dtype=np.int8, mode='r', shape=(len(G[0]),len(G[0])))
+	kmeans      = MiniBatchKMeans(n_clusters=len(set(G[0])), batch_size=10000, max_iter=100, tol=1e-4, max_no_improvement=15, random_state=42)
+	kmeans      = batch_fit_kmeans(kmeans, xC_memory, batch_size=10000)
+	predictions = batch_predict(   kmeans, xC_memory, batch_size=10000)
+	del xC_memory; time.sleep(5)
+	
+	
+	# DictMethod
+	'''
+	kmeans = MiniBatchKMeans(n_clusters=len(set(G[0])), batch_size=10000,  max_iter=100, tol=1e-4,  max_no_improvement=10, random_state=42)
+	kmeans = batch_fit_kmeans(kmeans, xC, batch_size=10000)
+	predictions = batch_predict(kmeans, xC, batch_size= 10000)
+	'''
+
+	#return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
+	return predictions
+
 
 def selectGroupsOfClusterings(Y, clusterings):
 	# Returns the indices of clusterings that alternates groups with large sizes and large dissimilarities

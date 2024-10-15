@@ -236,18 +236,18 @@ def batch_predict_gmm(gmm_model, X, batch_size):
 '''
 
 def batch_fit_kmeans(kmeans_model, X, batch_size):
-    n_samples = X.shape[0]
+    n_samples = X.shape[0]; print('\n\t -> Fitting ...' )
     for i in range(0, n_samples, batch_size):
-        X_batch = X[i:i+batch_size]; print('Batch:', i+i+batch_size )
+        X_batch = X[i:i+batch_size]; print('\t  - Batch:', i+batch_size )
         kmeans_model.partial_fit(X_batch)  # Incrementally fit the mini-batch
     return kmeans_model
 
 
 def batch_predict(kmeans_model, X, batch_size):
-    n_samples = X.shape[0]; print('Predicting ...' )
+    n_samples = X.shape[0]; print('\n\t -> Predicting ...' )
     predictions = []
     for i in range(0, n_samples, batch_size):
-        X_batch = X[i:i+batch_size]
+        X_batch = X[i:i+batch_size]; print('\t  - Batch:', i+batch_size )
         predictions.append(kmeans_model.predict(X_batch))
     return np.concatenate(predictions)
 
@@ -262,7 +262,7 @@ def aggregate(G, label):
 		dict_ = {}
 		for s_id, S in enumerate(G):
 			dict_[s_id]= pairwiseOccurance(S,S)
-			print(s_id,'EqualOuter')
+			print('\t -> Pairwise occurancies in solution %d'%s_id)
 		return dict_
 	
 	def occuranceFreq(x_id, G, dict_):
@@ -282,36 +282,52 @@ def aggregate(G, label):
 		return gmm_model		
 	
 	dict_ = allPairwiseOccurance(G)
-	#xC    = lil_array( (len(G[0]), len(G[0])) , dtype=np.int8) # slow
-	#xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) # Matrix representation for all points according to G
 	
-	if os.path.exists(label+'_matrix.dat'): os.remove(label+'_matrix.dat')
-	xC     = np.memmap(label+'_matrix.dat', dtype=np.int8, mode='w+', shape=(len(G[0]),len(G[0])))
+	# DictMethod
+	#xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) 	# Matrix representation for all points according to G
 	
-	print('len G0',len(G[0]))
+	# MemMethod
+	if os.path.exists(str(label)+'_matrix.dat'): 
+		os.remove(str(label)+'_matrix.dat')
+		time.sleep(5)
+	
+	# MemMethod
+	xC     = np.memmap(str(label)+'_matrix.dat', dtype=np.int8, mode='w+', shape=(len(G[0]),len(G[0])))
+	
+	print('\n\t -> Occurance frequencies X^C (%d, %d) for all X(xi, xj) in all G(S). Save in an external file.'%(len(G[0]),len(G[0])) )
 	for x_id in range(len(G[0])):
 		freq 		= occuranceFreq(x_id, G, dict_)
-		#xC[x_id]	= freq
+		
+		# DictMethod
+		#xC[x_id]	= freq                                             	 	 
+		
+		# MemMethod
 		xC[x_id, :]	= freq
-		if x_id % 100 == 0: print('x', x_id)
-	xC.flush()
-	del xC
-	del dict_
+		
+		if x_id % 10000 == 0: print('\t -> batch', x_id)
 	
-	print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' *** wait 15 seconds for emptying the memory ...')
+	# MemMethod
+	xC.flush(); time.sleep(10); del xC ; time.sleep(5)
 	
-	time.sleep(15)
-	xC_memory = np.memmap(label+'_matrix.dat', dtype=np.int8, mode='r', shape=(len(G[0]),len(G[0])))
+	del dict_ ; time.sleep(5)  														
+	
+	print('\n\t -> Emptying the RAM, reading the external X^C file')
+	
+	# MemMethod
+	xC_memory   = np.memmap(str(label)+'_matrix.dat', dtype=np.int8, mode='r', shape=(len(G[0]),len(G[0])))
+	kmeans      = MiniBatchKMeans(n_clusters=len(set(G[0])), batch_size=10000, max_iter=100, tol=1e-4, max_no_improvement=15, random_state=42)
+	kmeans      = batch_fit_kmeans(kmeans, xC_memory, batch_size=10000)
+	predictions = batch_predict(   kmeans, xC_memory, batch_size=10000)
+	del xC_memory; time.sleep(5)
+	
+	
+	# DictMethod
+	'''
+	kmeans = MiniBatchKMeans(n_clusters=len(set(G[0])), batch_size=10000,  max_iter=100, tol=1e-4,  max_no_improvement=10, random_state=42)
+	kmeans = batch_fit_kmeans(kmeans, xC, batch_size=10000)
+	predictions = batch_predict(kmeans, xC, batch_size= 10000)
+	'''
 
-	#gmm = GaussianMixture(n_components=len(set(G[0])), covariance_type='full', warm_start=True)
-	#gmm = batch_fit_gmm_with_min_passes(gmm, xC_memory, batch_size=10000, min_passes=2, tol=1e-4)
-	
-	kmeans = MiniBatchKMeans(n_clusters=set(G[0]), batch_size=10000,  max_iter=100, tol=1e-4,  max_no_improvement=10, random_state=42)
-	kmeans = batch_fit_kmeans(kmeans, xC_memory, batch_size=10000)
-	
-	#predictions = batch_predict_gmm(gmm, xC_memory, batch_size = 10000)
-	predictions = batch_predict(kmeans, xC_memory, batch_size= 10000)
-	
 	#return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
 	return predictions
 
