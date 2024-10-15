@@ -313,10 +313,11 @@ def aggregate(G, label):
 					dset[i:chunk_end] = SS_result_data[i:chunk_end]  # Write chunk directly to the HDF5 dataset
 				
 				del SS_result_data
-				time.sleep(5)
+				time.sleep(10)
 				os.remove('S'+str(s_id)+'_1')
 				os.remove('S'+str(s_id)+'_2')
 				os.remove(SS_result_path)
+				time.sleep(10)
 				
 				
 				
@@ -367,9 +368,10 @@ def aggregate(G, label):
 	predictions = batch_predict(   kmeans, xC_memory, batch_size=10000)
 	del xC_memory
 	
-	time.sleep(5)
+	time.sleep(10)
 	os.remove(G_dict_path)
 	os.remove('G_matrix')
+	time.sleep(10)
 	
 
 	#return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
