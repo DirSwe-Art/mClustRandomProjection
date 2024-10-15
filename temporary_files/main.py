@@ -264,32 +264,32 @@ def aggregate(G):
 		return gmm_model		
 	
 	dict_ = allPairwiseOccurance(G)
-	#xC    = lil_array( (len(G[0]), len(G[0])) , dtype=np.int8) 
-	#xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) # Matrix representation for all points according to G
+	#xC    = lil_array( (len(G[0]), len(G[0])) , dtype=np.int8) # slow
+	xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) # Matrix representation for all points according to G
 	
-	if os.path.exists('matrix.dat'): os.remove('matrix.dat')
-	xC     = np.memmap('matrix.dat', dtype=np.int8, mode='w+', shape=(len(G[0]),len(G[0])))
+	#if os.path.exists('matrix.dat'): os.remove('matrix.dat')
+	#xC     = np.memmap('matrix.dat', dtype=np.int8, mode='w+', shape=(len(G[0]),len(G[0])))
 	
 	print('len G0',len(G[0]))
 	for x_id in range(len(G[0])):
 		freq 		= occuranceFreq(x_id, G, dict_)
-		#xC[x_id]	= freq
-		xC[x_id, :]	= freq
+		xC[x_id]	= freq
+		#xC[x_id, :]	= freq
 		if x_id % 100 == 0: print('x', x_id)
-	xC.flush()
-	del xC
+	#xC.flush()
+	#del xC
 	del dict_
 	
 	print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' *** wait 15 seconds for emptying the memory ...')
 	
 	time.sleep(15)
-	xC_memory = np.memmap('matrix.dat', dtype=np.int8, mode='r', shape=(len(G[0]),len(G[0])))
+	#xC_memory = np.memmap('matrix.dat', dtype=np.int8, mode='r', shape=(len(G[0]),len(G[0])))
 
 	gmm = GaussianMixture(n_components=len(set(G[0])), covariance_type='full', warm_start=True)
-	gmm = batch_fit_gmm_with_min_passes(gmm, xC_memory, batch_size=10000, min_passes=2, tol=1e-4)
+	gmm = batch_fit_gmm_with_min_passes(gmm, xC, batch_size=10000, min_passes=2, tol=1e-4)
 	
 	
-	predictions = batch_predict_gmm(gmm, xC_memory, batch_size = 10000)
+	predictions = batch_predict_gmm(gmm, xC, batch_size = 10000)
 	
 	#return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
 	return predictions
