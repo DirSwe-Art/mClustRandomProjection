@@ -252,7 +252,6 @@ def batch_predict(kmeans_model, X, batch_size):
     return np.concatenate(predictions)
 
 def aggregate(G, label):
-	##
 	def pairwiseOccurance(M1_path, M2_path, result_path, shape, chunk_size=10000):
 	    #Perform np.equal.outer(M1, M2) using np.memmap to handle large boolean arrays.
 	
@@ -334,7 +333,7 @@ def aggregate(G, label):
 				xS[str(s_id)] = hf['S'+str(s_id)][x_id]
 			return xS.sum(axis=1)
 	
-	G_dict_path = allPairwiseOccurance(G, 'G_dict.h5') # => G_dict.h5 
+	G_dict_path = allPairwiseOccurance(G, 'G_dict') # => G_dict.h5 
 	
 	# DictMethod
 	#xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) 	# Matrix representation for all points according to G
@@ -345,7 +344,7 @@ def aggregate(G, label):
 	
 	print('\n\t -> Occurance frequencies X^C (%d, %d) for all X(xi, xj) in all G(S). Save in an external file.'%(len(G[0]),len(G[0])) )
 	for x_id in range(len(G[0])):
-		freq 		= occuranceFreq(x_id, G)
+		freq 		= occuranceFreq(x_id, G, G_dict_path)
 		
 		# DictMethod
 		#xC[x_id]	= freq                                             	 	 
@@ -715,8 +714,8 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 
 ## Settings
-n_projections 		 = 8
-n_clusters           = 7
+n_projections 		 = 5
+n_clusters           = 5
 n_views              = 3
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
 clusterings_rep 	 = 'aggregate'							# 'centeral', 'ensemble', 'aggregate'
