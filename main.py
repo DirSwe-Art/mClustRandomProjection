@@ -485,7 +485,7 @@ n_projections 		 = 120
 n_clusters           = 7
 n_views              = 3
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
-clusterings_rep 	 = 'ensemble'							# 'centeral', 'ensemble', 'aggregate'
+clusterings_rep 	 = 'aggregate'							# 'centeral', 'ensemble', 'aggregate'
 
 M_mdl, P 	   		 = mClustRandomProjection(
 						DATA, 
