@@ -573,7 +573,7 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 ## Generate Data
 (DATA, n_clusters, 
  data_name,   
- imRow, imCol, imDim)= generate_data(data_name= 'image_x_ray_cheast_small.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image_x-ray.bmp'
+ imRow, imCol, imDim)= generate_data(data_name= 'image_x_ray_chest_small.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image_x-ray.bmp'
 # 					 )= generate_data(data_name= '223random')	# '432random', '223random'
 
 
