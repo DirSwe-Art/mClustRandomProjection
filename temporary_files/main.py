@@ -5,7 +5,7 @@
 
 from sklearn import random_projection
 from sklearn.mixture import GaussianMixture
-from sklearn.cluster import AgglomerativeClustering
+from sklearn.cluster import AgglomerativeClustering, MiniBatchKMeans
 from sklearn.metrics.pairwise import pairwise_distances
 from collections import Counter
 from itertools import combinations
@@ -190,6 +190,7 @@ def aggregate(G):
 	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
 '''
 
+'''
 # Function to fit a model in batches
 def batch_fit_gmm_with_min_passes(gmm_model, X, batch_size, min_passes=1, tol=1e-4, max_no_improvement=10):
     n_samples = X.shape[0]
@@ -232,6 +233,43 @@ def batch_predict_gmm(gmm_model, X, batch_size):
         X_batch = X[i:i+batch_size]
         predictions.append(gmm_model.predict(X_batch))  # For cluster labels
     return np.concatenate(predictions)
+'''
+
+def batch_fit_kmeans_with_min_passes(kmeans_model, X, batch_size, min_passes=1, tol=1e-4, max_no_improvement=10):
+    n_samples = X.shape[0]
+    prev_inertia = None
+    no_improvement = 0
+    num_passes = 0
+
+    while num_passes < min_passes or no_improvement < max_no_improvement:
+        for i in range(0, n_samples, batch_size):
+            X_batch = X[i:i+batch_size]
+            kmeans_model.partial_fit(X_batch); print(f"Process: {num_passes}, Batch: {i + batch_size}, Batches: {i // batch_size}.")
+            
+            current_inertia = kmeans_model.inertia_
+            if prev_inertia is not None:
+                change_in_inertia = abs(prev_inertia - current_inertia)
+                if change_in_inertia < tol:
+                    no_improvement += 1
+                else:
+                    no_improvement = 0
+                
+                if no_improvement >= max_no_improvement and num_passes >= min_passes:
+                    print(f"Converged after {num_passes} full passes and {i // batch_size} batches.")
+                    return kmeans_model
+
+            prev_inertia = current_inertia
+        num_passes += 1
+    
+    return kmeans_model
+
+def batch_predict(kmeans_model, X, batch_size):
+    n_samples = X.shape[0]
+    predictions = []
+    for i in range(0, n_samples, batch_size):
+        X_batch = X[i:i+batch_size]
+        predictions.append(kmeans_model.predict(X_batch))
+    return np.concatenate(predictions)
 
 def aggregate(G):
 	def pairwiseOccurance(M1, M2):
@@ -265,31 +303,34 @@ def aggregate(G):
 	
 	dict_ = allPairwiseOccurance(G)
 	#xC    = lil_array( (len(G[0]), len(G[0])) , dtype=np.int8) # slow
-	xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) # Matrix representation for all points according to G
+	#xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) # Matrix representation for all points according to G
 	
-	#if os.path.exists('matrix.dat'): os.remove('matrix.dat')
-	#xC     = np.memmap('matrix.dat', dtype=np.int8, mode='w+', shape=(len(G[0]),len(G[0])))
+	if os.path.exists('matrix.dat'): os.remove('matrix.dat')
+	xC     = np.memmap('matrix.dat', dtype=np.int8, mode='w+', shape=(len(G[0]),len(G[0])))
 	
 	print('len G0',len(G[0]))
 	for x_id in range(len(G[0])):
 		freq 		= occuranceFreq(x_id, G, dict_)
-		xC[x_id]	= freq
-		#xC[x_id, :]	= freq
+		#xC[x_id]	= freq
+		xC[x_id, :]	= freq
 		if x_id % 100 == 0: print('x', x_id)
-	#xC.flush()
-	#del xC
+	xC.flush()
+	del xC
 	del dict_
 	
 	print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' *** wait 15 seconds for emptying the memory ...')
 	
 	time.sleep(15)
-	#xC_memory = np.memmap('matrix.dat', dtype=np.int8, mode='r', shape=(len(G[0]),len(G[0])))
+	xC_memory = np.memmap('matrix.dat', dtype=np.int8, mode='r', shape=(len(G[0]),len(G[0])))
 
-	gmm = GaussianMixture(n_components=len(set(G[0])), covariance_type='full', warm_start=True)
-	gmm = batch_fit_gmm_with_min_passes(gmm, xC, batch_size=10000, min_passes=2, tol=1e-4)
+	#gmm = GaussianMixture(n_components=len(set(G[0])), covariance_type='full', warm_start=True)
+	#gmm = batch_fit_gmm_with_min_passes(gmm, xC_memory, batch_size=10000, min_passes=2, tol=1e-4)
 	
+	kmeans = MiniBatchKMeans(n_clusters=10, random_state=42)
+	kmeans = batch_fit_kmeans_with_min_passes(kmeans, xC_memory, batch_size=10000, min_passes=2, tol=1e-4)
 	
-	predictions = batch_predict_gmm(gmm, xC, batch_size = 10000)
+	#predictions = batch_predict_gmm(gmm, xC_memory, batch_size = 10000)
+	predictions = batch_predict(kmeans, xC_memory, batch_size= 10000)
 	
 	#return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
 	return predictions
