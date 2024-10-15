@@ -265,9 +265,6 @@ def aggregate(G, label):
 	    #- chunk_size: int, the size of chunks to process in memory
 	    
 	    #Result is stored in `result_path` as a memory-mapped file.
-
-		if os.path.exists(M1_path): os.remove(M1_path)
-		if os.path.exists(M2_path): os.remove(M2_path)
 	    
 		mmap_M1 = np.memmap(M1_path, dtype=np.bool_, mode='r', shape=shape)
 		mmap_M2 = np.memmap(M2_path, dtype=np.bool_, mode='r', shape=shape)
@@ -290,8 +287,6 @@ def aggregate(G, label):
 		del mmap_M1
 		del mmap_M2
 		del mmap_result
-		os.remove(M1_path)
-		os.remove(M2_path)
 	
 	    # Force garbage collection to ensure memory is freed
 		gc.collect()
@@ -310,23 +305,24 @@ def aggregate(G, label):
 		# Each key is for one solution's elements pairwise equality comparison.
 		with h5py.File('dict_.h5', 'w') as hf:
 			for s_id, S in enumerate(G):
-				np.memmap('S1.dat', dtype=np.bool_, mode='w+', shape=S.shape)[:] = S[:] # => 'S1.dat'
-				np.memmap('S2.dat', dtype=np.bool_, mode='w+', shape=S.shape)[:] = S[:] # => 'S2.dat'
-				result_path = pairwiseOccurance('S1.dat', 'S2.dat', 'result.dat', S.shape, chunk_size=10000) #  # => 'result.dat'
+				np.memmap('S'+str(s_id)+'_1', dtype=np.bool_, mode='w+', shape=S.shape)[:] = S[:] # => 's_id S1.dat'
+				np.memmap('S'+str(s_id)+'_2', dtype=np.bool_, mode='w+', shape=S.shape)[:] = S[:] # => 's_id S2.dat'
+				SS_result_path = pairwiseOccurance('S'+str(s_id)+'_1', 'S'+str(s_id)+'_2', 'S'+str(s_id)+'_result', S.shape, chunk_size=10000) #  # => 'result.dat'
 				
-				dset = hf.create_dataset(str(s_id), shape=(len(S), len(S)), dtype=np.bool_) # => s_id (m,m) dataset
+				dset = hf.create_dataset('S'+str(s_id), shape=(len(S), len(S)), dtype=np.bool_) # => s_id (m,m) dataset
 
 				# Open the memmap file in read mode
-				result_data = np.memmap(result_path, dtype=np.bool_, mode='r', shape=(len(S), len(S)))
+				SS_result_data = np.memmap(SS_result_path, dtype=np.bool_, mode='r', shape=(len(S), len(S)))
 
 				# Process the data in chunks and write to the HDF5 file incrementally
 				for i in range(0, S.shape[0], 10000):
 					chunk_end = min(i + 10000, S.shape[0])
-					dset[i:chunk_end] = result_data[i:chunk_end]  # Write chunk directly to the HDF5 dataset
-				del result_data
-				os.remove('S1.dat')
-				os.remove('S2.dat')
-				os.remove(result_path)
+					dset[i:chunk_end] = SS_result_data[i:chunk_end]  # Write chunk directly to the HDF5 dataset
+				
+				del SS_result_data
+				os.remove('S'+str(s_id)+'_1')
+				os.remove('S'+str(s_id)+'_2')
+				os.remove(SS_result_path)
 				
 				time.sleep(5)
 				
@@ -341,7 +337,7 @@ def aggregate(G, label):
 		with h5py.File('dict_.h5', 'r') as hf:
 			xS = pd.DataFrame( {}, columns=range(len(G)), dtype=np.int8)
 			for s_id, S in enumerate(G):
-				xS[s_id] = hf[s_id][x_id]
+				xS[str(s_id)] = hf[str(s_id)][x_id]
 			return xS.sum(axis=1)
 	
 	
@@ -383,12 +379,7 @@ def aggregate(G, label):
 	del xC_memory; time.sleep(5)
 	
 	
-	# DictMethod
-	'''
-	kmeans = MiniBatchKMeans(n_clusters=len(set(G[0])), batch_size=10000,  max_iter=100, tol=1e-4,  max_no_improvement=10, random_state=42)
-	kmeans = batch_fit_kmeans(kmeans, xC, batch_size=10000)
-	predictions = batch_predict(kmeans, xC, batch_size= 10000)
-	'''
+	os.remove('dict_.h5')
 
 	#return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
 	return predictions
