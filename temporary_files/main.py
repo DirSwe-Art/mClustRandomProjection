@@ -313,11 +313,12 @@ def aggregate(G, label):
 					dset[i:chunk_end] = SS_result_data[i:chunk_end]  # Write chunk directly to the HDF5 dataset
 				
 				del SS_result_data
+				time.sleep(5)
 				os.remove('S'+str(s_id)+'_1')
 				os.remove('S'+str(s_id)+'_2')
 				os.remove(SS_result_path)
 				
-				time.sleep(5)
+				
 				
 				# After this loop, the entire memmap data will be written to the HDF5 file
 			
@@ -364,11 +365,12 @@ def aggregate(G, label):
 	kmeans      = MiniBatchKMeans(n_clusters=len(set(G[0])), batch_size=10000, max_iter=100, tol=1e-4, max_no_improvement=15, random_state=42)
 	kmeans      = batch_fit_kmeans(kmeans, xC_memory, batch_size=10000)
 	predictions = batch_predict(   kmeans, xC_memory, batch_size=10000)
-	del xC_memory; time.sleep(5)
+	del xC_memory
 	
-	
+	time.sleep(5)
 	os.remove(G_dict_path)
 	os.remove('G_matrix')
+	
 
 	#return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
 	return predictions
@@ -714,8 +716,8 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 
 ## Settings
-n_projections 		 = 5
-n_clusters           = 5
+n_projections 		 = 60
+n_clusters           = 7
 n_views              = 3
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
 clusterings_rep 	 = 'aggregate'							# 'centeral', 'ensemble', 'aggregate'
