@@ -191,7 +191,7 @@ def aggregate(G):
 '''
 
 # Function to fit a model in batches
-def batch_fit_gmm_with_min_passes(gmm_model, X, batch_size, min_passes=1, tol=1e-4, max_no_improvement=10, n_iterations=10):
+def batch_fit_gmm_with_min_passes(gmm_model, X, batch_size, min_passes=1, tol=1e-4, max_no_improvement=10):
     n_samples = X.shape[0]
     prev_log_likelihood = None
     no_improvement = 0
@@ -266,6 +266,8 @@ def aggregate(G):
 	dict_ = allPairwiseOccurance(G)
 	#xC    = lil_array( (len(G[0]), len(G[0])) , dtype=np.int8) 
 	#xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) # Matrix representation for all points according to G
+	
+	if os.path.exists('matrix.dat'): os.remove('matrix.dat')
 	xC     = np.memmap('matrix.dat', dtype=np.int8, mode='w+', shape=(len(G[0]),len(G[0])))
 	
 	print('len G0',len(G[0]))
