@@ -251,7 +251,7 @@ def batch_predict(kmeans_model, X, batch_size):
         predictions.append(kmeans_model.predict(X_batch))
     return np.concatenate(predictions)
 
-def aggregate(G):
+def aggregate(G, label):
 	def pairwiseOccurance(M1, M2):
 		# Returns an (m,m) matrix for (M1,M2) pairwise equaliity comparisons. 
 		return np.equal.outer(M1,M2)
@@ -285,8 +285,8 @@ def aggregate(G):
 	#xC    = lil_array( (len(G[0]), len(G[0])) , dtype=np.int8) # slow
 	#xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) # Matrix representation for all points according to G
 	
-	if os.path.exists('matrix.dat'): os.remove('matrix.dat')
-	xC     = np.memmap('matrix.dat', dtype=np.int8, mode='w+', shape=(len(G[0]),len(G[0])))
+	if os.path.exists(label+'_matrix.dat'): os.remove(label+'_matrix.dat')
+	xC     = np.memmap(label+'_matrix.dat', dtype=np.int8, mode='w+', shape=(len(G[0]),len(G[0])))
 	
 	print('len G0',len(G[0]))
 	for x_id in range(len(G[0])):
@@ -301,7 +301,7 @@ def aggregate(G):
 	print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' *** wait 15 seconds for emptying the memory ...')
 	
 	time.sleep(15)
-	xC_memory = np.memmap('matrix.dat', dtype=np.int8, mode='r', shape=(len(G[0]),len(G[0])))
+	xC_memory = np.memmap(label+'_matrix.dat', dtype=np.int8, mode='r', shape=(len(G[0]),len(G[0])))
 
 	#gmm = GaussianMixture(n_components=len(set(G[0])), covariance_type='full', warm_start=True)
 	#gmm = batch_fit_gmm_with_min_passes(gmm, xC_memory, batch_size=10000, min_passes=2, tol=1e-4)
@@ -510,21 +510,21 @@ def representative_solutions(model, clusterings, n_views=3, clusterings_rep='agg
 	plotDendrogram(model, G, resultsPath)
 	
 	print('*** Aggregating groups of clusterings is started. ***')
-	for group_id, label in enumerate(G):
+	for label in set(G):
 		C  = clusterings[G==label]
 		
 		if len(C) == 1:
-			print('*** Group (%d) has one clustering solution. No aggregation is needed. ***'%group_id)
+			print('*** Group (%d) has one clustering solution. No aggregation is needed. ***'%label)
 			R.append(C[0].tolist())
 		elif clusterings_rep == 'central': 
-			print('*** Finding the central solution of group (%d). ***'%group_id)
+			print('*** Finding the central solution of group (%d). ***'%label)
 			R.append(central(C))
 		elif clusterings_rep == 'ensemble': 
-			print('*** Computing the ensemble solution of group (%d). ***'%group_id)
+			print('*** Computing the ensemble solution of group (%d). ***'%label)
 			R.append(ensemble(C))
 		elif clusterings_rep == 'aggregate': 
-			print('*** Aggregating clusterings of group (%d). ***'%group_id)
-			R.append(aggregate(C))
+			print('*** Aggregating clusterings of group (%d). ***'%label)
+			R.append(aggregate(C, label))
 	
 	print('*** Groups of clusterings are aggregated to representative clusterings. ***')
 	return np.array(R)
