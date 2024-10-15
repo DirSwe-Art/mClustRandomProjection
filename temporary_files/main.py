@@ -324,7 +324,10 @@ def aggregate(G, label):
 					chunk_end = min(i + 10000, S.shape[0])
 					dset[i:chunk_end] = result_data[i:chunk_end]  # Write chunk directly to the HDF5 dataset
 				del result_data
+				os.remove('S1.dat')
+				os.remove('S2.dat')
 				os.remove(result_path)
+				
 				time.sleep(5)
 				
 				# After this loop, the entire memmap data will be written to the HDF5 file
@@ -726,7 +729,7 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 ## Generate Data
 (DATA, n_clusters, 
  data_name,   
- imRow, imCol, imDim)= generate_data(data_name= 'image_x_ray_chest_small.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image_x-ray.bmp'
+ imRow, imCol, imDim)= generate_data(data_name= 'image_x-ray-chest-small.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image_x-ray.bmp'
 # 					 )= generate_data(data_name= '223random')	# '432random', '223random'
 
 
