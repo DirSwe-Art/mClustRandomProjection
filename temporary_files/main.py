@@ -235,36 +235,16 @@ def batch_predict_gmm(gmm_model, X, batch_size):
     return np.concatenate(predictions)
 '''
 
-def batch_fit_kmeans_with_min_passes(kmeans_model, X, batch_size, min_passes=1, tol=1e-4, max_no_improvement=10):
+def batch_fit_kmeans(kmeans_model, X, batch_size):
     n_samples = X.shape[0]
-    prev_inertia = None
-    no_improvement = 0
-    num_passes = 0
-
-    while num_passes < min_passes or no_improvement < max_no_improvement:
-        for i in range(0, n_samples, batch_size):
-            X_batch = X[i:i+batch_size]
-            kmeans_model.partial_fit(X_batch); print(f"Process: {num_passes}, Batch: {i + batch_size}, Batches: {i // batch_size}.")
-            
-            current_inertia = kmeans_model.inertia_
-            if prev_inertia is not None:
-                change_in_inertia = abs(prev_inertia - current_inertia)
-                if change_in_inertia < tol:
-                    no_improvement += 1
-                else:
-                    no_improvement = 0
-                
-                if no_improvement >= max_no_improvement and num_passes >= min_passes:
-                    print(f"Converged after {num_passes} full passes and {i // batch_size} batches.")
-                    return kmeans_model
-
-            prev_inertia = current_inertia
-        num_passes += 1
-    
+    for i in range(0, n_samples, batch_size):
+        X_batch = X[i:i+batch_size]; print('Batch:', i+i+batch_size )
+        kmeans_model.partial_fit(X_batch)  # Incrementally fit the mini-batch
     return kmeans_model
 
+
 def batch_predict(kmeans_model, X, batch_size):
-    n_samples = X.shape[0]
+    n_samples = X.shape[0]; print('Predicting ...' )
     predictions = []
     for i in range(0, n_samples, batch_size):
         X_batch = X[i:i+batch_size]
@@ -326,8 +306,8 @@ def aggregate(G):
 	#gmm = GaussianMixture(n_components=len(set(G[0])), covariance_type='full', warm_start=True)
 	#gmm = batch_fit_gmm_with_min_passes(gmm, xC_memory, batch_size=10000, min_passes=2, tol=1e-4)
 	
-	kmeans = MiniBatchKMeans(n_clusters=10, random_state=42)
-	kmeans = batch_fit_kmeans_with_min_passes(kmeans, xC_memory, batch_size=10000, min_passes=2, tol=1e-4)
+	kmeans = MiniBatchKMeans(n_clusters=set(G[0]), batch_size=10000,  max_iter=100, tol=1e-4,  max_no_improvement=10, random_state=42)
+	kmeans = batch_fit_kmeans(kmeans, xC_memory, batch_size=10000)
 	
 	#predictions = batch_predict_gmm(gmm, xC_memory, batch_size = 10000)
 	predictions = batch_predict(kmeans, xC_memory, batch_size= 10000)
