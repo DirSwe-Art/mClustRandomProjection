@@ -15,7 +15,7 @@ import copy, math, time, datetime, os, sys
 
 
 '''
-def aggregated(G):
+def aggregate(G):
 	# dictionary for sample pairwise equality comparisons in each clustering
 	dict_ = {}
 	for s_id, S in enumerate(G):
@@ -40,7 +40,7 @@ def aggregated(G):
 
 
 '''
-def aggregated(G):
+def aggregate(G):
 	# dictionary for sample pairwise equality comparisons in each clustering
 	dict_ = {}
 	for s_id, S in enumerate(G):
@@ -67,7 +67,7 @@ def aggregated(G):
 
 '''
 # dictionary for sample pairwise equality comparisons in each clustering
-def aggregated(G):
+def aggregate(G):
 	for s_id, S in enumerate(G):
 		exec('global dict_'+str(s_id))
 		globals()['dict_G_S'+str(s_id)]={}
@@ -93,7 +93,7 @@ def aggregated(G):
 '''
 
 # better performance, map large arrays to external files, better for memory
-def aggregated(G):
+def aggregate(G):
 	# dictionary for sample pairwise equality comparisons in each clustering
 	dict_ = {}
 	for s_id, S in enumerate(G):
@@ -133,7 +133,7 @@ G = np.array([
 	[0,0,0,0,0,0,0,0,0,0,0]
 	])
 
-def aggregated(G):
+def aggregate(G):
 	# dictionary for sample pairwise equality comparisons in each clustering
 	dict_ = {}
 	for s_id, S in enumerate(G):
@@ -159,7 +159,7 @@ def aggregated(G):
 	print(G)
 	print(GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist())
 	
-aggregated(G)
+aggregate(G)
 
 
 '''
