@@ -92,7 +92,7 @@ def central(clusterings):
 
 def ensemble(clusterings):
 	# returns a clustering where the label of each data point is the majority voting of its labels among all clusterings. #
-	
+	# modify this function. let add mClustRandomProjection also return A, and add it as an argument to this function. #
 	zipped_clusterings = list(zip(*clusterings))
 	
 	labels_majority    = []
@@ -447,6 +447,8 @@ def representative_solutions(model, clusterings, n_views=3, clusterings_rep='agg
 	
 	print('*** Groups of clusterings are aggregated to representative clusterings. ***')
 	return np.array(R)
+
+
 	
 # ====================================================================== #
 
@@ -570,16 +572,16 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 ## Generate Data
 (DATA, n_clusters, 
  data_name,   
- imRow, imCol, imDim)= generate_data(data_name= 'image_x-ray-chest-small.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image-x-ray-chest.bmp'
+ imRow, imCol, imDim)= generate_data(data_name= 'image_chest_new.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image-x-ray-chest.bmp'
 # 					 )= generate_data(data_name= '223random')	# '432random', '223random'
 
 
 ## Settings
-n_projections 		 = 30
+n_projections 		 = 120
 n_clusters           = 7
 n_views              = 3
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
-clusterings_rep 	 = 'aggregate'							# 'centeral', 'ensemble', 'aggregate'
+clusterings_rep 	 = 'ensemble'							# 'central', 'ensemble', 'aggregate'
 
 M_mdl, P 	   		 = mClustRandomProjection(
 						DATA, 

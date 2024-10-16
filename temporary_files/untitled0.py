@@ -193,10 +193,14 @@ print( GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist())
 
 '''
 
+'''
+def representativesSorted(DATA, R):
+	sortedR = [ [] for _ in range(len(R)) ]
+	for i, S in enumerate(R):
+		sortedR[i] = large_labels_first(DATA, S)
+	return sortedR
 
-
-
-
+'''
 
 
 

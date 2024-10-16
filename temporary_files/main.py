@@ -270,7 +270,7 @@ def aggregate(G, label):
 	    
 	    # Prepare a memory-mapped file for the result
 		result_shape = (shape[0], shape[0])
-		mmap_result = np.memmap(result_path, dtype=np.bool_, mode='w+', shape=result_shape)
+		mmap_result  = np.memmap(result_path, dtype=np.bool_, mode='w+', shape=result_shape)
 	
 	    # Process in chunks to handle memory efficiently
 		for i in range(0, shape[0], chunk_size):
@@ -298,8 +298,8 @@ def aggregate(G, label):
 		# Each key is for one solution's elements pairwise equality comparison.
 		with h5py.File(result_path, 'w') as hf:
 			for s_id, S in enumerate(G):
-				np.memmap('S'+str(s_id)+'_1', dtype=np.bool_, mode='w+', shape=S.shape)[:] = S[:] # => 's_id S1.dat'
-				np.memmap('S'+str(s_id)+'_2', dtype=np.bool_, mode='w+', shape=S.shape)[:] = S[:] # => 's_id S2.dat'
+				np.memmap('S'+str(s_id)+'_1', dtype=np.int8, mode='w+', shape=S.shape)[:] = S[:] # => 's_id S1.dat'
+				np.memmap('S'+str(s_id)+'_2', dtype=np.int8, mode='w+', shape=S.shape)[:] = S[:] # => 's_id S2.dat'
 				SS_result_path = pairwiseOccurance('S'+str(s_id)+'_1', 'S'+str(s_id)+'_2', 'S'+str(s_id)+'_result', S.shape, chunk_size=10000) #  # => 'result.dat'
 				
 				dset = hf.create_dataset('S'+str(s_id), shape=(len(S), len(S)), dtype=np.bool_) # => s_id (m,m) dataset
@@ -733,7 +733,34 @@ M_mdl, P 	   		 = mClustRandomProjection(
 plotDendrogram(M_mdl, M_mdl.labels_, resultsPath)
 print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
 
+n_views   = 7
+starting_time   = time.time()
 
+representatives 	 = representative_solutions(
+						model           = M_mdl,
+						clusterings     = P,
+						n_views 	    = int(n_views), 
+						clusterings_rep = clusterings_rep ) 
+
+for S_id, S in enumerate(representatives):
+	if data_name[0:5] == 'image':
+		# Coloring RGB pixels with thier cluster correspondiing color (2 colors, 1 for each cluster)
+		#clr = [ [0, 0, 0], [255, 255, 255] ] 	 
+		clr = [[0,0,0], [0,128,0], [255,140,0], [165,42,42], [255,255,255], [65,105,225], [255,215,0] ]
+		
+		
+		# coloring RGB pixels with their cluster means
+		#clr = [ [np.mean(col) for col in zip(*DATA[S==cl])] for cl in set(S) ] 
+	else:
+		# Coloring data points with thier cluster correspondiing color
+		clr = ['black', 'green', 'orange', 'brown', 'white', 'cornflowerblue', 'yellow', ]
+	
+	sorted_labels = large_labels_first(DATA, S) 
+	plot_clusters( DATA, [ clr[i] for i in sorted_labels ], S_id, resultsPath )
+
+print('*** Final solutions are presented. ***')
+		
+'''
 while True:
 	try:
 		### important ###
@@ -769,7 +796,7 @@ while True:
 	except ValueError:
 		if n_views == 'q': print("\nProgram is ended"); break
 		print("Invalid number of clusters")
-
+'''
 
 
 
