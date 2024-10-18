@@ -233,7 +233,6 @@ def aggregate(G, label):
 	#return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
 	return predictions
 
-
 def selectGroupsOfClusterings(Y, clusterings):
 	# Returns the indices of clusterings that alternates groups with large sizes and large dissimilarities
 	
@@ -421,54 +420,49 @@ def mClustRandomProjection(X, n_projections=60, n_clusters=2, dis_metric='dist_c
 	return M, P
 
 def get_groups_of_solutions(model):
-	plotDendrogram(M_mdl, [0 for _ in M_mdl.labels_] , resultsPath)
+	plotDendrogram(model, [0 for _ in model.labels_] , resultsPath)
 	while True:
 		try:
-			### important ###
-			# set whether labels  are used with the corresponding link coloring. 
-			n_views   = str(input('    Enter the number of number of views, then "ok" to proceed.'))
+			n_views = str(input('\n    Enter the number of views: '))
 			
 			print('*** Extracting the groups of similar clusterings. ***')
-			Z      = computeLinkageFromModel(model)
-			G      = np.array(cut_tree(Z, n_clusters=n_views).flatten())
+			Z       = computeLinkageFromModel(model)
+			G       = np.array(cut_tree(Z, n_clusters=n_views).flatten())
 			
 			plotDendrogram(model, G, resultsPath)
 			
 			try:
-				proceeding   = str(input('    Enter "ok" to proceed or prss any key to select another number of views.'))
+				proceeding    = str(input('    Enter "ok" to proceed or prss any key to enter another number of views.'))
 				if proceeding == 'ok': 
 					return G
 				else: 
 					break
 			except ValueError:
-				print('Invalid input. Enter "ok" to proceed or any key to select another number of views')
+				print('Invalid input. Enter "ok" to proceed or any key to enter another number of views')
 		
 		except ValueError:
-			print("Invalid number of views")
+			if n_views == 'q': 
+				print('The program in ended.')
+				sys.exit()
+			print('Invalid number of views')
 
-	
-def representative_solutions(model, clusterings, n_views=3, clusterings_rep='aggregate'):
-	print('*** Grouping similar clusterings is started. ***')
-	R      = []
-	Z      = computeLinkageFromModel(model)
-	G      = np.array(cut_tree(Z, n_clusters=n_views).flatten())
-	
-	plotDendrogram(model, G, resultsPath)
-	
+def representative_solutions(clusterings, groups, method='aggregate'):
 	print('*** Aggregating groups of clusterings is started. ***')
-	for label in set(G):
-		C  = clusterings[G==label]
+	
+	R      = []
+	for label in set(groups):
+		C  = clusterings[groups==label]
 		
 		if len(C) == 1:
 			print('*** Group (%d) has one clustering solution. No aggregation is needed. ***'%label)
 			R.append(C[0].tolist())
-		elif clusterings_rep == 'central': 
+		elif method == 'central': 
 			print('*** Finding the central solution of group (%d). ***'%label)
 			R.append(central(C))
-		elif clusterings_rep == 'ensemble': 
+		elif method == 'ensemble': 
 			print('*** Computing the ensemble solution of group (%d). ***'%label)
 			R.append(ensemble(C))
-		elif clusterings_rep == 'aggregate': 
+		elif method == 'aggregate': 
 			print('*** Aggregating clusterings of group (%d). ***'%label)
 			R.append(aggregate(C, label))
 	
@@ -596,67 +590,51 @@ starting_time   = time.time()
 resultsPath     = r'C:/ExperimentalResults/Results/results_MultipleClusteringsViaRandomProjection/'
 if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
-## Generate Data
-(DATA, n_clusters, 
- data_name,   
- imRow, imCol, imDim)= generate_data(data_name= 'image_chest_new.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image-x-ray-chest.bmp'
-# 					 )= generate_data(data_name= '223random')	# '432random', '223random'
-
-
 ## Settings
-n_projections 		 = 120
+n_projections 		 = 30
 n_clusters           = 7
 n_views              = 3
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
-clusterings_rep 	 = 'ensemble'							# 'central', 'ensemble', 'aggregate'
+rep_method 	 		 = 'ensemble'							# 'central', 'ensemble', 'aggregate'
+
+
+## Generate Data
+(DATA, n_clusters, 
+ data_name,   
+# imRow, imCol, imDim)= generate_data(data_name= 'image_chest_new.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image-x-ray-chest.bmp'
+ 					 )= generate_data(data_name= 'random223')	# 'random432', 'random223'
+
+
+
 
 M_mdl, P   		     = mClustRandomProjection(
 						DATA, 
-						n_projections   = n_projections, 
-						n_clusters 	    = n_clusters, 
-						dis_metric 	    = dis_metric )
-
+						n_projections = n_projections, 
+						n_clusters 	  = n_clusters, 
+						dis_metric 	  = dis_metric )
 print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
 
-
 while True:
-	try:
-		### important ###
-		# set whether labels  are used with the corresponding link coloring. 
-		n_views   = str(input('    Enter the number of number of views of clustering solutions: '))
-		
-		representatives 	 = representative_solutions(
-								model           = M_mdl,
-								clusterings     = P,
-								n_views 	    = int(n_views), 
-								clusterings_rep = clusterings_rep ) 
-		
-		for S_id, S in enumerate(representatives):
-			if data_name[0:5] == 'image':
-				# Coloring RGB pixels with thier cluster correspondiing color (2 colors, 1 for each cluster)
-				#clr = [ [0, 0, 0], [255, 255, 255] ] 	 
-				clr = [[0,0,0], [0,128,0], [255,140,0], [165,42,42], [255,255,255], [65,105,225], [255,215,0] ]
-				
-				
-				# coloring RGB pixels with their cluster means
-				#clr = [ [np.mean(col) for col in zip(*DATA[S==cl])] for cl in set(S) ] 
-			else:
-				# Coloring data points with thier cluster correspondiing color
-				clr = ['black', 'green', 'orange', 'brown', 'white', 'cornflowerblue', 'yellow', ]
+	G = get_groups_of_solutions(M_mdl)
+	R = representative_solutions(clusterings= P, groups= G, method= rep_method ) 
+	
+	for S_id, S in enumerate(R):
+		if data_name[0:5] == 'image':
+			# Coloring RGB pixels with thier cluster correspondiing color (2 colors, 1 for each cluster)
+			#clr = [ [0, 0, 0], [255, 255, 255] ] 	 
+			clr = [[0,0,0], [0,128,0], [255,140,0], [165,42,42], [255,255,255], [65,105,225], [255,215,0] ]
 			
-			sorted_labels = large_labels_first(DATA, S) 
-			plot_clusters( DATA, [ clr[i] for i in sorted_labels ], S_id, resultsPath )
-		
-		print('*** Final solutions are presented. ***')
 			
-
-	except ValueError:
-		if n_views == 'q': print("\nProgram is ended"); break
-		print("Invalid number of clusters")
-
-
-
-
+			# coloring RGB pixels with their cluster means
+			#clr = [ [np.mean(col) for col in zip(*DATA[S==cl])] for cl in set(S) ] 
+		else:
+			# Coloring data points with thier cluster correspondiing color
+			clr = ['black', 'green', 'orange', 'brown', 'white', 'cornflowerblue', 'yellow', ]
+		
+		sorted_labels = large_labels_first(DATA, S) 
+		plot_clusters( DATA, [ clr[i] for i in sorted_labels ], S_id, resultsPath )
+	
+	print('*** Final solutions are presented. ***')
 
 
 
