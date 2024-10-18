@@ -426,7 +426,7 @@ def get_groups_of_solutions(model):
 		try:
 			### important ###
 			# set whether labels  are used with the corresponding link coloring. 
-			n_views   = str(input('    Enter the number of number of views of clustering solutions: '))
+			n_views   = str(input('    Enter the number of number of views, then "ok" to proceed.'))
 			
 			print('*** Extracting the groups of similar clusterings. ***')
 			Z      = computeLinkageFromModel(model)
@@ -434,11 +434,17 @@ def get_groups_of_solutions(model):
 			
 			plotDendrogram(model, G, resultsPath)
 			
-			return G
-
+			try:
+				proceeding   = str(input('    Enter "ok" to proceed or prss any key to select another number of views.'))
+				if proceeding == 'ok': 
+					return G
+				else: 
+					break
+			except ValueError:
+				print('Invalid input. Enter "ok" to proceed or any key to select another number of views')
+		
 		except ValueError:
-			if n_views == 'q': print("\nProgram is ended"); break
-			print("Invalid number of clusters")
+			print("Invalid number of views")
 
 	
 def representative_solutions(model, clusterings, n_views=3, clusterings_rep='aggregate'):
