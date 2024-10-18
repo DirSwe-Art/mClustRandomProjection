@@ -378,7 +378,7 @@ def plotDendrogram(model, Y, resultsPath):
 	plt.xlabel('Sample index')
 	plt.ylabel('Distance')
 	plt.savefig(resultsPath+'dendrogram_'+data_name[6:]+'_k_'+str(n_clusters)+'.jpg')
-	#plt.show()
+	plt.show()
 
 def large_labels_first(DATA, Y):
 	DATA         = np.array(copy.deepcopy(DATA))
@@ -420,6 +420,27 @@ def mClustRandomProjection(X, n_projections=60, n_clusters=2, dis_metric='dist_c
 
 	return M, P
 
+def get_groups_of_solutions(model):
+	plotDendrogram(M_mdl, [0 for _ in M_mdl.labels_] , resultsPath)
+	while True:
+		try:
+			### important ###
+			# set whether labels  are used with the corresponding link coloring. 
+			n_views   = str(input('    Enter the number of number of views of clustering solutions: '))
+			
+			print('*** Extracting the groups of similar clusterings. ***')
+			Z      = computeLinkageFromModel(model)
+			G      = np.array(cut_tree(Z, n_clusters=n_views).flatten())
+			
+			plotDendrogram(model, G, resultsPath)
+			
+			return G
+
+		except ValueError:
+			if n_views == 'q': print("\nProgram is ended"); break
+			print("Invalid number of clusters")
+
+	
 def representative_solutions(model, clusterings, n_views=3, clusterings_rep='aggregate'):
 	print('*** Grouping similar clusterings is started. ***')
 	R      = []
@@ -583,13 +604,12 @@ n_views              = 3
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
 clusterings_rep 	 = 'ensemble'							# 'central', 'ensemble', 'aggregate'
 
-M_mdl, P 	   		 = mClustRandomProjection(
+M_mdl, P   		     = mClustRandomProjection(
 						DATA, 
 						n_projections   = n_projections, 
 						n_clusters 	    = n_clusters, 
 						dis_metric 	    = dis_metric )
 
-plotDendrogram(M_mdl, M_mdl.labels_, resultsPath)
 print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
 
 
