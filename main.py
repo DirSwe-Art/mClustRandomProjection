@@ -82,9 +82,9 @@ def affinity(data, affinity_metric='dist_clusterings'):
 	elif affinity_metric == 'approximate_dist_clusterings': return pairwise_distances(data, metric=approximate_dist_clusterings)
 	# elif affinity_metric == 'hamming_dist': return ...  we can add more metrics #
 
-def central(clusterings):
+def central(clusterings, model):
 	# returns a clustering from the pool that has the minimum sum of distnaces with all other clutserings. #
-	
+	#Z      = computeLinkageFromModel(model)
 	A      = affinity(clusterings)
 	id_min = np.argmin([ sum(A[row_id]) for row_id in range(len(A)) ])
 	
@@ -431,13 +431,9 @@ def get_groups_of_solutions(model):
 			
 			plotDendrogram(model, G, resultsPath)
 			
-			try:
-				proceeding    = str(input('\n    Enter "ok" to proceed or press any key to enter another number of views.'))
-				if proceeding == 'ok': 
-					return G
-				elif input(str('')): break
-			except ValueError:
-				print('Invalid input. Enter "ok" to proceed or any key to enter another number of views')
+			choice    = str(input('\n    Press "ok" to proceed or just press Enter to input another number: '))
+			if choice == 'ok': 
+				return G			
 		
 		except ValueError:
 			if n_views == 'q': 
@@ -445,7 +441,7 @@ def get_groups_of_solutions(model):
 				sys.exit()
 			print('Invalid number of views')
 
-def representative_solutions(clusterings, groups, method='aggregate'):
+def representative_solutions(model, clusterings, groups, method='aggregate'):
 	print('*** Aggregating groups of clusterings is started. ***')
 	
 	R      = []
@@ -457,7 +453,7 @@ def representative_solutions(clusterings, groups, method='aggregate'):
 			R.append(C[0].tolist())
 		elif method == 'central': 
 			print('*** Finding the central solution of group (%d). ***'%label)
-			R.append(central(C))
+			R.append(central(C, model))
 		elif method == 'ensemble': 
 			print('*** Computing the ensemble solution of group (%d). ***'%label)
 			R.append(ensemble(C))
@@ -594,7 +590,7 @@ n_projections 		 = 30
 n_clusters           = 7
 n_views              = 3
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
-rep_method 	 		 = 'central'							# 'central', 'ensemble', 'aggregate'
+rep_method 	 		 = 'ensemble'							# 'central', 'ensemble', 'aggregate'
 
 
 ## Generate Data
@@ -615,7 +611,7 @@ print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),'
 
 while True:
 	G = get_groups_of_solutions(M_mdl)
-	R = representative_solutions(clusterings= P, groups= G, method= rep_method ) 
+	R = representative_solutions(model= M_mdl, clusterings= P, groups= G, method= rep_method ) 
 	
 	for S_id, S in enumerate(R):
 		if data_name[0:5] == 'image':
