@@ -427,12 +427,12 @@ def get_groups_of_solutions(model):
 			
 			print('*** Extracting the groups of similar clusterings. ***')
 			Z       = computeLinkageFromModel(model)
-			G       = np.array(cut_tree(Z, n_clusters=n_views).flatten())
+			G       = np.array(cut_tree(Z, n_clusters=int(n_views)).flatten())
 			
 			plotDendrogram(model, G, resultsPath)
 			
 			try:
-				proceeding    = str(input('    Enter "ok" to proceed or prss any key to enter another number of views.'))
+				proceeding    = str(input('\n    Enter "ok" to proceed or prss any key to enter another number of views.'))
 				if proceeding == 'ok': 
 					return G
 				else: 
