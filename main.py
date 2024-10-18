@@ -86,7 +86,7 @@ def central(clusterings):
 	# returns a clustering from the pool that has the minimum sum of distnaces with all other clutserings. #
 	
 	A      = affinity(clusterings)
-	id_min = np.argmin([ sum(A[row]) for row in A ])
+	id_min = np.argmin([ sum(A[row_id]) for row_id in range(len(A)) ])
 	
 	return clusterings[id_min]
 
@@ -594,14 +594,14 @@ n_projections 		 = 30
 n_clusters           = 7
 n_views              = 3
 dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
-rep_method 	 		 = 'ensemble'							# 'central', 'ensemble', 'aggregate'
+rep_method 	 		 = 'central'							# 'central', 'ensemble', 'aggregate'
 
 
 ## Generate Data
 (DATA, n_clusters, 
  data_name,   
 # imRow, imCol, imDim)= generate_data(data_name= 'image_chest_new.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image-x-ray-chest.bmp'
- 					 )= generate_data(data_name= 'random223')	# 'random432', 'random223'
+ 					 )= generate_data(data_name= 'random432')	# 'random432', 'random223'
 
 
 
