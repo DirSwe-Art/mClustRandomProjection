@@ -432,11 +432,10 @@ def get_groups_of_solutions(model):
 			plotDendrogram(model, G, resultsPath)
 			
 			try:
-				proceeding    = str(input('\n    Enter "ok" to proceed or prss any key to enter another number of views.'))
+				proceeding    = str(input('\n    Enter "ok" to proceed or press any key to enter another number of views.'))
 				if proceeding == 'ok': 
 					return G
-				else: 
-					break
+				elif input(str('')): break
 			except ValueError:
 				print('Invalid input. Enter "ok" to proceed or any key to enter another number of views')
 		
