@@ -107,9 +107,12 @@ def ensemble(clusterings):
 	return labels_majority
 '''
 def aggregate(clusterings):
-	# This is the original function. It is a lazy function, and suffurs from the lack of memory with large-scale data
-	# returns a clustering where the label of each data point is estimated from NxN matrix that containes 
-	# the number of clusterings of each pairwise points where they belong to the same cluster. #
+	# This is the original (lazy) clustering aggragation function. It suffurs 
+	# from the lack of memory with extreame dimensions data, e.g., 1000000-D. 
+	
+	# It returns a clustering solution where the label of each data point is
+	# estimated from a matrix representation of the dataset. Each element (i,j)
+	# represents the number of clusterings where x_i, x_j are grouped together.
 
     ids = list(range(len(clusterings[0])))
     comb_ids = combinations(range(len(clusterings[0])), 2)
@@ -134,7 +137,7 @@ def aggregate(G):
 		dict_[s_id]= np.equal.outer(S,S)
 
 	xS = [] # xi and each xj are together (m-element row for each solution)
-	xC = [] # xi representation (the sum of xj-column over all solutions where xi,xj are together
+	xC = [] # xi representation (the sum of xj-column over all solutions where xi,xj are together)
 
 	for x_id in range(len(G[0])):
 		for s_id, S in enumerate(G):
