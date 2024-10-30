@@ -29,8 +29,8 @@ def constructProjectionMatrix(d):
 
 	return A
 
-# enhanced function
-def dist_clusterings(Ya, Yb):
+def clust_distance(Ya, Yb):
+	# enhanced function
     Ya = np.array(Ya)							# Ensure inputs are numpy arrays
     Yb = np.array(Yb)
     
@@ -67,20 +67,21 @@ def dist_clusterings(Ya, Yb):
     return d
 '''	
 
-def approximate_dist_clusterings(Ya, Yb, th=2200):
+def dist_clusterings(Ya, Yb, th=2200):
 	# Returns an approximate distance between two clustering solutions if the data size is larger than 100 points
-	if len(Ya) < th: return dist_clusterings(Ya, Yb)
+	if len(Ya) < th: return clust_distance(Ya, Yb)
 	
 	ds_rand_Ys    = []
 	for i in range(10):
 		rand_ids = np.random.choice(range(len(Ya)), th, replace=False) # replace=False a value a is selected once.
-		ds_rand_Ys.append( dist_clusterings([Ya[id] for id in rand_ids], [Yb[id] for id in rand_ids]) )
+		ds_rand_Ys.append( clust_distance([Ya[id] for id in rand_ids], [Yb[id] for id in rand_ids]) )
 	return np.mean(ds_rand_Ys)
 
 def affinity(data, affinity_metric='dist_clusterings'):
 	if   affinity_metric == 'dist_clusterings':             return pairwise_distances(data, metric=dist_clusterings)
-	elif affinity_metric == 'approximate_dist_clusterings': return pairwise_distances(data, metric=approximate_dist_clusterings)
-	# elif affinity_metric == 'hamming_dist': return ...  we can add more metrics #
+	
+	# We can add more metrics
+	# elif affinity_metric == 'hamming_dist': return ...  #
 
 def central(clusterings, model):
 	# returns a clustering from the pool that has the minimum sum of distnaces with all other clutserings. #
