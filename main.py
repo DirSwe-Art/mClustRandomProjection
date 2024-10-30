@@ -128,7 +128,7 @@ def aggregate(clusterings):
     nS = nS.tocsr()
     return GaussianMixture(n_components=len(set(clusterings[0]))).fit_predict(nS.toarray()).tolist()
 
-
+'''
 # better performance with a large RAM
 def aggregate(G):
 	# dictionary for sample pairwise equality comparisons in each clustering
@@ -147,11 +147,15 @@ def aggregate(G):
 		xS    = []
 		
 	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
-'''
 
+'''
 def aggregate(G, label):
 	# Returns an aggregated representative solution for all solutions in G.
-	# This function solves the memory lack issue with large data sets
+	# This function solves the memory lack issue with large data sets. 
+	# However, it is effective but not efficient, meaning that it takes a long
+	# processing time since operations are not accomplished through a virtual 
+	# memory on the hard disk.
+	
 	def pairwiseOccurance(M1, M2):
 		# Returns an (m,m) matrix for (M1,M2) pairwise equaliity comparisons. 
 		return np.equal.outer(M1,M2)
@@ -173,7 +177,7 @@ def aggregate(G, label):
 			xS[s_id] = dict_[s_id][x_id]
 		return xS.sum(axis=1)
 
-	def batch_fit_kmeans(kmeans_model, X, batch_size):
+	def batch_fit_kmeans(kmeans_model, X, batch_size=10000):
 		# Returns a batch fitted k-means model for a large matrix
 	    n_samples = X.shape[0]; print('\n\t -> Fitting ...' )
 	    for i in range(0, n_samples, batch_size):
@@ -181,7 +185,7 @@ def aggregate(G, label):
 	        kmeans_model.partial_fit(X_batch)  # Incrementally fit the mini-batch
 	    return kmeans_model
 
-	def batch_predict(kmeans_model, X, batch_size):
+	def batch_predict(kmeans_model, X, batch_size=10000):
 		# Returns a batch predicted cluster labels for a large matrix
 	    n_samples = X.shape[0]; print('\n\t -> Predicting ...' )
 	    predictions = []
@@ -231,15 +235,14 @@ def aggregate(G, label):
 	
 	
 	# DictMethod
-	'''
-	kmeans = MiniBatchKMeans(n_clusters=len(set(G[0])), batch_size=10000,  max_iter=100, tol=1e-4,  max_no_improvement=10, random_state=42)
-	kmeans = batch_fit_kmeans(kmeans, xC, batch_size=10000)
-	predictions = batch_predict(kmeans, xC, batch_size= 10000)
-	'''
+	#kmeans = MiniBatchKMeans(n_clusters=len(set(G[0])), batch_size=10000,  max_iter=100, tol=1e-4,  max_no_improvement=10, random_state=42)
+	#kmeans = batch_fit_kmeans(kmeans, xC, batch_size=10000)
+	#predictions = batch_predict(kmeans, xC, batch_size= 10000)
+
 
 	#return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
 	return predictions
-
+'''
 
 
 def computeLinkageFromModel(model):
@@ -374,7 +377,7 @@ def get_groups_of_solutions(model):
 	plotDendrogram(model, [0 for _ in model.labels_] , resultsPath)
 	while True:
 		try:
-			n_views = str(input('\n    Enter the number of views: '))
+			n_views = str(input('\n    Enter the number of views or \'q\' to exit: '))
 			
 			print('*** Extracting the groups of similar clusterings. ***')
 			Z       = computeLinkageFromModel(model)
@@ -382,15 +385,18 @@ def get_groups_of_solutions(model):
 			
 			plotDendrogram(model, G, resultsPath)
 			
-			choice    = str(input('\n    Press "ok" to proceed or just press Enter to input another number: '))
-			if choice == 'ok': 
-				return G			
+			choice    = str(input('\n    Type "ok" to proceed or press Enter to input another number: '))
+			if choice in ['ok', 'OK', 'Ok', 'oK']: 
+				return G
+			elif choice in ['q','Q']:
+				print('\nThe program in ended.')
+				sys.exit()
 		
 		except ValueError:
-			if n_views == 'q': 
-				print('The program in ended.')
+			if n_views in ['q','Q']:
+				print('\nThe program in ended.')
 				sys.exit()
-			print('Invalid number of views')
+			print('\nInvalid number of views')
 
 def representative_solutions(model, clusterings, groups, method='aggregate'):
 	print('*** Aggregating groups of clusterings is started. ***')
@@ -410,7 +416,8 @@ def representative_solutions(model, clusterings, groups, method='aggregate'):
 			R.append(ensemble(C))
 		elif method == 'aggregate': 
 			print('*** Aggregating clusterings of group (%d). ***'%label)
-			R.append(aggregate(C, label))
+			#R.append(aggregate(C, label))
+			R.append(aggregate(C))
 	
 	print('*** Groups of clusterings are aggregated to representative clusterings. ***')
 	return np.array(R)
@@ -541,7 +548,7 @@ n_projections 		 = 30
 n_clusters           = 7
 n_views              = 3
 dis_metric			 = 'dist_clusterings'		            # 'distance', 'dist_clusterings'
-rep_method 	 		 = 'ensemble'							# 'central', 'ensemble', 'aggregate'
+rep_method 	 		 = 'aggregate'							# 'central', 'ensemble', 'aggregate'
 
 
 ## Generate Data
