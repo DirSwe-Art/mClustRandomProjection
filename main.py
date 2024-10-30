@@ -29,25 +29,8 @@ def constructProjectionMatrix(d):
 
 	return A
 
-def clust_distance(Ya, Yb):
-	# enhanced function
-    Ya = np.array(Ya)							# Ensure inputs are numpy arrays
-    Yb = np.array(Yb)
-    
-    # Create boolean masks for pairwise equality comparisons
-    Ya_equal = np.equal.outer(Ya, Ya)  			# Pairwise comparison of Ya
-    Yb_equal = np.equal.outer(Yb, Yb)  			# Pairwise comparison of Yb
-    
-    # XOR operation on the masks: True where only one is equal and the other isn't
-    mismatch = np.triu(Ya_equal ^ Yb_equal, k=1)# Only upper triangle to avoid double-counting
-    
-    # Count the number of mismatches
-    d = np.sum(mismatch)
-    
-    return d
-
 '''
-def dist_clusterings(Ya, Yb):
+def distance(Ya, Yb):
     # Ensure the inputs are NumPy arrays for efficient operations
     Ya = np.array(Ya)
     Yb = np.array(Yb)
@@ -67,14 +50,34 @@ def dist_clusterings(Ya, Yb):
     return d
 '''	
 
+def distance(Ya, Yb):
+	# enhanced function to compute the actual distance between two clusterings
+    Ya = np.array(Ya)							# Ensure inputs are numpy arrays
+    Yb = np.array(Yb)
+    
+    # Create boolean masks for pairwise equality comparisons
+    Ya_equal = np.equal.outer(Ya, Ya)  			# Pairwise comparison of Ya
+    Yb_equal = np.equal.outer(Yb, Yb)  			# Pairwise comparison of Yb
+    
+    # XOR operation on the masks: True where only one is equal and the other isn't
+    mismatch = np.triu(Ya_equal ^ Yb_equal, k=1)# Only upper triangle to avoid double-counting
+    
+    # Count the number of mismatches
+    d = np.sum(mismatch)
+    
+    return d
+
 def dist_clusterings(Ya, Yb, th=2200):
-	# Returns an approximate distance between two clustering solutions if the data size is larger than 100 points
-	if len(Ya) < th: return clust_distance(Ya, Yb)
+	# Returns an approximate distance between two clusterings if the threshold
+	# is not None and the data size is larger than it, otherwise it returns
+	# the actual distance. 'th' can be adjusted according to the PC's RAM size. 
+	
+	if th == None or len(Ya) < th: return distance(Ya, Yb)
 	
 	ds_rand_Ys    = []
 	for i in range(10):
 		rand_ids = np.random.choice(range(len(Ya)), th, replace=False) # replace=False a value a is selected once.
-		ds_rand_Ys.append( clust_distance([Ya[id] for id in rand_ids], [Yb[id] for id in rand_ids]) )
+		ds_rand_Ys.append( distance([Ya[id] for id in rand_ids], [Yb[id] for id in rand_ids]) )
 	return np.mean(ds_rand_Ys)
 
 def affinity(data, affinity_metric='dist_clusterings'):
@@ -234,63 +237,7 @@ def aggregate(G, label):
 	#return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
 	return predictions
 
-def selectGroupsOfClusterings(Y, clusterings):
-	# Returns the indices of clusterings that alternates groups with large sizes and large dissimilarities
-	
-	cluster_labels 	     = Y
-	#num_clusters         = len(np.unique(Y)) # num_clusters = n_views+3
-	
-	# Calculate cluster centroids
-	cluster_centroids    = {}
-	for label in np.unique(cluster_labels):
-		cluster_data     = clusterings[cluster_labels == label]
-		cluster_centroids[label] = aggregate(cluster_data)
-	
-	# Compute pairwise dissimilarity
-	centroid_matrix      = np.array(list(cluster_centroids.values()))
-	dissimilarity_matrix = affinity(centroid_matrix, affinity_metric='dist_clustering')
 
-	# Cluster sizes
-	cluster_sizes        = {label: np.sum(cluster_labels == label) for label in np.unique(cluster_labels)}
-
-	# Alternating iteration between largest and most dissimilar clusters
-	selected_clusters 	 = []
-	remaining_clusters   = set(cluster_sizes.keys())
-	
-	def select_largest_cluster():
-		largest_cluster  = max(remaining_clusters, key=lambda label: cluster_sizes[label])
-		return largest_cluster
-
-	def select_most_dissimilar_cluster(last_selected):
-		dissimilarities     = dissimilarity_matrix[last_selected, :]
-		dissimilar_clusters = [(label, dissimilarities[label]) for label in remaining_clusters if label != last_selected and cluster_sizes[label] > 1]
-		if dissimilar_clusters:  # Ensure there's a valid cluster to select
-			most_dissimilar_cluster = max(dissimilar_clusters, key=lambda x: x[1])[0]
-			return most_dissimilar_cluster
-		else:
-			return None  # Return None if no suitable cluster found
-	
-	# Alternating selection process
-	is_largest = True
-	while remaining_clusters:
-		if is_largest:
-			cluster = select_largest_cluster()
-		else:
-			if selected_clusters:
-				last_selected = selected_clusters[-1]
-				cluster = select_most_dissimilar_cluster(last_selected)
-				if cluster is None:
-					cluster = select_largest_cluster()  # Fallback if no suitable cluster found
-			else:
-				cluster = select_largest_cluster()  # fallback in case it's the first iteration
-		
-		selected_clusters.append(cluster)
-		remaining_clusters.remove(cluster)
-		is_largest = not is_largest  # Toggle between largest and most dissimilar
-
-	# The `selected_clusters` list contains the order of cluster selections
-	print("Order of selected clusters:", selected_clusters)
-	return selected_clusters
 
 def computeLinkageFromModel(model):
 	counts = np.zeros(model.children_.shape[0])
@@ -632,6 +579,76 @@ while True:
 	
 	print('*** Final solutions are presented. ***')
 
+
+
+
+
+
+
+
+
+
+
+'''
+
+def selectGroupsOfClusterings(Y, clusterings):
+	# Returns the indices of clusterings that alternates groups with large sizes and large dissimilarities
+	
+	cluster_labels 	     = Y
+	#num_clusters         = len(np.unique(Y)) # num_clusters = n_views+3
+	
+	# Calculate cluster centroids
+	cluster_centroids    = {}
+	for label in np.unique(cluster_labels):
+		cluster_data     = clusterings[cluster_labels == label]
+		cluster_centroids[label] = aggregate(cluster_data)
+	
+	# Compute pairwise dissimilarity
+	centroid_matrix      = np.array(list(cluster_centroids.values()))
+	dissimilarity_matrix = affinity(centroid_matrix, affinity_metric='dist_clustering')
+
+	# Cluster sizes
+	cluster_sizes        = {label: np.sum(cluster_labels == label) for label in np.unique(cluster_labels)}
+
+	# Alternating iteration between largest and most dissimilar clusters
+	selected_clusters 	 = []
+	remaining_clusters   = set(cluster_sizes.keys())
+	
+	def select_largest_cluster():
+		largest_cluster  = max(remaining_clusters, key=lambda label: cluster_sizes[label])
+		return largest_cluster
+
+	def select_most_dissimilar_cluster(last_selected):
+		dissimilarities     = dissimilarity_matrix[last_selected, :]
+		dissimilar_clusters = [(label, dissimilarities[label]) for label in remaining_clusters if label != last_selected and cluster_sizes[label] > 1]
+		if dissimilar_clusters:  # Ensure there's a valid cluster to select
+			most_dissimilar_cluster = max(dissimilar_clusters, key=lambda x: x[1])[0]
+			return most_dissimilar_cluster
+		else:
+			return None  # Return None if no suitable cluster found
+	
+	# Alternating selection process
+	is_largest = True
+	while remaining_clusters:
+		if is_largest:
+			cluster = select_largest_cluster()
+		else:
+			if selected_clusters:
+				last_selected = selected_clusters[-1]
+				cluster = select_most_dissimilar_cluster(last_selected)
+				if cluster is None:
+					cluster = select_largest_cluster()  # Fallback if no suitable cluster found
+			else:
+				cluster = select_largest_cluster()  # fallback in case it's the first iteration
+		
+		selected_clusters.append(cluster)
+		remaining_clusters.remove(cluster)
+		is_largest = not is_largest  # Toggle between largest and most dissimilar
+
+	# The `selected_clusters` list contains the order of cluster selections
+	print("Order of selected clusters:", selected_clusters)
+	return selected_clusters
+'''
 
 
 
