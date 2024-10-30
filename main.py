@@ -86,9 +86,8 @@ def affinity(data, affinity_metric='dist_clusterings'):
 	# We can add more metrics
 	# elif affinity_metric == 'hamming_dist': return ...  #
 
-def central(clusterings, model):
+def central(clusterings):
 	# returns a clustering from the pool that has the minimum sum of distnaces with all other clutserings. #
-	#Z      = computeLinkageFromModel(model)
 	A      = affinity(clusterings)
 	id_min = np.argmin([ sum(A[row_id]) for row_id in range(len(A)) ])
 	
@@ -451,7 +450,7 @@ def representative_solutions(model, clusterings, groups, method='aggregate'):
 			R.append(C[0].tolist())
 		elif method == 'central': 
 			print('*** Finding the central solution of group (%d). ***'%label)
-			R.append(central(C, model))
+			R.append(central(C))
 		elif method == 'ensemble': 
 			print('*** Computing the ensemble solution of group (%d). ***'%label)
 			R.append(ensemble(C))
@@ -591,7 +590,7 @@ n_projections 		 = 30
 n_clusters           = 7
 n_views              = 3
 dis_metric			 = 'dist_clusterings'		            # 'distance', 'dist_clusterings'
-rep_method 	 		 = 'aggregate_large_data'				# 'central', 'ensemble', 'aggregate', 'aggregate_large_data'
+rep_method 	 		 = 'aggregate'				# 'central', 'ensemble', 'aggregate', 'aggregate_large_data'
 
 
 ## Generate Data
