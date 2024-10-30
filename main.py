@@ -540,7 +540,7 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 n_projections 		 = 30
 n_clusters           = 7
 n_views              = 3
-dis_metric			 = 'approximate_dist_clusterings'		# 'dist_clusterings', 'approximate_dist_clusterings'
+dis_metric			 = 'dist_clusterings'		            # 'distance', 'dist_clusterings'
 rep_method 	 		 = 'ensemble'							# 'central', 'ensemble', 'aggregate'
 
 
