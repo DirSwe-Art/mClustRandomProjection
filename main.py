@@ -12,7 +12,7 @@ from itertools import combinations
 from scipy.cluster.hierarchy import dendrogram, cut_tree
 import numpy as np
 import matplotlib.pyplot as plt
-import random, copy, math, time, datetime, os, sys
+import random, copy, math, time, datetime, os, sys, gc, h5py
 from scipy.sparse import lil_matrix
 import pandas as pd
 #import dask
@@ -105,6 +105,7 @@ def ensemble(clusterings):
 		labels_majority.append(label)
 	
 	return labels_majority
+
 '''
 def aggregate(clusterings):
 	# This is the original (lazy) clustering aggragation function. It suffurs 
@@ -128,9 +129,16 @@ def aggregate(clusterings):
     nS = nS.tocsr()
     return GaussianMixture(n_components=len(set(clusterings[0]))).fit_predict(nS.toarray()).tolist()
 
+'''
 
-# better performance with a large RAM
 def aggregate(G):
+	# This shows a better performance with a larger RAM. Still, it suffurs 
+	# from the lack of memory with extreame dimensions data, e.g., 1000000-D. 
+	
+	# It returns a clustering solution where the label of each data point is
+	# estimated from a matrix representation of the dataset. Each element (i,j)
+	# represents the number of clusterings where x_i, x_j are grouped together.
+	
 	# dictionary for sample pairwise equality comparisons in each clustering
 	dict_ = {}
 	for s_id, S in enumerate(G):
@@ -148,69 +156,134 @@ def aggregate(G):
 		
 	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
 
-'''
-def aggregate(G):
+def aggregate_large_data(G):
 	# Returns an aggregated representative solution for all solutions in G.
-	# This function solves the memory lack issue with large data sets. 
+	# This function solves the memory lack issue with large datasets. 
 	# However, it is effective but not efficient, meaning that it takes a long
-	# processing time since operations are not accomplished through a virtual 
-	# memory on the hard disk.
+	# processing time since operations are not accomplished directly through 
+	# the RAM, but through a virtual memory on the hard disk.
+	def pairwiseOccurance(M1_path, M2_path, result_path, shape, chunk_size=10000):
+	    #Perform np.equal.outer(M1, M2) using np.memmap to handle large boolean arrays.
 	
-	def pairwiseOccurance(M1, M2):
-		# Returns an (m,m) matrix for (M1,M2) pairwise equaliity comparisons. 
-		return np.equal.outer(M1,M2)
+	    #Parameters:
+	    #- M1_path: str, path to memory-mapped file for M1
+	    #- M2_path: str, path to memory-mapped file for M2
+	    #- result_path: str, path to memory-mapped file for the result
+	    #- shape_M1: tuple, shape of M1 (must be 1D)
+	    #- shape_M2: tuple, shape of M2 (must be 1D)
+	    #- chunk_size: int, the size of chunks to process in memory
+	    
+	    #Result is stored in `result_path` as a memory-mapped file.
+	    
+		mmap_M1 = np.memmap(M1_path, dtype=np.bool_, mode='r', shape=shape)
+		mmap_M2 = np.memmap(M2_path, dtype=np.bool_, mode='r', shape=shape)
+	    
+	    # Prepare a memory-mapped file for the result
+		result_shape = (shape[0], shape[0])
+		mmap_result  = np.memmap(result_path, dtype=np.bool_, mode='w+', shape=result_shape)
+	
+	    # Process in chunks to handle memory efficiently
+		for i in range(0, shape[0], chunk_size):
+			chunk_end = min(i + chunk_size, shape[0])
+	        
+	        # Perform the np.equal.outer operation for the current chunk
+			mmap_result[i:chunk_end, :] = np.equal.outer(mmap_M1[i:chunk_end], mmap_M2[:])
+	        
+	        # Flush changes to disk after each chunk
+			mmap_result.flush()
+	
+	    # Delete memory-mapped arrays to free up RAM
+		del mmap_M1
+		del mmap_M2
+		del mmap_result
+	
+	    # Force garbage collection to ensure memory is freed
+		gc.collect()
+	
+	    # Optionally return the result path
+		return result_path
 
-	def allPairwiseOccurance(G):
-		# Returns one dictionary for all solutions in G. Each key is for 
-		# one solution's elements pairwise equality comparison.
-		dict_ = {}
-		for s_id, S in enumerate(G):
-			dict_[s_id]= pairwiseOccurance(S,S)
-			#print('\t -> Pairwise occurancies in solution %d'%s_id)
-		return dict_
-	
-	def occuranceFrequencies(x_id, G, dict_):
+	def allOccurance(G, result_path):
+		# Returns one dictionary saved externally for all solutions in G.  
+		# Each key is for one solution's elements pairwise equality comparison.
+		with h5py.File(result_path, 'w') as hf:
+			for s_id, S in enumerate(G):
+				np.memmap('S'+str(s_id)+'_1', dtype=np.int8, mode='w+', shape=S.shape)[:] = S[:] # => 's_id S1.dat'
+				np.memmap('S'+str(s_id)+'_2', dtype=np.int8, mode='w+', shape=S.shape)[:] = S[:] # => 's_id S2.dat'
+				SS_result_path = pairwiseOccurance('S'+str(s_id)+'_1', 'S'+str(s_id)+'_2', 'S'+str(s_id)+'_result', S.shape, chunk_size=10000) #  # => 'result.dat'
+				
+				dset = hf.create_dataset('S'+str(s_id), shape=(len(S), len(S)), dtype=np.bool_) # => s_id (m,m) dataset
+
+				# Open the memmap file in read mode
+				SS_result_data = np.memmap(SS_result_path, dtype=np.bool_, mode='r', shape=(len(S), len(S)))
+
+				# Process the data in chunks and write to the HDF5 file incrementally
+				for i in range(0, S.shape[0], 10000):
+					chunk_end = min(i + 10000, S.shape[0])
+					dset[i:chunk_end] = SS_result_data[i:chunk_end]  # Write chunk directly to the HDF5 dataset
+				
+				del SS_result_data
+				time.sleep(10)
+				os.remove('S'+str(s_id)+'_1')
+				os.remove('S'+str(s_id)+'_2')
+				os.remove(SS_result_path)
+				time.sleep(10)
+				
+				# After this loop, the entire memmap data will be written to the HDF5 file
+			
+				print('\t -> Pairwise occurancies in solution %d'%s_id)
+		return result_path
+
+	def occuranceFreq(x_id, G, G_dict_path):
 		# Returns a vector representation of one data point x where frequencies  
-		# of which it occures together with other points across solutions in G.  
-		xS = pd.DataFrame( {}, columns=range(len(G)), dtype=np.int8)
-		for s_id, S in enumerate(G):
-			xS[s_id] = dict_[s_id][x_id]
-		return xS.sum(axis=1)
+		# of which it occures together with other points across solutions in G.
+		with h5py.File(G_dict_path, 'r') as hf:
+			xS = pd.DataFrame( {}, columns=range(len(G)), dtype=np.int8)
+			for s_id, S in enumerate(G):
+				xS[str(s_id)] = hf['S'+str(s_id)][x_id]
+			return xS.sum(axis=1)
 
-	def batch_fit_kmeans(kmeans_model, X, batch_size=10000):
-		# Returns a batch fitted k-means model for a large matrix
-	    n_samples = X.shape[0] #; print('\n\t -> Fitting ...' )
+	def batch_fit_kmeans(kmeans_model, X, batch_size):
+	    n_samples = X.shape[0]; print('\n\t -> Fitting ...' )
 	    for i in range(0, n_samples, batch_size):
-	        X_batch = X[i:i+batch_size] #; print('\t  - Batch:', i+batch_size )
+	        X_batch = X[i:i+batch_size]; print('\t  - Batch:', i+batch_size )
 	        kmeans_model.partial_fit(X_batch)  # Incrementally fit the mini-batch
 	    return kmeans_model
-
-	def batch_predict(kmeans_model, X, batch_size=10000):
-		# Returns a batch predicted cluster labels for a large matrix
-	    n_samples = X.shape[0] #; print('\n\t -> Predicting ...' )
+	
+	def batch_predict(kmeans_model, X, batch_size):
+	    n_samples = X.shape[0]; print('\n\t -> Predicting ...' )
 	    predictions = []
 	    for i in range(0, n_samples, batch_size):
-	        X_batch = X[i:i+batch_size] #; print('\t  - Batch:', i+batch_size )
+	        X_batch = X[i:i+batch_size]; print('\t  - Batch:', i+batch_size )
 	        predictions.append(kmeans_model.predict(X_batch))
 	    return np.concatenate(predictions)
-	
-	dict_ = allPairwiseOccurance(G)
-	xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) 	# Matrix representation for all points according to G
 
-	#print('\n\t -> Occurance frequencies X^C (%d, %d) for all X(xi, xj) in all G(S). Save in an external file.'%(len(G[0]),len(G[0])) )
+	
+	G_dict_path = allOccurance(G, 'G_dict') # => G_dict.h5 
+	xC          = np.memmap('G_matrix', dtype=np.int8, mode='w+', shape=(len(G[0]),len(G[0])))
+	
+	print('\n\t -> Occurance frequencies X^C (%d, %d) for all X(xi, xj) in all G(S). Save in an external file.'%(len(G[0]),len(G[0])) )
 	for x_id in range(len(G[0])):
-		freq 		= occuranceFrequencies(x_id, G, dict_)
-		xC[x_id]	= freq                                             	 	 
-		#if x_id % 10000 == 0: print('\t -> batch', x_id)
+		freq 		= occuranceFreq(x_id, G, G_dict_path)
+		xC[x_id, :]	= freq
+		if x_id % 10000 == 0: print('\t -> batch', x_id)
 	
-	del dict_														
-
-	kmeans = MiniBatchKMeans(n_clusters=len(set(G[0])), batch_size=10000,  max_iter=100, tol=1e-4,  max_no_improvement=10, random_state=42)
-	kmeans = batch_fit_kmeans(kmeans, xC, batch_size=10000)
-	predictions = batch_predict(kmeans, xC, batch_size= 10000)
-
+	xC.flush(); time.sleep(10); del xC ; time.sleep(5)
+														
+	print('\n\t -> Emptying the RAM, reading the external X^C file')
+	
+	xC_memory   = np.memmap('G_matrix', dtype=np.int8, mode='r', shape=(len(G[0]),len(G[0])))
+	kmeans      = MiniBatchKMeans(n_clusters=len(set(G[0])), batch_size=10000, max_iter=100, tol=1e-4, max_no_improvement=15, random_state=42)
+	kmeans      = batch_fit_kmeans(kmeans, xC_memory, batch_size=10000)
+	predictions = batch_predict(   kmeans, xC_memory, batch_size=10000)
+	del xC_memory
+	
+	time.sleep(10)
+	os.remove(G_dict_path)
+	os.remove('G_matrix')
+	time.sleep(10)
+	
 	return predictions
-
 
 
 def computeLinkageFromModel(model):
@@ -384,9 +457,11 @@ def representative_solutions(model, clusterings, groups, method='aggregate'):
 			R.append(ensemble(C))
 		elif method == 'aggregate': 
 			print('*** Aggregating clusterings of group (%d). ***'%label)
-			#R.append(aggregate(C, label))
 			R.append(aggregate(C))
-	
+		elif method == 'aggregate_large_data': 
+			print('*** Aggregating clusterings of group (%d). ***'%label)
+			R.append(aggregate_large_data(C))
+
 	print('*** Groups of clusterings are aggregated to representative clusterings. ***')
 	return np.array(R)
 
@@ -516,7 +591,7 @@ n_projections 		 = 30
 n_clusters           = 7
 n_views              = 3
 dis_metric			 = 'dist_clusterings'		            # 'distance', 'dist_clusterings'
-rep_method 	 		 = 'aggregate'							# 'central', 'ensemble', 'aggregate'
+rep_method 	 		 = 'aggregate_large_data'				# 'central', 'ensemble', 'aggregate', 'aggregate_large_data'
 
 
 ## Generate Data
@@ -538,6 +613,8 @@ print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),'
 while True:
 	G = get_groups_of_solutions(M_mdl)
 	R = representative_solutions(model= M_mdl, clusterings= P, groups= G, method= rep_method ) 
+
+
 	
 	for S_id, S in enumerate(R):
 		if data_name[0:5] == 'image':
@@ -565,105 +642,7 @@ while True:
 
 
 
-'''
-def aggregate(G, label):
-	# Returns an aggregated representative solution for all solutions in G.
-	# This function solves the memory lack issue with large data sets. 
-	# However, it is effective but not efficient, meaning that it takes a long
-	# processing time since operations are not accomplished through a virtual 
-	# memory on the hard disk.
-	
-	def pairwiseOccurance(M1, M2):
-		# Returns an (m,m) matrix for (M1,M2) pairwise equaliity comparisons. 
-		return np.equal.outer(M1,M2)
 
-	def allPairwiseOccurance(G):
-		# Returns one dictionary for all solutions in G. Each key is for 
-		# one solution's elements pairwise equality comparison.
-		dict_ = {}
-		for s_id, S in enumerate(G):
-			dict_[s_id]= pairwiseOccurance(S,S)
-			print('\t -> Pairwise occurancies in solution %d'%s_id)
-		return dict_
-	
-	def occuranceFrequencies(x_id, G, dict_):
-		# Returns a vector representation of one data point x where frequencies  
-		# of which it occures together with other points across solutions in G.  
-		xS = pd.DataFrame( {}, columns=range(len(G)), dtype=np.int8)
-		for s_id, S in enumerate(G):
-			xS[s_id] = dict_[s_id][x_id]
-		return xS.sum(axis=1)
-
-	def batch_fit_kmeans(kmeans_model, X, batch_size=10000):
-		# Returns a batch fitted k-means model for a large matrix
-	    n_samples = X.shape[0]; print('\n\t -> Fitting ...' )
-	    for i in range(0, n_samples, batch_size):
-	        X_batch = X[i:i+batch_size]; print('\t  - Batch:', i+batch_size )
-	        kmeans_model.partial_fit(X_batch)  # Incrementally fit the mini-batch
-	    return kmeans_model
-
-	def batch_predict(kmeans_model, X, batch_size=10000):
-		# Returns a batch predicted cluster labels for a large matrix
-	    n_samples = X.shape[0]; print('\n\t -> Predicting ...' )
-	    predictions = []
-	    for i in range(0, n_samples, batch_size):
-	        X_batch = X[i:i+batch_size]; print('\t  - Batch:', i+batch_size )
-	        predictions.append(kmeans_model.predict(X_batch))
-	    return np.concatenate(predictions)
-	
-	dict_ = allPairwiseOccurance(G)
-	
-	# DictMethod
-	#xC    = pd.DataFrame( {}, columns=range(len(G[0])) , dtype=np.int8) 	# Matrix representation for all points according to G
-	
-	# MemMethod
-	if os.path.exists(str(label)+'_matrix.dat'): 
-		os.remove(str(label)+'_matrix.dat')
-		time.sleep(5)
-	
-	# MemMethod
-	xC     = np.memmap(str(label)+'_matrix.dat', dtype=np.int8, mode='w+', shape=(len(G[0]),len(G[0])))
-	
-	print('\n\t -> Occurance frequencies X^C (%d, %d) for all X(xi, xj) in all G(S). Save in an external file.'%(len(G[0]),len(G[0])) )
-	for x_id in range(len(G[0])):
-		freq 		= occuranceFrequencies(x_id, G, dict_)
-		
-		# DictMethod
-		#xC[x_id]	= freq                                             	 	 
-		
-		# MemMethod
-		xC[x_id, :]	= freq
-		
-		if x_id % 10000 == 0: print('\t -> batch', x_id)
-	
-	# MemMethod
-	xC.flush(); time.sleep(10); del xC ; time.sleep(5)
-	
-	del dict_ ; time.sleep(5)  														
-	
-	print('\n\t -> Emptying the RAM, reading the external X^C file')
-	
-	# MemMethod
-	xC_memory   = np.memmap(str(label)+'_matrix.dat', dtype=np.int8, mode='r', shape=(len(G[0]),len(G[0])))
-	kmeans      = MiniBatchKMeans(n_clusters=len(set(G[0])), batch_size=10000, max_iter=100, tol=1e-4, max_no_improvement=15, random_state=42)
-	kmeans      = batch_fit_kmeans(kmeans, xC_memory, batch_size=10000)
-	predictions = batch_predict(   kmeans, xC_memory, batch_size=10000)
-	del xC_memory; time.sleep(5)
-	
-	
-	# DictMethod
-	#kmeans = MiniBatchKMeans(n_clusters=len(set(G[0])), batch_size=10000,  max_iter=100, tol=1e-4,  max_no_improvement=10, random_state=42)
-	#kmeans = batch_fit_kmeans(kmeans, xC, batch_size=10000)
-	#predictions = batch_predict(kmeans, xC, batch_size= 10000)
-
-
-	#return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
-	return predictions
-'''
-
-
-
-'''
 def selectGroupsOfClusterings(Y, clusterings):
 	# Returns the indices of clusterings that alternates groups with large sizes and large dissimilarities
 	
