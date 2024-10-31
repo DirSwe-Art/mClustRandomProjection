@@ -585,18 +585,18 @@ resultsPath     = r'./ExperimentalResults/'
 if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 ## Settings
-n_projections 		 = 30
-n_clusters           = 7
-n_views              = 3
+n_projections 		 = 15
+n_clusters           = 2
+n_views              = 8
 dis_metric			 = 'dist_clusterings'		            # 'distance', 'dist_clusterings'
-rep_method 	 		 = 'aggregate'				# 'central', 'ensemble', 'aggregate', 'aggregate_large_data'
+rep_method 	 		 = 'ensemble'				# 'central', 'ensemble', 'aggregate', 'aggregate_large_data'
 
 
 ## Generate Data
 (DATA, n_clusters, 
  data_name,   
-# imRow, imCol, imDim)= generate_data(data_name= 'image_chest_new.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image-x-ray-chest.bmp'
- 					 )= generate_data(data_name= 'random432')	# 'random432', 'random223'
+ imRow, imCol, imDim)= generate_data(data_name= 'image_000.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image-x-ray-chest.bmp', 'image_chest_new.bmp'
+# 					 )= generate_data(data_name= 'random432')	# 'random432', 'random223'
 
 
 
