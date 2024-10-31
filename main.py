@@ -631,20 +631,3 @@ while True:
 		plot_clusters( DATA, [ clr[i] for i in sorted_labels ], S_id, resultsPath )
 	
 	print('*** Final solutions are presented. ***')
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
-
-
-
