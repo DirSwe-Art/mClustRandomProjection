@@ -581,7 +581,7 @@ def image_clusters(DATA, colors, t, resultsPath):
 # ====================================================================== #
 
 starting_time   = time.time()
-resultsPath     = r'C:/ExperimentalResults/Results/results_MultipleClusteringsViaRandomProjection/'
+resultsPath     = r'./ExperimentalResults/'
 if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 ## Settings
