@@ -941,6 +941,65 @@ def aggregate(G, label):
 
 '''
 
+def selectGroupsOfClusterings(Y, clusterings):
+	# Returns the indices of clusterings that alternates groups with large sizes and large dissimilarities
+	
+	cluster_labels 	     = Y
+	#num_clusters         = len(np.unique(Y)) # num_clusters = n_views+3
+	
+	# Calculate cluster centroids
+	cluster_centroids    = {}
+	for label in np.unique(cluster_labels):
+		cluster_data     = clusterings[cluster_labels == label]
+		cluster_centroids[label] = aggregate(cluster_data)
+	
+	# Compute pairwise dissimilarity
+	centroid_matrix      = np.array(list(cluster_centroids.values()))
+	dissimilarity_matrix = affinity(centroid_matrix, affinity_metric='dist_clustering')
+
+	# Cluster sizes
+	cluster_sizes        = {label: np.sum(cluster_labels == label) for label in np.unique(cluster_labels)}
+
+	# Alternating iteration between largest and most dissimilar clusters
+	selected_clusters 	 = []
+	remaining_clusters   = set(cluster_sizes.keys())
+	
+	def select_largest_cluster():
+		largest_cluster  = max(remaining_clusters, key=lambda label: cluster_sizes[label])
+		return largest_cluster
+
+	def select_most_dissimilar_cluster(last_selected):
+		dissimilarities     = dissimilarity_matrix[last_selected, :]
+		dissimilar_clusters = [(label, dissimilarities[label]) for label in remaining_clusters if label != last_selected and cluster_sizes[label] > 1]
+		if dissimilar_clusters:  # Ensure there's a valid cluster to select
+			most_dissimilar_cluster = max(dissimilar_clusters, key=lambda x: x[1])[0]
+			return most_dissimilar_cluster
+		else:
+			return None  # Return None if no suitable cluster found
+	
+	# Alternating selection process
+	is_largest = True
+	while remaining_clusters:
+		if is_largest:
+			cluster = select_largest_cluster()
+		else:
+			if selected_clusters:
+				last_selected = selected_clusters[-1]
+				cluster = select_most_dissimilar_cluster(last_selected)
+				if cluster is None:
+					cluster = select_largest_cluster()  # Fallback if no suitable cluster found
+			else:
+				cluster = select_largest_cluster()  # fallback in case it's the first iteration
+		
+		selected_clusters.append(cluster)
+		remaining_clusters.remove(cluster)
+		is_largest = not is_largest  # Toggle between largest and most dissimilar
+
+	# The `selected_clusters` list contains the order of cluster selections
+	print("Order of selected clusters:", selected_clusters)
+	return selected_clusters
+'''
+
 
 
 	
