@@ -67,16 +67,16 @@ def distance(Ya, Yb):
     
     return d
 
-def dist_clusterings(Ya, Yb, th=2200):
+def dist_clusterings(Ya, Yb, threshold=2200):
 	# Returns an approximate distance between two clusterings if the threshold
 	# is not None and the data size is larger than it, otherwise it returns
-	# the actual distance. 'th' can be adjusted according to the PC's RAM size. 
+	# the actual distance. 'threshold' can be adjusted according to the PC's RAM size. 
 	
-	if th == None or len(Ya) < th: return distance(Ya, Yb)
+	if threshold == None or len(Ya) < threshold: return distance(Ya, Yb)
 	
 	ds_rand_Ys    = []
 	for i in range(10):
-		rand_ids = np.random.choice(range(len(Ya)), th, replace=False) # replace=False a value a is selected once.
+		rand_ids = np.random.choice(range(len(Ya)), threshold, replace=False) # replace=False a value a is selected once.
 		ds_rand_Ys.append( distance([Ya[id] for id in rand_ids], [Yb[id] for id in rand_ids]) )
 	return np.mean(ds_rand_Ys)
 
@@ -88,6 +88,7 @@ def affinity(data, affinity_metric='dist_clusterings'):
 
 def central(clusterings):
 	# returns a clustering from the pool that has the minimum sum of distnaces with all other clutserings. #
+    # modify this function. Let mClustRandomProjection also return A, and add it as an argument to this function. #
 	A      = affinity(clusterings)
 	id_min = np.argmin([ sum(A[row_id]) for row_id in range(len(A)) ])
 	
@@ -95,7 +96,6 @@ def central(clusterings):
 
 def ensemble(clusterings):
 	# returns a clustering where the label of each data point is the majority voting of its labels among all clusterings. #
-	# modify this function. let add mClustRandomProjection also return A, and add it as an argument to this function. #
 	zipped_clusterings = list(zip(*clusterings))
 	
 	labels_majority    = []
