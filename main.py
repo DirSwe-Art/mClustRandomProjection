@@ -27,7 +27,7 @@ def constructProjectionMatrix(d):
 	A    = rng.normal(0, 1/math.sqrt(d), size=(d,d))		# Generator's normal method to generate the matrix A
 	M    = A @ np.linalg.inv(A.T @ A) @ A.T		# Prjection matrix (projects data onto a space spanned by the unit vectors in A).#
 
-	return A
+	return M
 
 '''
 def distance(Ya, Yb):
