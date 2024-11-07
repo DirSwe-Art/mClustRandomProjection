@@ -366,7 +366,7 @@ def plotDendrogram(model, Y, resultsPath):
 	'''
 	
 	plt.title('Dendrogram with Cluster-based Link and Leaf Colors - '+str(data_name[6:]))
-	plt.xlabel('Sample index')
+	plt.xlabel('Sample label')
 	plt.ylabel('Distance')
 	plt.savefig(resultsPath+'dendrogram_'+data_name[6:]+'_k_'+str(n_clusters)+'.jpg')
 	plt.show()
@@ -412,7 +412,6 @@ def mClustRandomProjection(X, n_projections=60, n_clusters=2, dis_metric='dist_c
 	return M, P
 
 def get_groups_of_solutions(model):
-	plotDendrogram(model, [0 for _ in model.labels_] , resultsPath)
 	while True:
 		try:
 			n_views = str(input('\n    Enter the number of views or \'q\' to exit: '))
@@ -579,25 +578,24 @@ def image_clusters(DATA, colors, t, resultsPath):
 	
 # ====================================================================== #
 
-starting_time   = time.time()
-resultsPath     = r'./ExperimentalResults/'
-if not os.path.exists(resultsPath): os.makedirs(resultsPath)
-
 ## Settings
-n_projections 		 = 15
+starting_time        = time.time()
+resultsPath          = r'./ExperimentalResults/'
+
+n_projections 		 = 60
 n_clusters           = 2
 n_views              = 8
 dis_metric			 = 'dist_clusterings'		            # 'distance', 'dist_clusterings'
-rep_method 	 		 = 'ensemble'				# 'central', 'ensemble', 'aggregate', 'aggregate_large_data'
+rep_method 	 		 = 'aggregate'				            # 'central', 'ensemble', 'aggregate', 'aggregate_large_data'
 
+if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 ## Generate Data
-(DATA, n_clusters, 
+(DATA, 
+ n_clusters, 
  data_name,   
- imRow, imCol, imDim)= generate_data(data_name= 'image_000.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image-x-ray-chest.bmp', 'image_chest_new.bmp'
-# 					 )= generate_data(data_name= 'random432')	# 'random432', 'random223'
-
-
+# imRow, imCol, imDim)= generate_data(data_name= 'image_000.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image-x-ray-chest.bmp', 'image_chest_new.bmp'
+ 					)= generate_data(data_name= 'random432')	                # 'random432', 'random223'
 
 
 M_mdl, P   		     = mClustRandomProjection(
@@ -605,14 +603,14 @@ M_mdl, P   		     = mClustRandomProjection(
 						n_projections = n_projections, 
 						n_clusters 	  = n_clusters, 
 						dis_metric 	  = dis_metric )
-print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
+plotDendrogram(M_mdl, [0 for _ in M_mdl.labels_] , resultsPath)
+
+#print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
 
 while True:
 	G = get_groups_of_solutions(M_mdl)
 	R = representative_solutions(model= M_mdl, clusterings= P, groups= G, method= rep_method ) 
 
-
-	
 	for S_id, S in enumerate(R):
 		if data_name[0:5] == 'image':
 			# Coloring RGB pixels with thier cluster correspondiing color (2 colors, 1 for each cluster)
