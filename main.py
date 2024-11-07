@@ -409,7 +409,7 @@ def mClustRandomProjection(X, n_projections=60, n_clusters=2, dis_metric='dist_c
 	M      = AgglomerativeClustering( linkage="average", metric="precomputed", compute_distances=True ).fit(A)
 	print('*** Clusterings hierarchy is generated with an agglomeartive model. ***') 
 
-	return M, P
+	return P, A, M
 
 def get_groups_of_solutions(model):
 	while True:
@@ -435,12 +435,14 @@ def get_groups_of_solutions(model):
 				sys.exit()
 			print('\nInvalid number of views')
 
-def representative_solutions(model, clusterings, groups, method='aggregate'):
+def representative_solutions(model, clusterings, distances, groups, method='aggregate'):
 	print('*** Aggregating groups of clusterings is started. ***')
 	
 	R      = []
 	for label in set(groups):
-		C  = clusterings[groups==label]
+		ids= np.asarray(groups==label).nonzero()
+		C  = clusterings[ids]
+		AC = distances[ids,ids]
 		
 		if len(C) == 1:
 			print('*** Group (%d) has one clustering solution. No aggregation is needed. ***'%label)
@@ -598,7 +600,7 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
  					)= generate_data(data_name= 'random432')	                # 'random432', 'random223'
 
 
-M_mdl, P   		     = mClustRandomProjection(
+P, A, M_mdl		     = mClustRandomProjection(
 						DATA, 
 						n_projections = n_projections, 
 						n_clusters 	  = n_clusters, 
@@ -609,7 +611,7 @@ plotDendrogram(M_mdl, [0 for _ in M_mdl.labels_] , resultsPath)
 
 while True:
 	G = get_groups_of_solutions(M_mdl)
-	R = representative_solutions(model= M_mdl, clusterings= P, groups= G, method= rep_method ) 
+	R = representative_solutions(model= M_mdl, clusterings= P, distances= A, groups= G, method= rep_method ) 
 
 	for S_id, S in enumerate(R):
 		if data_name[0:5] == 'image':
