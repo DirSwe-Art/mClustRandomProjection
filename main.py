@@ -85,10 +85,9 @@ def affinity(data, affinity_metric='dist_clusterings'):
 	# We can add more metrics
 	# elif affinity_metric == 'hamming_dist': return ...  #
 
-def central(clusterings):
+def central(clusterings, distances):
 	# returns a clustering from the pool that has the minimum sum of distnaces with all other clutserings. #
-    # modify this function. Let mClustRandomProjection also return A, and add it as an argument to this function. #
-	A      = affinity(clusterings)
+	A      = distances
 	id_min = np.argmin([ sum(A[row_id]) for row_id in range(len(A)) ])
 	
 	return clusterings[id_min]
@@ -129,7 +128,7 @@ def aggregate(clusterings):
 
 '''
 
-def aggregate(G):
+def aggregate(clusterings):
 	# This shows a better performance with a larger RAM. Still, it suffurs 
 	# from the lack of memory with extreame dimensions data, e.g., 1000000-D. 
 	
@@ -139,23 +138,23 @@ def aggregate(G):
 	
 	# dictionary for sample pairwise equality comparisons in each clustering
 	dict_ = {}
-	for s_id, S in enumerate(G):
+	for s_id, S in enumerate(clusterings):
 		dict_[s_id]= np.equal.outer(S,S)
 
 	xS = [] # xi and each xj are together (m-element row for each solution)
 	xC = [] # xi representation (the sum of xj-column over all solutions where xi,xj are together)
 
-	for x_id in range(len(G[0])):
-		for s_id, S in enumerate(G):
+	for x_id in range(len(clusterings[0])):
+		for s_id, S in enumerate(clusterings):
 			xS.append(dict_[s_id][x_id])
 		sums  = np.sum(np.array(xS), axis=0)
 		xC.append(sums)
 		xS    = []
 		
-	return GaussianMixture(n_components=len(set(G[0]))).fit_predict(xC).tolist()
+	return GaussianMixture(n_components=len(set(clusterings[0]))).fit_predict(xC).tolist()
 
-def aggregate_large_data(G):
-	# Returns an aggregated representative solution for all solutions in G.
+def aggregate_large_data(clusterings):
+	# Returns an aggregated representative solution for all solutions in clusterings.
 	# This function solves the memory lack issue with large datasets. 
 	# However, it is effective but not efficient, meaning that it takes a long
 	# processing time since operations are not accomplished directly through 
@@ -201,11 +200,11 @@ def aggregate_large_data(G):
 	    # Optionally return the result path
 		return result_path
 
-	def allOccurance(G, result_path):
-		# Returns one dictionary saved externally for all solutions in G.  
+	def allOccurance(clusterings, result_path):
+		# Returns one dictionary saved externally for all solutions in clusterings.  
 		# Each key is for one solution's elements pairwise equality comparison.
 		with h5py.File(result_path, 'w') as hf:
-			for s_id, S in enumerate(G):
+			for s_id, S in enumerate(clusterings):
 				np.memmap('S'+str(s_id)+'_1', dtype=np.int8, mode='w+', shape=S.shape)[:] = S[:] # => 's_id S1.dat'
 				np.memmap('S'+str(s_id)+'_2', dtype=np.int8, mode='w+', shape=S.shape)[:] = S[:] # => 's_id S2.dat'
 				SS_result_path = pairwiseOccurance('S'+str(s_id)+'_1', 'S'+str(s_id)+'_2', 'S'+str(s_id)+'_result', S.shape, chunk_size=10000) #  # => 'result.dat'
@@ -221,23 +220,22 @@ def aggregate_large_data(G):
 					dset[i:chunk_end] = SS_result_data[i:chunk_end]  # Write chunk directly to the HDF5 dataset
 				
 				del SS_result_data
-				time.sleep(10)
 				os.remove('S'+str(s_id)+'_1')
 				os.remove('S'+str(s_id)+'_2')
 				os.remove(SS_result_path)
-				time.sleep(10)
+				time.sleep(1)
 				
 				# After this loop, the entire memmap data will be written to the HDF5 file
 			
 				print('\t -> Pairwise occurancies in solution %d'%s_id)
 		return result_path
 
-	def occuranceFreq(x_id, G, G_dict_path):
+	def occuranceFreq(x_id, clusterings, clusterings_dict_path):
 		# Returns a vector representation of one data point x where frequencies  
-		# of which it occures together with other points across solutions in G.
-		with h5py.File(G_dict_path, 'r') as hf:
-			xS = pd.DataFrame( {}, columns=range(len(G)), dtype=np.int8)
-			for s_id, S in enumerate(G):
+		# of which it occures together with other points across solutions in clusterings.
+		with h5py.File(clusterings_dict_path, 'r') as hf:
+			xS = pd.DataFrame( {}, columns=range(len(clusterings)), dtype=np.int8)
+			for s_id, S in enumerate(clusterings):
 				xS[str(s_id)] = hf['S'+str(s_id)][x_id]
 			return xS.sum(axis=1)
 
@@ -257,29 +255,26 @@ def aggregate_large_data(G):
 	    return np.concatenate(predictions)
 
 	
-	G_dict_path = allOccurance(G, 'G_dict') # => G_dict.h5 
-	xC          = np.memmap('G_matrix', dtype=np.int8, mode='w+', shape=(len(G[0]),len(G[0])))
+	clusterings_dict_path = allOccurance(clusterings, 'clusterings_dict') # => clusterings_dict.h5 
+	xC          = np.memmap('clusterings_matrix', dtype=np.int8, mode='w+', shape=(len(clusterings[0]),len(clusterings[0])))
 	
-	print('\n\t -> Occurance frequencies X^C (%d, %d) for all X(xi, xj) in all G(S). Save in an external file.'%(len(G[0]),len(G[0])) )
-	for x_id in range(len(G[0])):
-		freq 		= occuranceFreq(x_id, G, G_dict_path)
+	print('\n\t -> Occurance frequencies X^C (%d, %d) for all X(xi, xj) in all clusterings(S). Save in an external file.'%(len(clusterings[0]),len(clusterings[0])) )
+	for x_id in range(len(clusterings[0])):
+		freq 		= occuranceFreq(x_id, clusterings, clusterings_dict_path)
 		xC[x_id, :]	= freq
 		if x_id % 10000 == 0: print('\t -> batch', x_id)
 	
-	xC.flush(); time.sleep(10); del xC ; time.sleep(5)
+	xC.flush(); del xC ; time.sleep(1)
 														
 	print('\n\t -> Emptying the RAM, reading the external X^C file')
 	
-	xC_memory   = np.memmap('G_matrix', dtype=np.int8, mode='r', shape=(len(G[0]),len(G[0])))
-	kmeans      = MiniBatchKMeans(n_clusters=len(set(G[0])), batch_size=10000, max_iter=100, tol=1e-4, max_no_improvement=15, random_state=42)
+	xC_memory   = np.memmap('clusterings_matrix', dtype=np.int8, mode='r', shape=(len(clusterings[0]),len(clusterings[0])))
+	kmeans      = MiniBatchKMeans(n_clusters=len(set(clusterings[0])), batch_size=10000, max_iter=100, tol=1e-4, max_no_improvement=15, random_state=42)
 	kmeans      = batch_fit_kmeans(kmeans, xC_memory, batch_size=10000)
 	predictions = batch_predict(   kmeans, xC_memory, batch_size=10000)
 	del xC_memory
-	
-	time.sleep(10)
-	os.remove(G_dict_path)
-	os.remove('G_matrix')
-	time.sleep(10)
+	os.remove(clusterings_dict_path)
+	os.remove('clusterings_matrix')
 	
 	return predictions
 
@@ -435,12 +430,12 @@ def get_groups_of_solutions(model):
 				sys.exit()
 			print('\nInvalid number of views')
 
-def representative_solutions(model, clusterings, distances, groups, method='aggregate'):
+def representative_solutions(model, clusterings, distances, group_lables, method='aggregate'):
 	print('*** Aggregating groups of clusterings is started. ***')
 	
 	R      = []
-	for label in set(groups):
-		ids= np.asarray(groups==label).nonzero()
+	for label in set(group_lables):
+		ids= np.asarray(group_lables==label).nonzero()
 		C  = clusterings[ids]
 		AC = distances[ids,ids]
 		
@@ -449,7 +444,7 @@ def representative_solutions(model, clusterings, distances, groups, method='aggr
 			R.append(C[0].tolist())
 		elif method == 'central': 
 			print('*** Finding the central solution of group (%d). ***'%label)
-			R.append(central(C))
+			R.append(central(C, AC))
 		elif method == 'ensemble': 
 			print('*** Computing the ensemble solution of group (%d). ***'%label)
 			R.append(ensemble(C))
@@ -588,7 +583,7 @@ n_projections 		 = 60
 n_clusters           = 2
 n_views              = 8
 dis_metric			 = 'dist_clusterings'		            # 'distance', 'dist_clusterings'
-rep_method 	 		 = 'aggregate'				            # 'central', 'ensemble', 'aggregate', 'aggregate_large_data'
+rep_method 	 		 = 'central'				            # 'central', 'ensemble', 'aggregate', 'aggregate_large_data'
 
 if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
@@ -611,7 +606,7 @@ plotDendrogram(M_mdl, [0 for _ in M_mdl.labels_] , resultsPath)
 
 while True:
 	G = get_groups_of_solutions(M_mdl)
-	R = representative_solutions(model= M_mdl, clusterings= P, distances= A, groups= G, method= rep_method ) 
+	R = representative_solutions(model= M_mdl, clusterings= P, distances= A, group_lables= G, method= rep_method ) 
 
 	for S_id, S in enumerate(R):
 		if data_name[0:5] == 'image':
