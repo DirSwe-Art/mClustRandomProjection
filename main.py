@@ -24,8 +24,8 @@ def constructProjectionMatrix(d):
 	
 	bit_generator = np.random.PCG64DXSM()		# Create a 128-bit bit generator (PCG64DXSM)
 	rng  = np.random.Generator(bit_generator)	# Create a Generator instance using the 128-bit bit generator
-	A    = rng.normal(0, 1/math.sqrt(d), size=(d,d))		# Generator's normal method to generate the matrix A
-	M    = A @ np.linalg.inv(A.T @ A) @ A.T		# Prjection matrix (projects data onto a space spanned by the unit vectors in A).#
+	M    = rng.normal(0, 1/d, size=(d,d))		# Generator's normal method to generate the matrix M
+	#M    = M @ np.linalg.inv(M.T @ M) @ M.T		# Prjection matrix (projects data onto a space spanned by the unit vectors in M).#
 
 	return M
 
@@ -82,7 +82,6 @@ def dist_clusterings(Ya, Yb, threshold=2200):
 
 def affinity(data, affinity_metric='dist_clusterings'):
 	if   affinity_metric == 'dist_clusterings':             return pairwise_distances(data, metric=dist_clusterings)
-	
 	# We can add more metrics
 	# elif affinity_metric == 'hamming_dist': return ...  #
 

@@ -35,9 +35,6 @@ def constructProjectionMatrix(d):
 	#M    = Q @ np.linalg.inv(Q.T @ Q) @ Q.T		# General Prjection matrix Q (Q.T Q)^-1 Q.T
 	
 	return A
-
-
-	
 	
 def dist_clusterings(Ya, Yb):
 	# Returns the distance between two clustering solutions
