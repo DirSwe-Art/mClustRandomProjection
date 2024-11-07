@@ -592,7 +592,7 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
  n_clusters, 
  data_name,   
 # imRow, imCol, imDim)= generate_data(data_name= 'image_000.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image-x-ray-chest.bmp', 'image_chest_new.bmp'
- 					)= generate_data(data_name= 'random432')	                # 'random432', 'random223'
+ 					)= generate_data(data_name= 'random223')	                # 'random432', 'random223'
 
 
 P, A, M_mdl		     = mClustRandomProjection(
