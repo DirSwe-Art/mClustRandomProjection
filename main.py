@@ -579,9 +579,9 @@ def image_clusters(DATA, colors, t, resultsPath):
 starting_time        = time.time()
 resultsPath          = r'./ExperimentalResults/'
 
-n_projections 		 = 60
+n_projections 		 = 120
 n_clusters           = 2
-n_views              = 8
+n_views              = 3
 dis_metric			 = 'dist_clusterings'		            # 'distance', 'dist_clusterings'
 rep_method 	 		 = 'central'				            # 'central', 'ensemble', 'aggregate', 'aggregate_large_data'
 
