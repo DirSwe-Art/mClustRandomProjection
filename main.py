@@ -30,7 +30,7 @@ def construct_projection_matrix(d):
 	return M
 
 '''
-def distance(Ya, Yb):
+def distance_two_clusterings(Ya, Yb):
 	# Original function
     # Ensure the inputs are NumPy arrays for efficient operations
     Ya = np.array(Ya)
@@ -49,9 +49,9 @@ def distance(Ya, Yb):
             if (Ya[i] == Ya[j]) ^ (Yb[i] == Yb[j]):
                 d += 1
     return d
-'''	
+'''
 
-def distance(Ya, Yb):
+def distance_two_clusterings(Ya, Yb):
 	# enhanced function to compute the actual distance between two clusterings
     Ya = np.array(Ya)							# Ensure inputs are numpy arrays
     Yb = np.array(Yb)
@@ -68,25 +68,27 @@ def distance(Ya, Yb):
     
     return d
 
-def dist_clusterings(Ya, Yb, threshold=2200):
+def distance_clusterings(Ya, Yb, threshold=2200):
 	# Returns an approximate distance between two clusterings if the threshold
 	# is not None and the data size is larger than it, otherwise it returns
 	# the actual distance. 'threshold' can be adjusted according to the PC's RAM size. 
 	
-	if threshold == None or len(Ya) < threshold: return distance(Ya, Yb)
+	if threshold == None or len(Ya) < threshold: return distance_two_clusterings(Ya, Yb)
 	
 	ds_rand_Ys    = []
 	for i in range(10):
 		rand_ids = np.random.choice(range(len(Ya)), threshold, replace=False) # replace=False a value a is selected once.
-		ds_rand_Ys.append( distance([Ya[id] for id in rand_ids], [Yb[id] for id in rand_ids]) )
+		ds_rand_Ys.append( distance_two_clusterings([Ya[id] for id in rand_ids], [Yb[id] for id in rand_ids]) )
 	return np.mean(ds_rand_Ys)
 
-def affinity(data, affinity_metric='dist_clusterings'):
-	if   affinity_metric == 'dist_clusterings':             return pairwise_distances(data, metric=dist_clusterings)
-	# We can add more metrics
-	# elif affinity_metric == 'hamming_dist': return ...  #
+def affinity_clusterings(data, affinity_metric='distance_clusterings'):
+	# We can add more metrics, for example:
+	#elif affinity_metric == 'hamming_dist': return ...  #
+	
+	if   affinity_metric == 'distance_clusterings':             
+		return pairwise_distances(data, metric=distance_clusterings)
 
-def compute_linkage_from_model(model):
+def linkage_from_model(model):
 	counts = np.zeros(model.children_.shape[0])
 	n_samples = len(model.labels_)
 	for i, merge in enumerate(model.children_):
@@ -134,7 +136,7 @@ def personalized_dendrogram(model, Y):
 				link_colors[i + n_leaves] = 'grey'
 		return link_colors.get(link_id, 'grey')
 	
-	Z = compute_linkage_from_model(model)
+	Z = linkage_from_model(model)
 	
 	plt.close('all')
 	plt.figure(figsize=(10,6))
@@ -177,9 +179,9 @@ def plot_dendrogram(denZ, Y, resultsPath=None):
 	plt.show()
 	if resultsPath: plt.savefig(resultsPath+'dendrogram_'+data_name[6:]+'_k_'+str(n_clusters)+'.jpg')
 
-def label_clusterings(model, n_views):
+def labels_from_clusterings_hierarchy(model, n_views):
 	print('*** Extracting the groups of similar clusterings. ***')
-	Z       = compute_linkage_from_model(model)
+	Z       = linkage_from_model(model)
 	G       = np.array(cut_tree(Z, n_clusters=int(n_views)).flatten())
 	return G
 	
@@ -375,7 +377,7 @@ def aggregate_large(clusterings):
 	
 	return predictions
 
-def representative_solution(clusterings, distances=None, label=None, method='aggregate'):
+def representative_clustering(clusterings, distances=None, label=None, method='aggregate'):
 		if len(clusterings) == 1:
 			print('*** Group (%d) has one clustering solution. No aggregation is needed. ***'%label)
 			return clusterings[0].tolist()
@@ -400,13 +402,13 @@ def all_representatives(model, clusterings, distances, group_lables, method='agg
 		ids = np.asarray(group_lables==label).nonzero()
 		C   = clusterings[ids]
 		AC  = distances[ids,ids]
-		S   = representative_solution(clusterings, distances=distances, label=label, method=method)
+		S   = representative_clustering(clusterings, distances=distances, label=label, method=method)
 		R.append(S)
 	
 	print('*** Groups of clusterings are aggregated to representative clusterings. ***')
 	return np.array(R)
 	
-def mClustRandomProjection(X, n_projections=60, n_clusters=2, n_views=3, dis_metric='dist_clusterings', method='aggregate'):
+def mClustRandomProjection(X, n_projections=60, n_clusters=2, n_views=3, dis_metric='distance_clusterings', method='aggregate'):
 	print('\n*** The algorithm is started with the following parameter values: \n    %d projections, each with %d clusters.\n'%(n_projections, n_clusters))
 	
 	P = []
@@ -420,7 +422,7 @@ def mClustRandomProjection(X, n_projections=60, n_clusters=2, n_views=3, dis_met
 	P      = np.array(P)
 	print('*** %d projections and clusterings are generated. ***'%(n_projections))
 
-	A      = affinity(P, affinity_metric=dis_metric)
+	A      = affinity_clusterings(P, affinity_metric=dis_metric)
 	print('*** Clusterings dissimilarity matrix is generated. ***')
 	
 	M      = AgglomerativeClustering( linkage="average", metric="precomputed", compute_distances=True ).fit(A)
@@ -433,7 +435,7 @@ def mClustRandomProjection(X, n_projections=60, n_clusters=2, n_views=3, dis_met
 	while True:
 		try:
 			n_views = str(input('\n    Enter the number of views: '))
-			G       = label_clusterings(M, n_views=n_views)
+			G       = labels_from_clusterings_hierarchy(M, n_views=n_views)
 			D       = personalized_dendrogram(M, G)
 			plot_dendrogram(D, G)
 			
@@ -450,7 +452,7 @@ def mClustRandomProjection(X, n_projections=60, n_clusters=2, n_views=3, dis_met
 		ids = np.asarray(G==label).nonzero()
 		C   = P[ids]
 		AC  = A[ids,ids]
-		S   = representative_solution(C, distances=AC, label=label, method=method)
+		S   = representative_clustering(C, distances=AC, label=label, method=method)
 		R.append(S)
 	
 	class model:
@@ -462,6 +464,9 @@ def mClustRandomProjection(X, n_projections=60, n_clusters=2, n_views=3, dis_met
 			self.solutions   = R
 	return model()
 
+
+
+# Data functions #
 # ====================================================================== #
 def generate_data(data_name='random432', format='text'):
 	if data_name == 'random432':
@@ -609,6 +614,7 @@ def reorder_labels_by_cluster_size(DATA, Y):
 	return new_labels
 # ====================================================================== #
 
+
 ## Settings
 starting_time   = time.time()
 resultsPath     = r'./ExperimentalResults/'
@@ -616,8 +622,8 @@ resultsPath     = r'./ExperimentalResults/'
 n_projections 	= 60
 n_clusters  	= 2
 n_views 		= 3
-dis_metric		= 'dist_clusterings'		            # 'distance', 'dist_clusterings'
-method			= 'aggregate'				            # 'central', 'ensemble', 'aggregate', 'aggregate_large'
+dis_metric		= 'distance_clusterings'				# 'distance_clusterings'
+method			= 'aggregate'							# 'central', 'ensemble', 'aggregate', 'aggregate_large'
 
 if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
@@ -628,32 +634,32 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 # imRow, imCol, imDim)= generate_data(data_name= 'image_000.bmp', format='bmp')	# 'image1.png', 'image2.png', 'image3.png', 'image4.png', 'image-x-ray-chest.bmp', 'image_chest_new.bmp'
  					)= generate_data(data_name= 'random223')	                # 'random432', 'random223'
 
+mClustMel = mClustRandomProjection(
+				DATA, 
+				n_projections = n_projections, 
+				n_clusters 	  = n_clusters,
+				n_views       = n_views,
+				dis_metric 	  = dis_metric,
+				method        = method
+				)
 
-
-multi_clusterings_mdl = mClustRandomProjection(
-						DATA, 
-						n_projections = n_projections, 
-						n_clusters 	  = n_clusters,
-						n_views       = 3,
-						dis_metric 	  = dis_metric,
-						method        = method)
-
-plot_solutions(DATA, multi_clusterings_mdl.solutions)
+plot_solutions(DATA, mClustModel.solutions)
+print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
 
 while True:
 	try:
 		n_views = str(input('\n    Enter the number of views or \'q\' to exit: '))
 		
 		print('*** Extracting the groups of similar clusterings. ***')
-		G       = label_clusterings(multi_clusterings_mdl.hac_model, n_views)
-		D       = personalized_dendrogram(multi_clusterings_mdl.hac_model, G)
+		G       = labels_from_clusterings_hierarchy(mClustModel.hac_model, n_views)
+		D       = personalized_dendrogram(mClustModel.hac_model, G)
 		plot_dendrogram(D, G, resultsPath)
 		
 		choice  = str(input('\n    Type "ok" to proceed or press any key to input another number: '))
 		if choice in ['ok', 'OK', 'Ok', 'oK']: 
-			R   = all_representatives(model        = multi_clusterings_mdl.hac_model, 
-									  clusterings  = multi_clusterings_mdl.clusterings, 
-									  distances    = multi_clusterings_mdl.distances, 
+			R   = all_representatives(model        = mClustModel.hac_model, 
+									  clusterings  = mClustModel.clusterings, 
+									  distances    = mClustModel.distances, 
 									  group_lables = G, 
 									  method       = method ) 
 			plot_solutions(DATA, R)
@@ -669,5 +675,3 @@ while True:
 			print('\nThe program in ended.')
 			sys.exit()
 		print('\nInvalid number of views')
-
-
