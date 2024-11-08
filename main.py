@@ -100,7 +100,7 @@ def compute_linkage_from_model(model):
 	Z = np.column_stack( [model.children_, model.distances_, counts] ).astype(float)
 	return Z
 
-def plot_dendrogram(model, Y, resultsPath=None):
+def personalized_dendrogram(model, Y):
 	# plots the dendrogram with various options concerning coloring labels and links. #
 	def linkColorFunction(link_id):
 		colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10', 'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19' ]
@@ -151,6 +151,9 @@ def plot_dendrogram(model, Y, resultsPath=None):
 				   link_color_func       = linkColorFunction,
 
 				   )
+	return denZ
+
+def plot_dendrogram(denZ, Y, resultsPath=None):
 	# customized label color based on the given labels
 	colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10', 'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19' ]
 	leaf_colors = {i: colors[lebel] for i, lebel in enumerate(Y)}
@@ -171,8 +174,10 @@ def plot_dendrogram(model, Y, resultsPath=None):
 	plt.xlabel('Sample label')
 	plt.ylabel('Distance')
 	plt.show()
-	if not resultsPath: plt.savefig(resultsPath+'dendrogram_'+data_name[6:]+'_k_'+str(n_clusters)+'.jpg')
+	if resultsPath: plt.savefig(resultsPath+'dendrogram_'+data_name[6:]+'_k_'+str(n_clusters)+'.jpg')
 
+
+'''
 def geterate_clusterings_pool(X, n_projections=60, n_clusters=2, dis_metric='dist_clusterings'):
 	print('\n*** The algorithm is started with the following parameter values: \n    %d projections, each with %d clusters.\n'%(n_projections, n_clusters))
 	
@@ -196,10 +201,13 @@ def clusterings_hierarchy(pool, dis_metric='dist_clusterings'):
 	M      = AgglomerativeClustering( linkage="average", metric="precomputed", compute_distances=True ).fit(A)
 	print('*** Clusterings hierarchy is generated with an agglomeartive model. ***') 
 
-	plot_dendrogram(M, [0 for _ in M.labels_])
+	D      = personalized_dendrogram(M, [o for _ in M.labels_])
+	
+	plot_dendrogram(D, [0 for _ in M.labels_])
 	print('*** Clusterings hierarchy is plotted. Please analyze it. ***') 
 	
 	return M, A
+
 
 def label_clusterings(model, resultsPath=None):
 	try:
@@ -209,7 +217,9 @@ def label_clusterings(model, resultsPath=None):
 		Z       = compute_linkage_from_model(model)
 		G       = np.array(cut_tree(Z, n_clusters=int(n_views)).flatten())
 		
-		plot_dendrogram(model, G, resultsPath)
+		D      = personalized_dendrogram(model, G)
+	
+		plot_dendrogram(D, G, resultsPath)
 		
 		choice    = str(input('\n    Type "ok" to proceed or press Enter to input another number: '))
 		if choice in ['ok', 'OK', 'Ok', 'oK']: 
@@ -223,6 +233,7 @@ def label_clusterings(model, resultsPath=None):
 			print('\nThe program in ended.')
 			sys.exit()
 		print('\nInvalid number of views')
+'''
 
 def label_clusterings_(model, n_views):
 	print('*** Extracting the groups of similar clusterings. ***')
@@ -454,7 +465,7 @@ def all_representatives(model, clusterings, distances, group_lables, method='agg
 	print('*** Groups of clusterings are aggregated to representative clusterings. ***')
 	return np.array(R)
 	
-def mClustRandomProjection_(X, n_projections=60, n_clusters=2, dis_metric='dist_clusterings', method='aggregate'):
+def mClustRandomProjection_(X, n_projections=60, n_clusters=2, n_views=3, dis_metric='dist_clusterings', method='aggregate'):
 	print('\n*** The algorithm is started with the following parameter values: \n    %d projections, each with %d clusters.\n'%(n_projections, n_clusters))
 	
 	P = []
@@ -474,21 +485,23 @@ def mClustRandomProjection_(X, n_projections=60, n_clusters=2, dis_metric='dist_
 	M      = AgglomerativeClustering( linkage="average", metric="precomputed", compute_distances=True ).fit(A)
 	print('*** Clusterings hierarchy is generated with an agglomeartive model. ***') 
 
-	plot_dendrogram(M, [0 for _ in M.labels_])
+	D      = personalized_dendrogram(M, [0 for _ in M.labels_])
+	plot_dendrogram(D, [0 for _ in M.labels_])
 	print('*** Clusterings hierarchy is plotted. Please analyze it. ***') 
 
 	while True:
 		try:
-			n_views = str(input('\n    Enter the number of views: '))
+			n_views = str(input('\n    Enter the number of views0: '))
 			G       = label_clusterings_(M, n_views=n_views)
-			D       = plot_dendrogram(M, G)
+			D       = personalized_dendrogram(M, G)
+			plot_dendrogram(D, G)
 			
-			choice    = str(input('\n    Type "ok" to proceed or press Enter to input another number: '))
+			choice    = str(input('\n    Type "ok" to proceed or press Enter to input another number0: '))
 			if choice in ['ok', 'OK', 'Ok', 'oK']: break
 			else: continue
 		
 		except ValueError:
-			print('\nInvalid number of views')			
+			print('\nInvalid number of views0')			
 	
 	R = []
 	print('*** Aggregating groups of clusterings is started. ***')
@@ -499,8 +512,16 @@ def mClustRandomProjection_(X, n_projections=60, n_clusters=2, dis_metric='dist_
 		S   = representative_solution(C, distances=AC, label=label, method=method)
 		R.append(S)
 	
-	return np.array(R)
+	class model:
+		def __init__(self):
+			self.clusterings = P
+			self.distances   = A
+			self.hac_model 	 = M
+			self.dendrogram	 = D
+			self.solutions   = R
+	return model()
 
+'''
 def mClustRandomProjection(X, n_projections=60, n_clusters=2, dis_metric='dist_clusterings'):
 	print('\n*** The algorithm is started with the following parameter values: \n    %d projections, each with %d clusters.\n'%(n_projections, n_clusters))
 	
@@ -523,11 +544,9 @@ def mClustRandomProjection(X, n_projections=60, n_clusters=2, dis_metric='dist_c
 	print('*** Clusterings hierarchy is generated with an agglomeartive model. ***') 
 
 	return P, A, M
+'''
 
-
-	
 # ====================================================================== #
-
 def generate_data(data_name='random432', format='text'):
 	if data_name == 'random432':
 		DATA = data432()
@@ -592,10 +611,10 @@ def dataimg(file, format='bmp'):
 	return np.array(X, dtype='uint8'), imRow, imCol, imDim
 
 def plot_clusters(DATA, colors, t, resultsPath):
-	if data_name      =='random223' or data_name=='random432': return random_clusters(DATA, colors, t, resultsPath)
-	if data_name[0:5] == 'image': return image_clusters(DATA, colors, t, resultsPath) 
+	if data_name      =='random223' or data_name=='random432': return plot_random_clusters(DATA, colors, t, resultsPath)
+	if data_name[0:5] == 'image':                              return plot_image_clusters(DATA, colors, t, resultsPath) 
 	
-def random_clusters(DATA, colors, t, resultsPath):
+def plot_random_clusters(DATA, colors, t, resultsPath):
 	fig, (ax1a, ax2a) = plt.subplots(1, 2, figsize=(12, 5), sharex=False, sharey=False)
 	
 	ax1a.scatter( *np.array([ *zip(*DATA) ])[:2], c=colors, marker='+' )
@@ -616,7 +635,7 @@ def random_clusters(DATA, colors, t, resultsPath):
 	
 	plt.close('all')	
 
-def image_clusters(DATA, colors, t, resultsPath):
+def plot_image_clusters(DATA, colors, t, resultsPath):
 	IMG_DATA = copy.deepcopy(DATA).reshape(imRow, imCol, imDim)
 
 	# If the input colors array has 4 channels (RGBA), convert it to RGB
@@ -639,6 +658,23 @@ def image_clusters(DATA, colors, t, resultsPath):
 	plt.savefig(resultsPath+data_name+'_'+str(t)+'.png')
 	plt.close('all')	
 
+def plot_solutions(DATA, solutions):
+	for S_id, S in enumerate(solutions):
+		if data_name[0:5] == 'image':
+			# Coloring RGB pixels with thier cluster correspondiing color (2 colors, 1 for each cluster)
+			#clr = [ [0, 0, 0], [255, 255, 255] ] 	 
+			clr = [[0,0,0], [0,128,0], [255,140,0], [165,42,42], [255,255,255], [65,105,225], [255,215,0] ]
+			
+			
+			# coloring RGB pixels with their cluster means
+			#clr = [ [np.mean(col) for col in zip(*DATA[S==cl])] for cl in set(S) ] 
+		else:
+			# Coloring data points with thier cluster correspondiing color
+			clr = ['black', 'green', 'orange', 'brown', 'white', 'cornflowerblue', 'yellow' ]
+		
+		sorted_labels = reorder_labels_by_cluster_size(DATA, S) 
+		plot_clusters( DATA, [ clr[i] for i in sorted_labels ], S_id, resultsPath )
+
 def reorder_labels_by_cluster_size(DATA, Y):
 	DATA         = np.array(copy.deepcopy(DATA))
 	Y            = np.array(Y)
@@ -655,18 +691,17 @@ def reorder_labels_by_cluster_size(DATA, Y):
 		new_labels[Y==old_label] = new_lable
 	
 	return new_labels
-
 # ====================================================================== #
 
 ## Settings
-starting_time        = time.time()
-resultsPath          = r'./ExperimentalResults/'
+starting_time   = time.time()
+resultsPath     = r'./ExperimentalResults/'
 
-n_projections 		 = 60
-n_clusters           = 2
-n_views              = 3
-dis_metric			 = 'dist_clusterings'		            # 'distance', 'dist_clusterings'
-rep_method 	 		 = 'aggregate'				            # 'central', 'ensemble', 'aggregate', 'aggregate_large'
+n_projections 	= 60
+n_clusters  	= 2
+n_views 		= 3
+dis_metric		= 'dist_clusterings'		            # 'distance', 'dist_clusterings'
+method			= 'aggregate'				            # 'central', 'ensemble', 'aggregate', 'aggregate_large'
 
 if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
@@ -678,18 +713,31 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
  					)= generate_data(data_name= 'random223')	                # 'random432', 'random223'
 
 
+
+multi_clusterings_mdl = mClustRandomProjection_(
+						DATA, 
+						n_projections = n_projections, 
+						n_clusters 	  = n_clusters,
+						n_views       = 3,
+						dis_metric 	  = dis_metric,
+						method        = method)
+
+plot_solutions(DATA, multi_clusterings_mdl.solutions)
+
+'''
 P, A, M_mdl		     = mClustRandomProjection(
 						DATA, 
 						n_projections = n_projections, 
 						n_clusters 	  = n_clusters, 
 						dis_metric 	  = dis_metric )
-plot_dendrogram(M_mdl, [0 for _ in M_mdl.labels_] , resultsPath)
-
+D = personalized_dendrogram(M_mdl, [0 for _ in M_mdl.labels_] , resultsPath)
+plot_dendrogram(D, [0 for _ in M_mdl.labels_] , resultsPath)
+'''
 #print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
-
+'''
 while True:
 	G = label_clusterings(M_mdl, resultsPath)
-	R = all_representatives(model= M_mdl, clusterings= P, distances= A, group_lables= G, method= rep_method ) 
+	R = all_representatives(model= M_mdl, clusterings= P, distances= A, group_lables= G, method= method ) 
 
 	for S_id, S in enumerate(R):
 		if data_name[0:5] == 'image':
@@ -708,3 +756,37 @@ while True:
 		plot_clusters( DATA, [ clr[i] for i in sorted_labels ], S_id, resultsPath )
 	
 	print('*** Final solutions are presented. ***')
+	
+'''
+
+while True:
+	try:
+		n_views = str(input('\n    Enter the number of views or \'q\' to exit: '))
+		
+		print('*** Extracting the groups of similar clusterings. ***')
+		G       = label_clusterings_(multi_clusterings_mdl.hac_model, n_views)
+		D       = personalized_dendrogram(multi_clusterings_mdl.hac_model, G)
+		plot_dendrogram(D, G, resultsPath)
+		
+		choice  = str(input('\n    Type "ok" to proceed or press Enter to input another number1: '))
+		if choice in ['ok', 'OK', 'Ok', 'oK']: 
+			R   = all_representatives(model        = multi_clusterings_mdl.hac_model, 
+									  clusterings  = multi_clusterings_mdl.clusterings, 
+									  distances    = multi_clusterings_mdl.distances, 
+									  group_lables = G, 
+									  method       = method ) 
+			plot_solutions(DATA, R)
+			
+			print('*** Final solutions are presented. ***')
+			
+		elif choice in ['q','Q']:
+			print('\nThe program in ended1.')
+			sys.exit()
+
+	except ValueError:
+		if n_views in ['q','Q']:
+			print('\nThe program in ended1.')
+			sys.exit()
+		print('\nInvalid number of views1')
+
+
