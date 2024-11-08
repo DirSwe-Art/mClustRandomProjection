@@ -189,9 +189,7 @@ def geterate_clusterings_pool(X, n_projections=60, n_clusters=2, dis_metric='dis
 	
 	return P
 
-def clusterings_hierarchy(pool, dis_metric='dist_clusterings'):
-	print('\n*** The algorithm is started with the following parameter values: \n    %d projections, each with %d clusters.\n'%(n_projections, n_clusters))
-	
+def clusterings_hierarchy(pool, dis_metric='dist_clusterings'):	
 	A      = affinity(pool, affinity_metric=dis_metric)
 	print('*** Clusterings dissimilarity matrix is generated. ***')
 	
@@ -199,33 +197,39 @@ def clusterings_hierarchy(pool, dis_metric='dist_clusterings'):
 	print('*** Clusterings hierarchy is generated with an agglomeartive model. ***') 
 
 	plot_dendrogram(M, [0 for _ in M.labels_])
+	print('*** Clusterings hierarchy is plotted. Please analyze it. ***') 
 	
-	return A, M
+	return M, A
 
-def label_clusterings(model, resultsPath):
-	while True:
-		try:
-			n_views = str(input('\n    Enter the number of views or \'q\' to exit: '))
-			
-			print('*** Extracting the groups of similar clusterings. ***')
-			Z       = compute_linkage_from_model(model)
-			G       = np.array(cut_tree(Z, n_clusters=int(n_views)).flatten())
-			
-			plot_dendrogram(model, G, resultsPath)
-			
-			choice    = str(input('\n    Type "ok" to proceed or press Enter to input another number: '))
-			if choice in ['ok', 'OK', 'Ok', 'oK']: 
-				return G
-			elif choice in ['q','Q']:
-				print('\nThe program in ended.')
-				sys.exit()
+def label_clusterings(model, resultsPath=None):
+	try:
+		n_views = str(input('\n    Enter the number of views or \'q\' to exit: '))
 		
-		except ValueError:
-			if n_views in ['q','Q']:
-				print('\nThe program in ended.')
-				sys.exit()
-			print('\nInvalid number of views')
+		print('*** Extracting the groups of similar clusterings. ***')
+		Z       = compute_linkage_from_model(model)
+		G       = np.array(cut_tree(Z, n_clusters=int(n_views)).flatten())
+		
+		plot_dendrogram(model, G, resultsPath)
+		
+		choice    = str(input('\n    Type "ok" to proceed or press Enter to input another number: '))
+		if choice in ['ok', 'OK', 'Ok', 'oK']: 
+			return G
+		elif choice in ['q','Q']:
+			print('\nThe program in ended.')
+			sys.exit()
+	
+	except ValueError:
+		if n_views in ['q','Q']:
+			print('\nThe program in ended.')
+			sys.exit()
+		print('\nInvalid number of views')
 
+def label_clusterings_(model, n_views):
+	print('*** Extracting the groups of similar clusterings. ***')
+	Z       = compute_linkage_from_model(model)
+	G       = np.array(cut_tree(Z, n_clusters=int(n_views)).flatten())
+	return G
+	
 def central(clusterings, distances):
 	# returns a clustering from the pool that has the minimum sum of distnaces with all other clutserings. #
 	A      = distances
@@ -256,16 +260,16 @@ def aggregate(clusterings):
     ids = list(range(len(clusterings[0])))
     comb_ids = combinations(range(len(clusterings[0])), 2)
 
-    nS = lil_matrix((len(ids), len(ids)))
+    X_C = lil_matrix((len(ids), len(ids)))
 
     for i, j in comb_ids:  # Iterate over combinations lazily
         count = len([1 for Y in clusterings if Y[i] == Y[j]])
         if count > 0:  # Store non-zero values only
-            nS[i, j] = count
-            nS[j, i] = count  # Keep symmetry if needed
+            X_C[i, j] = count
+            X_C[j, i] = count  # Keep symmetry if needed
 
-    nS = nS.tocsr()
-    return GaussianMixture(n_components=len(set(clusterings[0]))).fit_predict(nS.toarray()).tolist()
+    X_C = X_C.tocsr()
+    return GaussianMixture(n_components=len(set(clusterings[0]))).fit_predict(X_C.toarray()).tolist()
 
 '''
 
@@ -282,17 +286,17 @@ def aggregate(clusterings):
 	for s_id, S in enumerate(clusterings):
 		dict_[s_id]= np.equal.outer(S,S)
 
-	xS = [] # xi and each xj are together (m-element row for each solution)
-	xC = [] # xi representation (the sum of xj-column over all solutions where xi,xj are together)
+	X_S = [] # xi and each xj are together (m-element row for each solution)
+	X_C = [] # xi representation (the sum of xj-column over all solutions where xi,xj are together)
 
 	for x_id in range(len(clusterings[0])):
 		for s_id, S in enumerate(clusterings):
-			xS.append(dict_[s_id][x_id])
-		sums  = np.sum(np.array(xS), axis=0)
-		xC.append(sums)
-		xS    = []
+			X_S.append(dict_[s_id][x_id])
+		sums  = np.sum(np.array(X_S), axis=0)
+		X_C.append(sums)
+		X_S    = []
 		
-	return GaussianMixture(n_components=len(set(clusterings[0]))).fit_predict(xC).tolist()
+	return GaussianMixture(n_components=len(set(clusterings[0]))).fit_predict(X_C).tolist()
 
 def aggregate_large(clusterings):
 	# Returns an aggregated representative solution for all solutions in clusterings.
@@ -375,10 +379,10 @@ def aggregate_large(clusterings):
 		# Returns a vector representation of one data point x where frequencies  
 		# of which it occures together with other points across solutions in clusterings.
 		with h5py.File(clusterings_dict_path, 'r') as hf:
-			xS = pd.DataFrame( {}, columns=range(len(clusterings)), dtype=np.int8)
+			X_S = pd.DataFrame( {}, columns=range(len(clusterings)), dtype=np.int8)
 			for s_id, S in enumerate(clusterings):
-				xS[str(s_id)] = hf['S'+str(s_id)][x_id]
-			return xS.sum(axis=1)
+				X_S[str(s_id)] = hf['S'+str(s_id)][x_id]
+			return X_S.sum(axis=1)
 
 	def batch_fit_kmeans(kmeans_model, X, batch_size):
 	    n_samples = X.shape[0]; print('\n\t -> Fitting ...' )
@@ -397,46 +401,106 @@ def aggregate_large(clusterings):
 
 	
 	clusterings_dict_path = allOccurance(clusterings, 'clusterings_dict') # => clusterings_dict.h5 
-	xC          = np.memmap('clusterings_matrix', dtype=np.int8, mode='w+', shape=(len(clusterings[0]),len(clusterings[0])))
+	X_C          = np.memmap('clusterings_matrix', dtype=np.int8, mode='w+', shape=(len(clusterings[0]),len(clusterings[0])))
 	
 	print('\n\t -> Occurance frequencies X^C (%d, %d) for all X(xi, xj) in all clusterings(S). Save in an external file.'%(len(clusterings[0]),len(clusterings[0])) )
 	for x_id in range(len(clusterings[0])):
 		freq 		= occuranceFreq(x_id, clusterings, clusterings_dict_path)
-		xC[x_id, :]	= freq
+		X_C[x_id, :]	= freq
 		if x_id % 10000 == 0: print('\t -> batch', x_id)
 	
-	xC.flush(); del xC ; time.sleep(1)
+	X_C.flush(); del X_C ; time.sleep(1)
 														
 	print('\n\t -> Emptying the RAM, reading the external X^C file')
 	
-	xC_memory   = np.memmap('clusterings_matrix', dtype=np.int8, mode='r', shape=(len(clusterings[0]),len(clusterings[0])))
+	X_C_memory   = np.memmap('clusterings_matrix', dtype=np.int8, mode='r', shape=(len(clusterings[0]),len(clusterings[0])))
 	kmeans      = MiniBatchKMeans(n_clusters=len(set(clusterings[0])), batch_size=10000, max_iter=100, tol=1e-4, max_no_improvement=15, random_state=42)
-	kmeans      = batch_fit_kmeans(kmeans, xC_memory, batch_size=10000)
-	predictions = batch_predict(   kmeans, xC_memory, batch_size=10000)
-	del xC_memory
+	kmeans      = batch_fit_kmeans(kmeans, X_C_memory, batch_size=10000)
+	predictions = batch_predict(   kmeans, X_C_memory, batch_size=10000)
+	del X_C_memory
 	os.remove(clusterings_dict_path)
 	os.remove('clusterings_matrix')
 	
 	return predictions
 
+def representative_solution(clusterings, distances=None, label=None, method='aggregate'):
+		if len(clusterings) == 1:
+			print('*** Group (%d) has one clustering solution. No aggregation is needed. ***'%label)
+			return clusterings[0].tolist()
+		elif method == 'central': 
+			print('*** Finding the central solution of group (%d). ***'%label)
+			return central(clusterings, distances)
+		elif method == 'ensemble': 
+			print('*** Computing the ensemble solution of group (%d). ***'%label)
+			return ensemble(clusterings)
+		elif method == 'aggregate': 
+			print('*** Aggregating clusterings of group (%d). ***'%label)
+			return aggregate(clusterings)
+		elif method == 'aggregate_large': 
+			print('*** Aggregating clusterings of group (%d). ***'%label)
+			return aggregate_large(clusterings)
 
-def large_labels_first(DATA, Y):
-	DATA         = np.array(copy.deepcopy(DATA))
-	Y            = np.array(Y)
-	
-	# The size of each label
-	label_sizes  = [ len(DATA[Y==y]) for y in set(Y) ]
-	
-	# Sort label indices large to small
-	label_sorted = np.flip(np.argsort(label_sizes))
+def all_representatives(model, clusterings, distances, group_lables, method='aggregate'):
+	print('*** Aggregating groups of clusterings is started. ***')
 
-	# assign new labels
-	new_labels   = np.zeros(Y.shape, dtype=int)
-	for new_lable, old_label in enumerate(label_sorted):
-		new_labels[Y==old_label] = new_lable
+	R       = []
+	for label in set(group_lables):
+		ids = np.asarray(group_lables==label).nonzero()
+		C   = clusterings[ids]
+		AC  = distances[ids,ids]
+		S   = representative_solution(clusterings, distances=distances, label=label, method=method)
+		R.append(S)
 	
-	return new_labels
+	print('*** Groups of clusterings are aggregated to representative clusterings. ***')
+	return np.array(R)
 	
+def mClustRandomProjection_(X, n_projections=60, n_clusters=2, dis_metric='dist_clusterings', method='aggregate'):
+	print('\n*** The algorithm is started with the following parameter values: \n    %d projections, each with %d clusters.\n'%(n_projections, n_clusters))
+	
+	P = []
+	for p in range(n_projections):
+		Mp = construct_projection_matrix(X.shape[1])
+		Xp = X @ Mp
+		#Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(X)
+		Sp = GaussianMixture(n_components=n_clusters).fit_predict(Xp)
+		P.append(Sp)
+
+	P      = np.array(P)
+	print('*** %d projections and clusterings are generated. ***'%(n_projections))
+
+	A      = affinity(P, affinity_metric=dis_metric)
+	print('*** Clusterings dissimilarity matrix is generated. ***')
+	
+	M      = AgglomerativeClustering( linkage="average", metric="precomputed", compute_distances=True ).fit(A)
+	print('*** Clusterings hierarchy is generated with an agglomeartive model. ***') 
+
+	plot_dendrogram(M, [0 for _ in M.labels_])
+	print('*** Clusterings hierarchy is plotted. Please analyze it. ***') 
+
+	while True:
+		try:
+			n_views = str(input('\n    Enter the number of views: '))
+			G       = label_clusterings_(M, n_views=n_views)
+			D       = plot_dendrogram(M, G)
+			
+			choice    = str(input('\n    Type "ok" to proceed or press Enter to input another number: '))
+			if choice in ['ok', 'OK', 'Ok', 'oK']: break
+			else: continue
+		
+		except ValueError:
+			print('\nInvalid number of views')			
+	
+	R = []
+	print('*** Aggregating groups of clusterings is started. ***')
+	for label in set(G):
+		ids = np.asarray(G==label).nonzero()
+		C   = P[ids]
+		AC  = A[ids,ids]
+		S   = representative_solution(C, distances=AC, label=label, method=method)
+		R.append(S)
+	
+	return np.array(R)
+
 def mClustRandomProjection(X, n_projections=60, n_clusters=2, dis_metric='dist_clusterings'):
 	print('\n*** The algorithm is started with the following parameter values: \n    %d projections, each with %d clusters.\n'%(n_projections, n_clusters))
 	
@@ -459,35 +523,6 @@ def mClustRandomProjection(X, n_projections=60, n_clusters=2, dis_metric='dist_c
 	print('*** Clusterings hierarchy is generated with an agglomeartive model. ***') 
 
 	return P, A, M
-
-
-def representative_solutions(model, clusterings, distances, group_lables, method='aggregate'):
-	print('*** Aggregating groups of clusterings is started. ***')
-	
-	R      = []
-	for label in set(group_lables):
-		ids= np.asarray(group_lables==label).nonzero()
-		C  = clusterings[ids]
-		AC = distances[ids,ids]
-		
-		if len(C) == 1:
-			print('*** Group (%d) has one clustering solution. No aggregation is needed. ***'%label)
-			R.append(C[0].tolist())
-		elif method == 'central': 
-			print('*** Finding the central solution of group (%d). ***'%label)
-			R.append(central(C, AC))
-		elif method == 'ensemble': 
-			print('*** Computing the ensemble solution of group (%d). ***'%label)
-			R.append(ensemble(C))
-		elif method == 'aggregate': 
-			print('*** Aggregating clusterings of group (%d). ***'%label)
-			R.append(aggregate(C))
-		elif method == 'aggregate_large': 
-			print('*** Aggregating clusterings of group (%d). ***'%label)
-			R.append(aggregate_large(C))
-
-	print('*** Groups of clusterings are aggregated to representative clusterings. ***')
-	return np.array(R)
 
 
 	
@@ -603,7 +638,24 @@ def image_clusters(DATA, colors, t, resultsPath):
 	# Display the clustered image
 	plt.savefig(resultsPath+data_name+'_'+str(t)+'.png')
 	plt.close('all')	
+
+def reorder_labels_by_cluster_size(DATA, Y):
+	DATA         = np.array(copy.deepcopy(DATA))
+	Y            = np.array(Y)
 	
+	# The size of each label
+	label_sizes  = [ len(DATA[Y==y]) for y in set(Y) ]
+	
+	# Sort label indices large to small
+	label_sorted = np.flip(np.argsort(label_sizes))
+
+	# assign new labels
+	new_labels   = np.zeros(Y.shape, dtype=int)
+	for new_lable, old_label in enumerate(label_sorted):
+		new_labels[Y==old_label] = new_lable
+	
+	return new_labels
+
 # ====================================================================== #
 
 ## Settings
@@ -636,8 +688,8 @@ plot_dendrogram(M_mdl, [0 for _ in M_mdl.labels_] , resultsPath)
 #print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
 
 while True:
-	G = label_clusterings(M_mdl)
-	R = representative_solutions(model= M_mdl, clusterings= P, distances= A, group_lables= G, method= rep_method ) 
+	G = label_clusterings(M_mdl, resultsPath)
+	R = all_representatives(model= M_mdl, clusterings= P, distances= A, group_lables= G, method= rep_method ) 
 
 	for S_id, S in enumerate(R):
 		if data_name[0:5] == 'image':
@@ -650,9 +702,9 @@ while True:
 			#clr = [ [np.mean(col) for col in zip(*DATA[S==cl])] for cl in set(S) ] 
 		else:
 			# Coloring data points with thier cluster correspondiing color
-			clr = ['black', 'green', 'orange', 'brown', 'white', 'cornflowerblue', 'yellow', ]
+			clr = ['black', 'green', 'orange', 'brown', 'white', 'cornflowerblue', 'yellow' ]
 		
-		sorted_labels = large_labels_first(DATA, S) 
+		sorted_labels = reorder_labels_by_cluster_size(DATA, S) 
 		plot_clusters( DATA, [ clr[i] for i in sorted_labels ], S_id, resultsPath )
 	
 	print('*** Final solutions are presented. ***')
