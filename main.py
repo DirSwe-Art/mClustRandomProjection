@@ -19,7 +19,7 @@ import pandas as pd
 
 
 # ========================================================================
-def constructProjectionMatrix(d):
+def construct_projection_matrix(d):
 	# Returns a random projection transformation matrix spanned by a linearly independent (orthogonal) unit vectors. #
 	
 	bit_generator = np.random.PCG64DXSM()		# Create a 128-bit bit generator (PCG64DXSM)
@@ -84,6 +84,147 @@ def affinity(data, affinity_metric='dist_clusterings'):
 	if   affinity_metric == 'dist_clusterings':             return pairwise_distances(data, metric=dist_clusterings)
 	# We can add more metrics
 	# elif affinity_metric == 'hamming_dist': return ...  #
+
+def compute_linkage_from_model(model):
+	counts = np.zeros(model.children_.shape[0])
+	n_samples = len(model.labels_)
+	for i, merge in enumerate(model.children_):
+		current_count = 0
+		for child_idx in merge:
+			if child_idx < n_samples:
+				current_count += 1  # leaf node
+			else:
+				current_count += counts[child_idx - n_samples]
+		counts[i] = current_count
+
+	Z = np.column_stack( [model.children_, model.distances_, counts] ).astype(float)
+	return Z
+
+def plot_dendrogram(model, Y, resultsPath=None):
+	# plots the dendrogram with various options concerning coloring labels and links. #
+	def linkColorFunction(link_id):
+		colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10', 'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19' ]
+		n_leaves    = len(Y)
+		link_colors = {}
+		
+		def get_clusters_from_node(node_id, n_leaves):
+			"""Returns a set of clusters that belong to a given node in the dendrogram."""
+			if node_id < n_leaves:
+				return {Y[int(node_id)]}
+			left_child  = int( Z[node_id - n_leaves][0] )
+			right_child = int( Z[node_id - n_leaves][1] )
+			return get_clusters_from_node(left_child, n_leaves).union( get_clusters_from_node(right_child, n_leaves) )
+		
+		for i in range(len(Z)):
+			left, right     = int(Z[i, 0]), int(Z[i, 1])
+			left_clusters   = get_clusters_from_node(left, n_leaves)
+			right_clusters  = get_clusters_from_node(right, n_leaves)
+			merged_clusters = left_clusters.union(right_clusters)
+			
+			if len(merged_clusters) == 1:
+				# If both children belong to the same cluster, color the link accordingly
+				link_colors[i + n_leaves] = colors[next(iter(merged_clusters))]
+			#elif len(merged_clusters) > 1 and len(left_clusters)  == 1:
+			#	link_colors[i + n_leaves] = colors[next(iter(left_clusters))]		
+			#elif len(merged_clusters) > 1 and len(right_clusters) == 1:
+			#	link_colors[i + n_leaves] = colors[next(iter(right_clusters))]
+			else:
+				# Otherwise, color it grey to indicate it merges different clusters
+				link_colors[i + n_leaves] = 'grey'
+		return link_colors.get(link_id, 'grey')
+	
+	Z = compute_linkage_from_model(model)
+	
+	plt.close('all')
+	plt.figure(figsize=(10,6))
+	
+	Z2           = np.array(copy.deepcopy(Z))
+	#Z2[:, 2]     = [ float(i)/max(Z2[:, 2]) for i in Z2[:, 2] ]
+
+	denZ = dendrogram( Z2,
+				   leaf_rotation         = 0,
+				   leaf_font_size        = 10,
+				   labels				 = Y,
+				   # customized link color based on give labels
+				   color_threshold       = 0,
+				   above_threshold_color = 'grey',
+				   link_color_func       = linkColorFunction,
+
+				   )
+	# customized label color based on the given labels
+	colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10', 'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19' ]
+	leaf_colors = {i: colors[lebel] for i, lebel in enumerate(Y)}
+	ax          = plt.gca()
+	x_labels    = ax.get_xmajorticklabels()
+	for lbl, leaf_idx in zip(x_labels, denZ['leaves']):
+		lbl.set_color(leaf_colors[leaf_idx])
+	
+	'''	
+	# labels and customized colors are not used
+	ax = plt.gca()
+	x_labels = ax.get_xmajorticklabels()
+	for i, lbl in enumerate(x_labels):
+		lbl.set_color(denZ['leaves_color_list'][i])
+	'''
+	
+	plt.title('Dendrogram with Cluster-based Link and Leaf Colors - '+str(data_name[6:]))
+	plt.xlabel('Sample label')
+	plt.ylabel('Distance')
+	plt.show()
+	if not resultsPath: plt.savefig(resultsPath+'dendrogram_'+data_name[6:]+'_k_'+str(n_clusters)+'.jpg')
+
+def geterate_clusterings_pool(X, n_projections=60, n_clusters=2, dis_metric='dist_clusterings'):
+	print('\n*** The algorithm is started with the following parameter values: \n    %d projections, each with %d clusters.\n'%(n_projections, n_clusters))
+	
+	P = []
+	for p in range(n_projections):
+		Mp = construct_projection_matrix(X.shape[1])
+		Xp = X @ Mp
+		#Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(X)
+		Sp = GaussianMixture(n_components=n_clusters).fit_predict(Xp)
+		P.append(Sp)
+	
+	P      = np.array(P)
+	print('*** %d projections and clusterings are generated. ***'%(n_projections))
+	
+	return P
+
+def clusterings_hierarchy(pool, dis_metric='dist_clusterings'):
+	print('\n*** The algorithm is started with the following parameter values: \n    %d projections, each with %d clusters.\n'%(n_projections, n_clusters))
+	
+	A      = affinity(pool, affinity_metric=dis_metric)
+	print('*** Clusterings dissimilarity matrix is generated. ***')
+	
+	M      = AgglomerativeClustering( linkage="average", metric="precomputed", compute_distances=True ).fit(A)
+	print('*** Clusterings hierarchy is generated with an agglomeartive model. ***') 
+
+	plot_dendrogram(M, [0 for _ in M.labels_])
+	
+	return A, M
+
+def label_clusterings(model, resultsPath):
+	while True:
+		try:
+			n_views = str(input('\n    Enter the number of views or \'q\' to exit: '))
+			
+			print('*** Extracting the groups of similar clusterings. ***')
+			Z       = compute_linkage_from_model(model)
+			G       = np.array(cut_tree(Z, n_clusters=int(n_views)).flatten())
+			
+			plot_dendrogram(model, G, resultsPath)
+			
+			choice    = str(input('\n    Type "ok" to proceed or press Enter to input another number: '))
+			if choice in ['ok', 'OK', 'Ok', 'oK']: 
+				return G
+			elif choice in ['q','Q']:
+				print('\nThe program in ended.')
+				sys.exit()
+		
+		except ValueError:
+			if n_views in ['q','Q']:
+				print('\nThe program in ended.')
+				sys.exit()
+			print('\nInvalid number of views')
 
 def central(clusterings, distances):
 	# returns a clustering from the pool that has the minimum sum of distnaces with all other clutserings. #
@@ -153,7 +294,7 @@ def aggregate(clusterings):
 		
 	return GaussianMixture(n_components=len(set(clusterings[0]))).fit_predict(xC).tolist()
 
-def aggregate_large_data(clusterings):
+def aggregate_large(clusterings):
 	# Returns an aggregated representative solution for all solutions in clusterings.
 	# This function solves the memory lack issue with large datasets. 
 	# However, it is effective but not efficient, meaning that it takes a long
@@ -278,93 +419,6 @@ def aggregate_large_data(clusterings):
 	
 	return predictions
 
-def computeLinkageFromModel(model):
-	counts = np.zeros(model.children_.shape[0])
-	n_samples = len(model.labels_)
-	for i, merge in enumerate(model.children_):
-		current_count = 0
-		for child_idx in merge:
-			if child_idx < n_samples:
-				current_count += 1  # leaf node
-			else:
-				current_count += counts[child_idx - n_samples]
-		counts[i] = current_count
-
-	Z = np.column_stack( [model.children_, model.distances_, counts] ).astype(float)
-	return Z
-
-def plotDendrogram(model, Y, resultsPath):
-	# plots the dendrogram with various options concerning coloring labels and links. #
-	def linkColorFunction(link_id):
-		colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10', 'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19' ]
-		n_leaves    = len(Y)
-		link_colors = {}
-		
-		def get_clusters_from_node(node_id, n_leaves):
-			"""Returns a set of clusters that belong to a given node in the dendrogram."""
-			if node_id < n_leaves:
-				return {Y[int(node_id)]}
-			left_child  = int( Z[node_id - n_leaves][0] )
-			right_child = int( Z[node_id - n_leaves][1] )
-			return get_clusters_from_node(left_child, n_leaves).union( get_clusters_from_node(right_child, n_leaves) )
-		
-		for i in range(len(Z)):
-			left, right     = int(Z[i, 0]), int(Z[i, 1])
-			left_clusters   = get_clusters_from_node(left, n_leaves)
-			right_clusters  = get_clusters_from_node(right, n_leaves)
-			merged_clusters = left_clusters.union(right_clusters)
-			
-			if len(merged_clusters) == 1:
-				# If both children belong to the same cluster, color the link accordingly
-				link_colors[i + n_leaves] = colors[next(iter(merged_clusters))]
-			#elif len(merged_clusters) > 1 and len(left_clusters)  == 1:
-			#	link_colors[i + n_leaves] = colors[next(iter(left_clusters))]		
-			#elif len(merged_clusters) > 1 and len(right_clusters) == 1:
-			#	link_colors[i + n_leaves] = colors[next(iter(right_clusters))]
-			else:
-				# Otherwise, color it grey to indicate it merges different clusters
-				link_colors[i + n_leaves] = 'grey'
-		return link_colors.get(link_id, 'grey')
-	
-	Z = computeLinkageFromModel(model)
-	
-	plt.close('all')
-	plt.figure(figsize=(10,6))
-	
-	Z2           = np.array(copy.deepcopy(Z))
-	#Z2[:, 2]     = [ float(i)/max(Z2[:, 2]) for i in Z2[:, 2] ]
-
-	denZ = dendrogram( Z2,
-				   leaf_rotation         = 0,
-				   leaf_font_size        = 10,
-				   labels				 = Y,
-				   # customized link color based on give labels
-				   color_threshold       = 0,
-				   above_threshold_color = 'grey',
-				   link_color_func       = linkColorFunction,
-
-				   )
-	# customized label color based on the given labels
-	colors      = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10', 'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19' ]
-	leaf_colors = {i: colors[lebel] for i, lebel in enumerate(Y)}
-	ax          = plt.gca()
-	x_labels    = ax.get_xmajorticklabels()
-	for lbl, leaf_idx in zip(x_labels, denZ['leaves']):
-		lbl.set_color(leaf_colors[leaf_idx])
-	
-	'''	
-	# labels and customized colors are not used
-	ax = plt.gca()
-	x_labels = ax.get_xmajorticklabels()
-	for i, lbl in enumerate(x_labels):
-		lbl.set_color(denZ['leaves_color_list'][i])
-	'''
-	
-	plt.title('Dendrogram with Cluster-based Link and Leaf Colors - '+str(data_name[6:]))
-	plt.xlabel('Sample label')
-	plt.ylabel('Distance')
-	plt.savefig(resultsPath+'dendrogram_'+data_name[6:]+'_k_'+str(n_clusters)+'.jpg')
-	plt.show()
 
 def large_labels_first(DATA, Y):
 	DATA         = np.array(copy.deepcopy(DATA))
@@ -389,7 +443,7 @@ def mClustRandomProjection(X, n_projections=60, n_clusters=2, dis_metric='dist_c
 	P = []
 	for p in range(n_projections):
 		XX = copy.deepcopy(X)
-		Mp = constructProjectionMatrix(XX.shape[1])
+		Mp = construct_projection_matrix(XX.shape[1])
 		Xp = XX @ Mp
 		#Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(XX)
 		Sp = GaussianMixture(n_components=n_clusters).fit_predict(Xp)
@@ -406,29 +460,6 @@ def mClustRandomProjection(X, n_projections=60, n_clusters=2, dis_metric='dist_c
 
 	return P, A, M
 
-def get_groups_of_solutions(model):
-	while True:
-		try:
-			n_views = str(input('\n    Enter the number of views or \'q\' to exit: '))
-			
-			print('*** Extracting the groups of similar clusterings. ***')
-			Z       = computeLinkageFromModel(model)
-			G       = np.array(cut_tree(Z, n_clusters=int(n_views)).flatten())
-			
-			plotDendrogram(model, G, resultsPath)
-			
-			choice    = str(input('\n    Type "ok" to proceed or press Enter to input another number: '))
-			if choice in ['ok', 'OK', 'Ok', 'oK']: 
-				return G
-			elif choice in ['q','Q']:
-				print('\nThe program in ended.')
-				sys.exit()
-		
-		except ValueError:
-			if n_views in ['q','Q']:
-				print('\nThe program in ended.')
-				sys.exit()
-			print('\nInvalid number of views')
 
 def representative_solutions(model, clusterings, distances, group_lables, method='aggregate'):
 	print('*** Aggregating groups of clusterings is started. ***')
@@ -451,9 +482,9 @@ def representative_solutions(model, clusterings, distances, group_lables, method
 		elif method == 'aggregate': 
 			print('*** Aggregating clusterings of group (%d). ***'%label)
 			R.append(aggregate(C))
-		elif method == 'aggregate_large_data': 
+		elif method == 'aggregate_large': 
 			print('*** Aggregating clusterings of group (%d). ***'%label)
-			R.append(aggregate_large_data(C))
+			R.append(aggregate_large(C))
 
 	print('*** Groups of clusterings are aggregated to representative clusterings. ***')
 	return np.array(R)
@@ -583,7 +614,7 @@ n_projections 		 = 60
 n_clusters           = 2
 n_views              = 3
 dis_metric			 = 'dist_clusterings'		            # 'distance', 'dist_clusterings'
-rep_method 	 		 = 'aggregate'				            # 'central', 'ensemble', 'aggregate', 'aggregate_large_data'
+rep_method 	 		 = 'aggregate'				            # 'central', 'ensemble', 'aggregate', 'aggregate_large'
 
 if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
@@ -600,12 +631,12 @@ P, A, M_mdl		     = mClustRandomProjection(
 						n_projections = n_projections, 
 						n_clusters 	  = n_clusters, 
 						dis_metric 	  = dis_metric )
-plotDendrogram(M_mdl, [0 for _ in M_mdl.labels_] , resultsPath)
+plot_dendrogram(M_mdl, [0 for _ in M_mdl.labels_] , resultsPath)
 
 #print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
 
 while True:
-	G = get_groups_of_solutions(M_mdl)
+	G = label_clusterings(M_mdl)
 	R = representative_solutions(model= M_mdl, clusterings= P, distances= A, group_lables= G, method= rep_method ) 
 
 	for S_id, S in enumerate(R):
