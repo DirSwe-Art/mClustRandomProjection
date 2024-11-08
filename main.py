@@ -31,6 +31,7 @@ def construct_projection_matrix(d):
 
 '''
 def distance(Ya, Yb):
+	# Original function
     # Ensure the inputs are NumPy arrays for efficient operations
     Ya = np.array(Ya)
     Yb = np.array(Yb)
@@ -176,66 +177,7 @@ def plot_dendrogram(denZ, Y, resultsPath=None):
 	plt.show()
 	if resultsPath: plt.savefig(resultsPath+'dendrogram_'+data_name[6:]+'_k_'+str(n_clusters)+'.jpg')
 
-
-'''
-def geterate_clusterings_pool(X, n_projections=60, n_clusters=2, dis_metric='dist_clusterings'):
-	print('\n*** The algorithm is started with the following parameter values: \n    %d projections, each with %d clusters.\n'%(n_projections, n_clusters))
-	
-	P = []
-	for p in range(n_projections):
-		Mp = construct_projection_matrix(X.shape[1])
-		Xp = X @ Mp
-		#Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(X)
-		Sp = GaussianMixture(n_components=n_clusters).fit_predict(Xp)
-		P.append(Sp)
-	
-	P      = np.array(P)
-	print('*** %d projections and clusterings are generated. ***'%(n_projections))
-	
-	return P
-
-def clusterings_hierarchy(pool, dis_metric='dist_clusterings'):	
-	A      = affinity(pool, affinity_metric=dis_metric)
-	print('*** Clusterings dissimilarity matrix is generated. ***')
-	
-	M      = AgglomerativeClustering( linkage="average", metric="precomputed", compute_distances=True ).fit(A)
-	print('*** Clusterings hierarchy is generated with an agglomeartive model. ***') 
-
-	D      = personalized_dendrogram(M, [o for _ in M.labels_])
-	
-	plot_dendrogram(D, [0 for _ in M.labels_])
-	print('*** Clusterings hierarchy is plotted. Please analyze it. ***') 
-	
-	return M, A
-
-
-def label_clusterings(model, resultsPath=None):
-	try:
-		n_views = str(input('\n    Enter the number of views or \'q\' to exit: '))
-		
-		print('*** Extracting the groups of similar clusterings. ***')
-		Z       = compute_linkage_from_model(model)
-		G       = np.array(cut_tree(Z, n_clusters=int(n_views)).flatten())
-		
-		D      = personalized_dendrogram(model, G)
-	
-		plot_dendrogram(D, G, resultsPath)
-		
-		choice    = str(input('\n    Type "ok" to proceed or press Enter to input another number: '))
-		if choice in ['ok', 'OK', 'Ok', 'oK']: 
-			return G
-		elif choice in ['q','Q']:
-			print('\nThe program in ended.')
-			sys.exit()
-	
-	except ValueError:
-		if n_views in ['q','Q']:
-			print('\nThe program in ended.')
-			sys.exit()
-		print('\nInvalid number of views')
-'''
-
-def label_clusterings_(model, n_views):
+def label_clusterings(model, n_views):
 	print('*** Extracting the groups of similar clusterings. ***')
 	Z       = compute_linkage_from_model(model)
 	G       = np.array(cut_tree(Z, n_clusters=int(n_views)).flatten())
@@ -281,7 +223,6 @@ def aggregate(clusterings):
 
     X_C = X_C.tocsr()
     return GaussianMixture(n_components=len(set(clusterings[0]))).fit_predict(X_C.toarray()).tolist()
-
 '''
 
 def aggregate(clusterings):
@@ -465,7 +406,7 @@ def all_representatives(model, clusterings, distances, group_lables, method='agg
 	print('*** Groups of clusterings are aggregated to representative clusterings. ***')
 	return np.array(R)
 	
-def mClustRandomProjection_(X, n_projections=60, n_clusters=2, n_views=3, dis_metric='dist_clusterings', method='aggregate'):
+def mClustRandomProjection(X, n_projections=60, n_clusters=2, n_views=3, dis_metric='dist_clusterings', method='aggregate'):
 	print('\n*** The algorithm is started with the following parameter values: \n    %d projections, each with %d clusters.\n'%(n_projections, n_clusters))
 	
 	P = []
@@ -491,17 +432,17 @@ def mClustRandomProjection_(X, n_projections=60, n_clusters=2, n_views=3, dis_me
 
 	while True:
 		try:
-			n_views = str(input('\n    Enter the number of views0: '))
-			G       = label_clusterings_(M, n_views=n_views)
+			n_views = str(input('\n    Enter the number of views: '))
+			G       = label_clusterings(M, n_views=n_views)
 			D       = personalized_dendrogram(M, G)
 			plot_dendrogram(D, G)
 			
-			choice    = str(input('\n    Type "ok" to proceed or press Enter to input another number0: '))
+			choice    = str(input('\n    Type "ok" to proceed or press any key to input another number: '))
 			if choice in ['ok', 'OK', 'Ok', 'oK']: break
 			else: continue
 		
 		except ValueError:
-			print('\nInvalid number of views0')			
+			print('\nInvalid number of views')			
 	
 	R = []
 	print('*** Aggregating groups of clusterings is started. ***')
@@ -520,31 +461,6 @@ def mClustRandomProjection_(X, n_projections=60, n_clusters=2, n_views=3, dis_me
 			self.dendrogram	 = D
 			self.solutions   = R
 	return model()
-
-'''
-def mClustRandomProjection(X, n_projections=60, n_clusters=2, dis_metric='dist_clusterings'):
-	print('\n*** The algorithm is started with the following parameter values: \n    %d projections, each with %d clusters.\n'%(n_projections, n_clusters))
-	
-	P = []
-	for p in range(n_projections):
-		XX = copy.deepcopy(X)
-		Mp = construct_projection_matrix(XX.shape[1])
-		Xp = XX @ Mp
-		#Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(XX)
-		Sp = GaussianMixture(n_components=n_clusters).fit_predict(Xp)
-		P.append(Sp)
-	
-	P      = np.array(P)
-	print('*** %d projections and clusterings are generated. ***'%(n_projections))
-	
-	A      = affinity(P, affinity_metric=dis_metric)
-	print('*** Clusterings dissimilarity matrix is generated. ***')
-	
-	M      = AgglomerativeClustering( linkage="average", metric="precomputed", compute_distances=True ).fit(A)
-	print('*** Clusterings hierarchy is generated with an agglomeartive model. ***') 
-
-	return P, A, M
-'''
 
 # ====================================================================== #
 def generate_data(data_name='random432', format='text'):
@@ -714,7 +630,7 @@ if not os.path.exists(resultsPath): os.makedirs(resultsPath)
 
 
 
-multi_clusterings_mdl = mClustRandomProjection_(
+multi_clusterings_mdl = mClustRandomProjection(
 						DATA, 
 						n_projections = n_projections, 
 						n_clusters 	  = n_clusters,
@@ -724,51 +640,16 @@ multi_clusterings_mdl = mClustRandomProjection_(
 
 plot_solutions(DATA, multi_clusterings_mdl.solutions)
 
-'''
-P, A, M_mdl		     = mClustRandomProjection(
-						DATA, 
-						n_projections = n_projections, 
-						n_clusters 	  = n_clusters, 
-						dis_metric 	  = dis_metric )
-D = personalized_dendrogram(M_mdl, [0 for _ in M_mdl.labels_] , resultsPath)
-plot_dendrogram(D, [0 for _ in M_mdl.labels_] , resultsPath)
-'''
-#print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
-'''
-while True:
-	G = label_clusterings(M_mdl, resultsPath)
-	R = all_representatives(model= M_mdl, clusterings= P, distances= A, group_lables= G, method= method ) 
-
-	for S_id, S in enumerate(R):
-		if data_name[0:5] == 'image':
-			# Coloring RGB pixels with thier cluster correspondiing color (2 colors, 1 for each cluster)
-			#clr = [ [0, 0, 0], [255, 255, 255] ] 	 
-			clr = [[0,0,0], [0,128,0], [255,140,0], [165,42,42], [255,255,255], [65,105,225], [255,215,0] ]
-			
-			
-			# coloring RGB pixels with their cluster means
-			#clr = [ [np.mean(col) for col in zip(*DATA[S==cl])] for cl in set(S) ] 
-		else:
-			# Coloring data points with thier cluster correspondiing color
-			clr = ['black', 'green', 'orange', 'brown', 'white', 'cornflowerblue', 'yellow' ]
-		
-		sorted_labels = reorder_labels_by_cluster_size(DATA, S) 
-		plot_clusters( DATA, [ clr[i] for i in sorted_labels ], S_id, resultsPath )
-	
-	print('*** Final solutions are presented. ***')
-	
-'''
-
 while True:
 	try:
 		n_views = str(input('\n    Enter the number of views or \'q\' to exit: '))
 		
 		print('*** Extracting the groups of similar clusterings. ***')
-		G       = label_clusterings_(multi_clusterings_mdl.hac_model, n_views)
+		G       = label_clusterings(multi_clusterings_mdl.hac_model, n_views)
 		D       = personalized_dendrogram(multi_clusterings_mdl.hac_model, G)
 		plot_dendrogram(D, G, resultsPath)
 		
-		choice  = str(input('\n    Type "ok" to proceed or press Enter to input another number1: '))
+		choice  = str(input('\n    Type "ok" to proceed or press any key to input another number: '))
 		if choice in ['ok', 'OK', 'Ok', 'oK']: 
 			R   = all_representatives(model        = multi_clusterings_mdl.hac_model, 
 									  clusterings  = multi_clusterings_mdl.clusterings, 
@@ -780,13 +661,13 @@ while True:
 			print('*** Final solutions are presented. ***')
 			
 		elif choice in ['q','Q']:
-			print('\nThe program in ended1.')
+			print('\nThe program in ended.')
 			sys.exit()
 
 	except ValueError:
 		if n_views in ['q','Q']:
-			print('\nThe program in ended1.')
+			print('\nThe program in ended.')
 			sys.exit()
-		print('\nInvalid number of views1')
+		print('\nInvalid number of views')
 
 

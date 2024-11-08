@@ -1000,9 +1000,122 @@ def selectGroupsOfClusterings(Y, clusterings):
 	return selected_clusters
 '''
 
-
-
+'''
+def geterate_clusterings_pool(X, n_projections=60, n_clusters=2, dis_metric='dist_clusterings'):
+	print('\n*** The algorithm is started with the following parameter values: \n    %d projections, each with %d clusters.\n'%(n_projections, n_clusters))
 	
+	P = []
+	for p in range(n_projections):
+		Mp = construct_projection_matrix(X.shape[1])
+		Xp = X @ Mp
+		#Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(X)
+		Sp = GaussianMixture(n_components=n_clusters).fit_predict(Xp)
+		P.append(Sp)
+	
+	P      = np.array(P)
+	print('*** %d projections and clusterings are generated. ***'%(n_projections))
+	
+	return P
+
+def clusterings_hierarchy(pool, dis_metric='dist_clusterings'):	
+	A      = affinity(pool, affinity_metric=dis_metric)
+	print('*** Clusterings dissimilarity matrix is generated. ***')
+	
+	M      = AgglomerativeClustering( linkage="average", metric="precomputed", compute_distances=True ).fit(A)
+	print('*** Clusterings hierarchy is generated with an agglomeartive model. ***') 
+
+	D      = personalized_dendrogram(M, [o for _ in M.labels_])
+	
+	plot_dendrogram(D, [0 for _ in M.labels_])
+	print('*** Clusterings hierarchy is plotted. Please analyze it. ***') 
+	
+	return M, A
 
 
+def label_clusterings__(model, resultsPath=None):
+	try:
+		n_views = str(input('\n    Enter the number of views or \'q\' to exit: '))
+		
+		print('*** Extracting the groups of similar clusterings. ***')
+		Z       = compute_linkage_from_model(model)
+		G       = np.array(cut_tree(Z, n_clusters=int(n_views)).flatten())
+		
+		D      = personalized_dendrogram(model, G)
+	
+		plot_dendrogram(D, G, resultsPath)
+		
+		choice    = str(input('\n    Type "ok" to proceed or press Enter to input another number: '))
+		if choice in ['ok', 'OK', 'Ok', 'oK']: 
+			return G
+		elif choice in ['q','Q']:
+			print('\nThe program in ended.')
+			sys.exit()
+	
+	except ValueError:
+		if n_views in ['q','Q']:
+			print('\nThe program in ended.')
+			sys.exit()
+		print('\nInvalid number of views')
+'''
 
+'''
+def mClustRandomProjection__(X, n_projections=60, n_clusters=2, dis_metric='dist_clusterings'):
+	print('\n*** The algorithm is started with the following parameter values: \n    %d projections, each with %d clusters.\n'%(n_projections, n_clusters))
+	
+	P = []
+	for p in range(n_projections):
+		XX = copy.deepcopy(X)
+		Mp = construct_projection_matrix(XX.shape[1])
+		Xp = XX @ Mp
+		#Xp = random_projection.GaussianRandomProjection(n_components=X.shape[1]).fit_transform(XX)
+		Sp = GaussianMixture(n_components=n_clusters).fit_predict(Xp)
+		P.append(Sp)
+	
+	P      = np.array(P)
+	print('*** %d projections and clusterings are generated. ***'%(n_projections))
+	
+	A      = affinity(P, affinity_metric=dis_metric)
+	print('*** Clusterings dissimilarity matrix is generated. ***')
+	
+	M      = AgglomerativeClustering( linkage="average", metric="precomputed", compute_distances=True ).fit(A)
+	print('*** Clusterings hierarchy is generated with an agglomeartive model. ***') 
+
+	return P, A, M
+'''
+
+'''
+P, A, M_mdl		     = mClustRandomProjection__(
+						DATA, 
+						n_projections = n_projections, 
+						n_clusters 	  = n_clusters, 
+						dis_metric 	  = dis_metric )
+D = personalized_dendrogram(M_mdl, [0 for _ in M_mdl.labels_] , resultsPath)
+plot_dendrogram(D, [0 for _ in M_mdl.labels_] , resultsPath)
+'''
+
+#print('\n*** duration',datetime.timedelta(seconds=(time.time()-starting_time)),' ***')
+
+'''
+while True:
+	G = label_clusterings__(M_mdl, resultsPath)
+	R = all_representatives(model= M_mdl, clusterings= P, distances= A, group_lables= G, method= method ) 
+
+	for S_id, S in enumerate(R):
+		if data_name[0:5] == 'image':
+			# Coloring RGB pixels with thier cluster correspondiing color (2 colors, 1 for each cluster)
+			#clr = [ [0, 0, 0], [255, 255, 255] ] 	 
+			clr = [[0,0,0], [0,128,0], [255,140,0], [165,42,42], [255,255,255], [65,105,225], [255,215,0] ]
+			
+			
+			# coloring RGB pixels with their cluster means
+			#clr = [ [np.mean(col) for col in zip(*DATA[S==cl])] for cl in set(S) ] 
+		else:
+			# Coloring data points with thier cluster correspondiing color
+			clr = ['black', 'green', 'orange', 'brown', 'white', 'cornflowerblue', 'yellow' ]
+		
+		sorted_labels = reorder_labels_by_cluster_size(DATA, S) 
+		plot_clusters( DATA, [ clr[i] for i in sorted_labels ], S_id, resultsPath )
+	
+	print('*** Final solutions are presented. ***')
+	
+'''
